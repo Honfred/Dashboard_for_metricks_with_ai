@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    image: dashboard:latest
+    container_name: dashboard_web
+    command: ash -c "rm -f tmp/pids/server.pid && rails server -b 0.0.0.0" #bundle exec rails s -p 3000 -b '0.0.0.0'
+    environment:
+      RAILS_ENV: development
+      PG_HOST: postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: 123456
+      REDIS_URL: redis://redis:6379/0
+    volumes:
+      - .:/app
+    tty: true
+    stdin_open: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    networks:
+      - dashboard_net
+    restart: unless-stopped
+
+  sidekiq:
+    image: dashboard:latest
+    container_name: dashboard_sidekiq
+    command: bundle exec sidekiq
+    environment:
+      RAILS_ENV: development
+      PG_HOST: postgres
+      DB_USERNAME: postgres
+      DB_PASSWORD: 123456
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - dashboard_net
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: dashboard_postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: dashboard_db
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - dashboard_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dashboard_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: dashboard_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - dashboard_net
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: dashboard_prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - dashboard_net
+    depends_on:
+      - web
+    restart: unless-stopped
+
+networks:
+  dashboard_net:
+    driver: bridge
+
+volumes:
+  db-data:
+  redis-data:
+  prometheus-data:
