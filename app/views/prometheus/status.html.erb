@@ -1,0 +1,32 @@
+<div class="container mt-4">
+  <div class="card">
+    <div class="card-header">
+      <h2>Статус источников данных Prometheus</h2>
+    </div>
+    <div class="card-body">
+      <% if @targets.present? %>
+        <div class="data-sources-list">
+          <% @targets.each do |target| %>
+            <div class="data-source-item <%= target[:active] ? 'active' : 'inactive' %>">
+              <div>
+                <strong>Job:</strong> <%= target[:job] %><br>
+                <strong>Instance:</strong> <%= target[:instance] %><br>
+                <strong>Статус:</strong> <span class="<%= target[:active] ? 'text-success' : 'text-danger' %>">
+                  <%= target[:active] ? 'Активен' : 'Неактивен' %>
+                </span>
+              </div>
+              <div>
+                <strong>Последнее обновление:</strong><br>
+                <%= target[:last_update] ? target[:last_update].strftime("%d.%m.%Y %H:%M:%S") : 'Нет данных' %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="no-data-message">
+          <p>Нет доступных источников данных</p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div> 

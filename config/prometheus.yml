@@ -4,20 +4,6 @@ global:
   # scrape_timeout is not explicitly set here; it defaults to 10s which is usually sufficient.
 
 scrape_configs:
-  # ... (other scrape_configs for existing exporters or services can be listed here) ...
-
-  # Scrape metrics from the Rails dashboard application
-  - job_name: 'rails_dashboard'      # Descriptive job name for the Rails app (appears in the `job` label for these metrics).
-    scrape_interval: 15s            # Poll the Rails app every 15 seconds (optimal for app metrics; adjust if needed for performance).
-    scrape_timeout: 10s             # Timeout after 10 seconds if the app doesn't respond (prevents hanging scrapes).
-    metrics_path: '/metrics'        # Path where the Rails app exposes Prometheus metrics (common default path for Rails instrumentation).
-    scheme: http                    # Use HTTP to scrape (change to https if your metrics endpoint is served over TLS).
-    static_configs:
-      - targets: ['web:3000']       # Используем имя контейнера web вместо localhost
-        labels:
-          service: 'dashboard'
-          application: 'rails'
-    
   # Сбор метрик PostgreSQL через экспортер postgres_exporter
   - job_name: 'postgresql'
     scrape_interval: 30s            # опрашивать PostgreSQL реже (30 сек) для снижения нагрузки на БД
@@ -42,6 +28,4 @@ scrape_configs:
   - job_name: 'prometheus'
     scrape_interval: 15s
     static_configs:
-      - targets: ['localhost:9090']  # Prometheus собирает свои собственные метрики
-        labels:
-          service: 'monitoring'
+      - targets: ['localhost:9090']  # Prometheus собирает свои собственные метрики 

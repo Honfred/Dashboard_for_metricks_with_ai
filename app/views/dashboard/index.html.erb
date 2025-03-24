@@ -1,0 +1,137 @@
+<div class="dashboard-container">
+  <h1>Мониторинг производительности</h1>
+  
+  <div class="dashboard-controls">
+    <div class="time-selector">
+      <label for="time-range">Временной интервал:</label>
+      <select id="time-range">
+        <option value="15m">15 минут</option>
+        <option value="1h" selected>1 час</option>
+        <option value="3h">3 часа</option>
+        <option value="6h">6 часов</option>
+        <option value="12h">12 часов</option>
+        <option value="24h">24 часа</option>
+        <option value="7d">7 дней</option>
+      </select>
+    </div>
+    
+    <div class="refresh-control">
+      <label for="auto-refresh">Автообновление:</label>
+      <select id="auto-refresh">
+        <option value="off">Выключено</option>
+        <option value="10s">10 секунд</option>
+        <option value="30s" selected>30 секунд</option>
+        <option value="1m">1 минута</option>
+        <option value="5m">5 минут</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="metrics-panels">
+    <div class="panel service-health">
+      <h2>Состояние сервисов</h2>
+      <div id="services-status-chart" class="chart-container"></div>
+    </div>
+    
+    <div class="panel response-time">
+      <h2>Время отклика</h2>
+      <div id="response-time-chart" class="chart-container"></div>
+    </div>
+    
+    <div class="panel throughput">
+      <h2>Пропускная способность</h2>
+      <div id="throughput-chart" class="chart-container"></div>
+    </div>
+    
+    <div class="panel error-rate">
+      <h2>Уровень ошибок</h2>
+      <div id="error-rate-chart" class="chart-container"></div>
+    </div>
+    
+    <div class="panel resource-usage">
+      <h2>Использование ресурсов</h2>
+      <div id="cpu-usage-chart" class="chart-container"></div>
+      <div id="memory-usage-chart" class="chart-container"></div>
+    </div>
+  </div>
+</div>
+
+<% content_for :scripts do %>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Инициализация графиков
+      initDashboard();
+      
+      // Настройка обновления данных
+      setupAutoRefresh();
+      
+      // Обработчики для элементов управления
+      document.getElementById('time-range').addEventListener('change', updateTimeRange);
+      document.getElementById('auto-refresh').addEventListener('change', updateRefreshInterval);
+    });
+    
+    function initDashboard() {
+      // Загрузка и отображение данных от Prometheus
+      fetchMetricsData();
+    }
+    
+    function fetchMetricsData() {
+      const timeRange = document.getElementById('time-range').value;
+      
+      // Fetch data from our backend which queries Prometheus
+      fetch(`/dashboard/metrics?time_range=${timeRange}`)
+        .then(response => response.json())
+        .then(data => {
+          renderCharts(data);
+        })
+        .catch(error => {
+          console.error('Error fetching metrics data:', error);
+        });
+    }
+    
+    function renderCharts(data) {
+      // Здесь будет код для отрисовки графиков с помощью D3.js или Chart.js
+      // Это заглушка для демонстрации
+      console.log('Rendering charts with data:', data);
+    }
+    
+    function setupAutoRefresh() {
+      let refreshInterval;
+      
+      function startRefresh() {
+        const refreshValue = document.getElementById('auto-refresh').value;
+        if (refreshValue === 'off') {
+          clearInterval(refreshInterval);
+          return;
+        }
+        
+        // Преобразование выбранного значения в миллисекунды
+        const timeInMs = convertToMs(refreshValue);
+        
+        clearInterval(refreshInterval);
+        refreshInterval = setInterval(fetchMetricsData, timeInMs);
+      }
+      
+      function convertToMs(timeString) {
+        const unit = timeString.slice(-1);
+        const value = parseInt(timeString.slice(0, -1));
+        
+        switch(unit) {
+          case 's': return value * 1000;
+          case 'm': return value * 60 * 1000;
+          default: return 30000; // Default to 30 seconds
+        }
+      }
+      
+      startRefresh();
+    }
+    
+    function updateTimeRange() {
+      fetchMetricsData();
+    }
+    
+    function updateRefreshInterval() {
+      setupAutoRefresh();
+    }
+  </script>
+<% end %> 

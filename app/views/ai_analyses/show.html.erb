@@ -1,0 +1,129 @@
+<div class="container mt-4" data-controller="anomaly-detection">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to 'Метрики', metrics_path %></li>
+      <li class="breadcrumb-item"><%= link_to @metric.name, metric_path(@metric) %></li>
+      <li class="breadcrumb-item"><%= link_to 'ИИ Анализы', metric_ai_analyses_path(@metric) %></li>
+      <li class="breadcrumb-item active" aria-current="page">Анализ #<%= @ai_analysis.id %></li>
+    </ol>
+  </nav>
+
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Результаты ИИ-анализа: <%= @ai_analysis.analysis_type.humanize %></h5>
+          <span class="badge bg-light text-dark">
+            <%= @ai_analysis.created_at.strftime("%d.%m.%Y %H:%M") %>
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-8">
+              <div id="analysis-chart" style="height: 400px;"
+                   data-analysis-id="<%= @ai_analysis.id %>"
+                   data-metric-id="<%= @metric.id %>"
+                   data-analysis-type="<%= @ai_analysis.analysis_type %>">
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h5 class="mb-0">Выводы ИИ</h5>
+                </div>
+                <div class="card-body">
+                  <div id="ai-insights">
+                    <% if @analysis_data && @analysis_data["insights"] %>
+                      <% @analysis_data["insights"].each do |insight| %>
+                        <div class="alert <%= insight["severity"] == "high" ? "alert-danger" : insight["severity"] == "medium" ? "alert-warning" : "alert-info" %> mb-2">
+                          <h6 class="alert-heading"><%= insight["title"] %></h6>
+                          <p><%= insight["description"] %></p>
+                          <% if insight["recommendation"].present? %>
+                            <hr>
+                            <p class="mb-0">
+                              <strong>Рекомендация:</strong> <%= insight["recommendation"] %>
+                            </p>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    <% else %>
+                      <div class="alert alert-info">
+                        Загрузка выводов ИИ...
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card mt-3">
+                <div class="card-header bg-success text-white">
+                  <h5 class="mb-0">Статистика анализа</h5>
+                </div>
+                <div class="card-body">
+                  <ul class="list-group">
+                    <% if @analysis_data && @analysis_data["statistics"] %>
+                      <% @analysis_data["statistics"].each do |key, value| %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                          <%= key.humanize %>
+                          <span class="badge bg-primary rounded-pill"><%= value %></span>
+                        </li>
+                      <% end %>
+                    <% else %>
+                      <li class="list-group-item">Загрузка статистики...</li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0">Аномалии и прогнозы</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Временная метка</th>
+                  <th>Тип события</th>
+                  <th>Значение</th>
+                  <th>Отклонение (%)</th>
+                  <th>Описание</th>
+                </tr>
+              </thead>
+              <tbody id="anomalies-table">
+                <% if @analysis_data && @analysis_data["events"] && @analysis_data["events"].any? %>
+                  <% @analysis_data["events"].each do |event| %>
+                    <tr class="<%= event["type"] == "anomaly" ? "table-danger" : "table-warning" %>">
+                      <td><%= Time.at(event["timestamp"]).strftime("%d.%m.%Y %H:%M:%S") %></td>
+                      <td><span class="badge <%= event["type"] == "anomaly" ? "bg-danger" : "bg-warning" %>"><%= event["type"] %></span></td>
+                      <td><%= event["value"] %></td>
+                      <td><%= event["deviation"] %>%</td>
+                      <td><%= event["description"] %></td>
+                    </tr>
+                  <% end %>
+                <% else %>
+                  <tr>
+                    <td colspan="5" class="text-center">Нет данных о событиях</td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer">
+          <%= link_to 'Экспорт данных (JSON)', metric_ai_analysis_path(@metric, @ai_analysis, format: :json), class: 'btn btn-secondary' %>
+          <%= link_to 'Экспорт данных (CSV)', metric_ai_analysis_path(@metric, @ai_analysis, format: :csv), class: 'btn btn-secondary' %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

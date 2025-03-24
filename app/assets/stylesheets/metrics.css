@@ -1,0 +1,61 @@
+/* Стили для страницы метрик */
+
+/* Стили для заголовков карточек */
+.card-header {
+  font-weight: bold;
+  background-color: #f8f9fa;
+}
+
+/* Стили для заголовков таблиц */
+.metrics-table th {
+  background-color: #f1f1f1;
+}
+
+/* Стили для списка источников данных */
+.data-sources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.data-source-item {
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 4px solid #ccc;
+  background-color: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+.data-source-item.active {
+  border-left-color: #28a745;
+  background-color: #f0fff4;
+}
+
+.data-source-item.inactive {
+  border-left-color: #dc3545;
+  background-color: #fff5f5;
+}
+
+.data-source-item strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.data-source-item .badge {
+  margin-top: 5px;
+  display: inline-block;
+}
+
+/* Общие стили для секции метрик */
+.metrics-section {
+  margin-bottom: 30px;
+}
+
+/* Стиль для сообщения об отсутствии данных */
+.no-data-message {
+  padding: 20px;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+  color: #6c757d;
+} 

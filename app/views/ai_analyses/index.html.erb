@@ -1,0 +1,55 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to 'Главная', root_path %></li>
+      <li class="breadcrumb-item active" aria-current="page">Все ИИ-анализы</li>
+    </ol>
+  </nav>
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>ИИ-анализы метрик</h1>
+  </div>
+
+  <div class="card">
+    <div class="card-header bg-primary text-white">
+      <h5 class="mb-0">Все анализы в системе</h5>
+    </div>
+    <div class="card-body">
+      <% if @ai_analyses.any? %>
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Метрика</th>
+                <th>Тип анализа</th>
+                <th>Дата создания</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @ai_analyses.each do |analysis| %>
+                <tr>
+                  <td><%= analysis.id %></td>
+                  <td>
+                    <%= link_to analysis.metric.name, metric_path(analysis.metric) %>
+                  </td>
+                  <td><span class="badge bg-info"><%= analysis.analysis_type.humanize %></span></td>
+                  <td><%= analysis.created_at.strftime("%d.%m.%Y %H:%M") %></td>
+                  <td>
+                    <%= link_to 'Просмотр', metric_ai_analysis_path(analysis.metric, analysis), class: 'btn btn-sm btn-primary' %>
+                    <%= link_to 'JSON', metric_ai_analysis_path(analysis.metric, analysis, format: :json), class: 'btn btn-sm btn-secondary' %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="alert alert-info">
+          В системе пока нет проведенных ИИ-анализов.
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

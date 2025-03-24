@@ -23,5 +23,11 @@ module DashboardForMetricksWithAi
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+    
+    # Настройка соединения с Prometheus
+    config.prometheus_url = ENV["PROMETHEUS_URL"] || "http://localhost:9090"
+
+    # Настройка соединения с микросервисом ИИ-анализа
+    config.ai_service_url = ENV["AI_SERVICE_URL"] || "http://localhost:5000"
   end
 end

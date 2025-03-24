@@ -1,0 +1,89 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Метрики мониторинга</h1>
+        <%= link_to "Добавить метрику", new_metric_path, class: "btn btn-primary" if current_user&.admin? %>
+      </div>
+      
+      <div class="row">
+        <!-- Колонка с доступными метриками -->
+        <div class="col-md-8 metrics-section">
+          <div class="card">
+            <div class="card-header">
+              Доступные метрики
+            </div>
+            <div class="card-body">
+              <% if @metrics.present? %>
+                <table class="table table-striped metrics-table">
+                  <thead>
+                    <tr>
+                      <th>Название</th>
+                      <th>Тип</th>
+                      <th>Описание</th>
+                      <th>Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% @metrics.each do |metric| %>
+                      <tr>
+                        <td><%= link_to metric.name, metric_path(metric) %></td>
+                        <td><%= metric.metric_type %></td>
+                        <td><%= metric.description %></td>
+                        <td>
+                          <%= link_to "Просмотр", metric_path(metric), class: "btn btn-sm btn-outline-primary" %>
+                          <% if current_user&.admin? %>
+                            <%= link_to "Редактировать", edit_metric_path(metric), class: "btn btn-sm btn-outline-secondary" %>
+                            <%= link_to "Удалить", metric_path(metric), 
+                                      method: :delete, 
+                                      data: { confirm: "Вы уверены?" }, 
+                                      class: "btn btn-sm btn-outline-danger" %>
+                          <% end %>
+                        </td>
+                      </tr>
+                    <% end %>
+                  </tbody>
+                </table>
+              <% else %>
+                <div class="no-data-message">
+                  Нет доступных метрик. <%= link_to "Добавьте первую метрику", new_metric_path if current_user&.admin? %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Колонка с источниками данных -->
+        <div class="col-md-4 metrics-section">
+          <div class="card">
+            <div class="card-header">
+              Источники данных (Prometheus)
+            </div>
+            <div class="card-body">
+              <% if @available_targets&.any? %>
+                <div class="data-sources-list">
+                  <% @available_targets.each do |target| %>
+                    <div class="data-source-item <%= target[:active] ? 'active' : 'inactive' %>">
+                      <strong><%= target[:instance] %></strong>
+                      <div class="small text-muted"><%= target[:job] %></div>
+                      <div class="badge <%= target[:active] ? 'bg-success' : 'bg-danger' %>">
+                        <%= target[:active] ? 'Активен' : 'Неактивен' %>
+                      </div>
+                      <div class="small text-muted mt-1">
+                        Последнее обновление: <%= target[:last_scrape] ? Time.parse(target[:last_scrape]).strftime("%H:%M:%S %d.%m.%Y") : 'неизвестно' %>
+                      </div>
+                    </div>
+                  <% end %>
+                </div>
+              <% else %>
+                <div class="no-data-message">
+                  Нет доступных источников данных. Проверьте подключение к Prometheus.
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
