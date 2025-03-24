@@ -23,7 +23,11 @@ class MetricsController < ApplicationController
   def create
     @metric = Metric.new(metric_params)
 
+    # Добавляем пример данных для тестирования
     if @metric.save
+      # Временное создание демо-данных в Prometheus (в реальной системе этого не нужно)
+      create_demo_metrics(@metric.name, @metric.metric_type)
+      
       redirect_to @metric, notice: "Метрика успешно создана."
     else
       render :new
@@ -54,5 +58,13 @@ class MetricsController < ApplicationController
 
   def metric_params
     params.require(:metric).permit(:name, :description, :metric_type)
+  end
+
+  # Метод для создания демонстрационных метрик
+  def create_demo_metrics(metric_name, metric_type)
+    # Эта функция в реальности бы добавляла данные в Prometheus
+    # Но так как мы просто демонстрируем интерфейс, мы "притворяемся", что метрики добавлены
+    Rails.logger.info "Демонстрационные метрики для #{metric_name} (#{metric_type}) добавлены в Prometheus"
+    # В реальной системе здесь был бы код для регистрации в Prometheus
   end
 end

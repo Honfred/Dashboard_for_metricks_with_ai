@@ -1,0 +1,124 @@
+<div class="alerts-container">
+  <h1>Оповещения</h1>
+  
+  <div class="alerts-filters">
+    <form action="<%= request.path %>" method="get" class="form-inline">
+      <div class="filter-group">
+        <label for="severity">Важность:</label>
+        <select name="severity" id="severity" class="form-select form-select-sm">
+          <option value="">Все</option>
+          <option value="info" <%= params[:severity] == 'info' ? 'selected' : '' %>>Информация</option>
+          <option value="warning" <%= params[:severity] == 'warning' ? 'selected' : '' %>>Предупреждение</option>
+          <option value="critical" <%= params[:severity] == 'critical' ? 'selected' : '' %>>Критическое</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label for="service">Сервис:</label>
+        <input type="text" name="service" id="service" value="<%= params[:service] %>" class="form-control form-control-sm" placeholder="Имя сервиса">
+      </div>
+      
+      <button type="submit" class="btn btn-primary btn-sm">Фильтровать</button>
+    </form>
+    
+    <div class="alerts-actions">
+      <a href="<%= active_alerts_path %>" class="btn btn-outline-primary <%= current_page?(active_alerts_path) ? 'active' : '' %>">Активные</a>
+      <a href="<%= alerts_path %>" class="btn btn-outline-primary <%= current_page?(alerts_path) && !current_page?(active_alerts_path) ? 'active' : '' %>">Все</a>
+    </div>
+  </div>
+  
+  <div class="alerts-list">
+    <% if @alerts.any? %>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Сервис</th>
+            <th>Метрика</th>
+            <th>Значение</th>
+            <th>Порог</th>
+            <th>Важность</th>
+            <th>Статус</th>
+            <th>Время</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @alerts.each do |alert| %>
+            <tr class="alert-row <%= alert.severity %>">
+              <td><%= alert.service %></td>
+              <td><%= alert.metric %></td>
+              <td><%= alert.value %></td>
+              <td><%= alert.threshold %></td>
+              <td>
+                <span class="badge bg-<%= { 'info' => 'info', 'warning' => 'warning', 'critical' => 'danger' }[alert.severity] %>">
+                  <%= { 'info' => 'Информация', 'warning' => 'Предупреждение', 'critical' => 'Критическое' }[alert.severity] %>
+                </span>
+              </td>
+              <td>
+                <span class="badge bg-<%= { 'triggered' => 'danger', 'acknowledged' => 'warning', 'resolved' => 'success' }[alert.status] %>">
+                  <%= { 'triggered' => 'Активно', 'acknowledged' => 'Принято', 'resolved' => 'Решено' }[alert.status] %>
+                </span>
+              </td>
+              <td><%= alert.triggered_at.strftime("%d.%m.%Y %H:%M:%S") %></td>
+              <td>
+                <div class="btn-group">
+                  <a href="<%= alert_path(alert) %>" class="btn btn-sm btn-outline-primary">Детали</a>
+                  <% if alert.active? %>
+                    <%= button_to 'Принять', acknowledge_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-warning' %>
+                    <%= button_to 'Решить', resolve_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-success' %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      
+      <div class="pagination">
+        <%= paginate @alerts if defined?(paginate) %>
+      </div>
+    <% else %>
+      <div class="alert alert-info">
+        Оповещений не найдено.
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<style>
+  .alerts-container {
+    max-width: 100%;
+    padding: 20px;
+  }
+  
+  .alerts-filters {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+  }
+  
+  .filter-group {
+    margin-right: 10px;
+    display: inline-block;
+  }
+  
+  .alerts-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .alert-row.critical {
+    background-color: rgba(255, 0, 0, 0.05);
+  }
+  
+  .alert-row.warning {
+    background-color: rgba(255, 193, 7, 0.05);
+  }
+  
+  .alert-row.info {
+    background-color: rgba(13, 202, 240, 0.05);
+  }
+</style>

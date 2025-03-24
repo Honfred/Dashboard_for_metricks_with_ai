@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_24_200503) do
+ActiveRecord::Schema[7.2].define(version: 2025_03_24_210244) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -22,6 +22,27 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_24_200503) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["metric_id"], name: "index_ai_analyses_on_metric_id"
+  end
+
+  create_table "alerts", force: :cascade do |t|
+    t.string "service"
+    t.string "metric"
+    t.float "value"
+    t.float "threshold"
+    t.string "status"
+    t.string "severity"
+    t.text "message"
+    t.datetime "triggered_at"
+    t.datetime "resolved_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "dashboard_settings", force: :cascade do |t|
+    t.string "name"
+    t.text "settings"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "metrics", force: :cascade do |t|

@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  service: MyString
+  metric: MyString
+  value: 1.5
+  threshold: 1.5
+  status: MyString
+  severity: MyString
+  message: MyText
+  triggered_at: 2025-03-24 21:02:44
+  resolved_at: 2025-03-24 21:02:44
+
+two:
+  service: MyString
+  metric: MyString
+  value: 1.5
+  threshold: 1.5
+  status: MyString
+  severity: MyString
+  message: MyText
+  triggered_at: 2025-03-24 21:02:44
+  resolved_at: 2025-03-24 21:02:44

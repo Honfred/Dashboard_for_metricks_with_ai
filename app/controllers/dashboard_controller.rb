@@ -1,17 +1,36 @@
 class DashboardController < ApplicationController
   def index
     @metrics = fetch_metrics
+    @settings = user_dashboard_settings
   end
 
   # API эндпоинт для получения метрик
   def metrics
-    time_range = params[:time_range] || "1h"
+    time_range = params[:time_range] || user_dashboard_settings[:time_range] || "1h"
     metrics_data = fetch_metrics_for_range(time_range)
 
     render json: metrics_data
   end
 
+  # API эндпоинт для сохранения настроек дашборда
+  def save_settings
+    settings_data = params.require(:settings).permit!.to_h
+    
+    # Сохраняем настройки в базе данных
+    dashboard_setting = DashboardSetting.current('default')
+    dashboard_setting.update(settings: settings_data)
+    
+    respond_to do |format|
+      format.json { render json: { success: true, settings: dashboard_setting.merged_settings } }
+    end
+  end
+
   private
+
+  def user_dashboard_settings
+    # Получаем настройки из базы данных или используем настройки по умолчанию
+    DashboardSetting.current('default').merged_settings
+  end
 
   def fetch_metrics
     PrometheusClient.new.fetch_metrics
