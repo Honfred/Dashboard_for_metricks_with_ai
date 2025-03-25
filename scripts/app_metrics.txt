@@ -1,0 +1,29 @@
+# HELP http_request_duration_seconds HTTP request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds{method="GET",path="/api/data"} 0.345
+
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",path="/api/data",status="200"} 1234
+http_requests_total{method="POST",path="/api/data",status="200"} 456
+
+# HELP http_requests_errors_total Total number of HTTP request errors
+# TYPE http_requests_errors_total counter
+http_requests_errors_total{method="GET",path="/api/data",status="500"} 78
+
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds
+# TYPE process_cpu_seconds_total gauge
+process_cpu_seconds_total{service="web"} 123.45
+
+# HELP process_resident_memory_bytes Resident memory size in bytes
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes{service="web"} 256000000
+
+# HELP sidekiq_job_duration_seconds Duration of Sidekiq job execution in seconds
+# TYPE sidekiq_job_duration_seconds histogram
+sidekiq_job_duration_seconds{queue="default",class="EmailJob"} 0.56
+
+# HELP up Whether the service is up or not
+# TYPE up gauge
+up{service="web"} 1
+up{service="sidekiq"} 1 

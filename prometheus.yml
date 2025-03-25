@@ -1,14 +1,12 @@
 global:
-  scrape_interval: 15s               # Set the global scrape interval to 15 seconds for timely metrics (default was 1m).
-  evaluation_interval: 15s           # Evaluate rules every 15 seconds (aligns with scrape_interval for consistency).
+  scrape_interval: 30s               # Увеличиваем глобальный интервал сбора метрик до 30 секунд
+  evaluation_interval: 30s           # Увеличиваем интервал оценки правил до 30 секунд
   # scrape_timeout is not explicitly set here; it defaults to 10s which is usually sufficient.
 
 scrape_configs:
-  # ... (other scrape_configs for existing exporters or services can be listed here) ...
-
   # Scrape metrics from the Rails dashboard application
   - job_name: 'rails_dashboard'      # Descriptive job name for the Rails app (appears in the `job` label for these metrics).
-    scrape_interval: 15s            # Poll the Rails app every 15 seconds (optimal for app metrics; adjust if needed for performance).
+    scrape_interval: 30s            # Увеличиваем интервал до 30 секунд
     scrape_timeout: 10s             # Timeout after 10 seconds if the app doesn't respond (prevents hanging scrapes).
     metrics_path: '/metrics'        # Path where the Rails app exposes Prometheus metrics (common default path for Rails instrumentation).
     scheme: http                    # Use HTTP to scrape (change to https if your metrics endpoint is served over TLS).
@@ -20,7 +18,7 @@ scrape_configs:
     
   # Сбор метрик PostgreSQL через экспортер postgres_exporter
   - job_name: 'postgresql'
-    scrape_interval: 30s            # опрашивать PostgreSQL реже (30 сек) для снижения нагрузки на БД
+    scrape_interval: 60s            # Увеличиваем интервал до 60 секунд
     scrape_timeout: 10s             # таймаут опроса PostgreSQL экспортерa
     static_configs:
       - targets: ['postgres-exporter:9187']  # Используем имя контейнера postgres-exporter вместо localhost
@@ -30,7 +28,7 @@ scrape_configs:
 
   # Сбор метрик Redis через экспортер redis_exporter
   - job_name: 'redis'
-    scrape_interval: 15s            # интервал опроса Redis (можно увеличить при высокой нагрузке)
+    scrape_interval: 60s            # Увеличиваем интервал до 60 секунд
     scrape_timeout: 5s              # таймаут опроса Redis экспортерa (Redis отвечает быстро, 5 сек достаточно)
     static_configs:
       - targets: ['redis-exporter:9121']  # Используем имя контейнера redis-exporter вместо localhost
@@ -40,8 +38,51 @@ scrape_configs:
           
   # Собственные метрики Prometheus
   - job_name: 'prometheus'
-    scrape_interval: 15s
+    scrape_interval: 30s
     static_configs:
       - targets: ['localhost:9090']  # Prometheus собирает свои собственные метрики
         labels:
           service: 'monitoring'
+          
+  # Сбор метрик с node-exporter (системные метрики)
+  - job_name: 'node'
+    scrape_interval: 60s            # Увеличиваем интервал до 60 секунд
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: 'node'
+          instance: 'server1'
+          
+  # Сбор метрик из Pushgateway
+  - job_name: 'pushgateway'
+    scrape_interval: 30s
+    honor_labels: true
+    static_configs:
+      - targets: ['pushgateway:9091']
+        labels:
+          service: 'pushgateway'
+
+  # Специальный job для метрик приложения из Pushgateway
+  - job_name: 'app_metrics'
+    scrape_interval: 15s
+    honor_labels: true
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['pushgateway:9091']
+        labels:
+          service: 'app'
+
+  # Имитация пользовательской метрики через textfile_collector
+  # Эти данные будут собираться непосредственно из веб-приложения
+  - job_name: 'custom-metrics'
+    scrape_interval: 30s
+    metrics_path: '/custom-metrics'
+    static_configs:
+      - targets: ['web:3000']
+        labels:
+          service: 'custom'
+          application: 'test'
+
+# Используем файл с правилами оповещений
+rule_files:
+  - 'alerts.yml'

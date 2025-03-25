@@ -1,5 +1,4 @@
-build:
-	docker compose build --no-cache
+.PHONY: start stop build rebuild restart restart-web restart-sidekiq
 
 start:
 	docker compose up -d
@@ -7,13 +6,16 @@ start:
 stop:
 	docker compose down
 
-restart: stop start
+build:
+	docker compose build
 
-docker:
-	docker compose run --rm web ash
+rebuild: down build up
 
-c:
-	docker compose run --rm web rails c
+restart:
+	docker compose restart
 
-chown:
-	sudo chown -R $$(whoami) ./*
+restart-web:
+	docker compose restart web
+
+restart-sidekiq:
+	docker compose restart sidekiq

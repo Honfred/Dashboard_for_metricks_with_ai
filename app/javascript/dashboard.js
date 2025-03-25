@@ -1,15 +1,25 @@
 // Dashboard.js - Функциональность для дашборда метрик
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Инициализация графиков
-  initDashboard();
-  
-  // Настройка обновления данных
-  setupAutoRefresh();
-  
-  // Обработчики для элементов управления
-  document.getElementById('time-range').addEventListener('change', updateTimeRange);
-  document.getElementById('auto-refresh').addEventListener('change', updateRefreshInterval);
+  // Инициализация графиков только на странице дашборда
+  if (document.querySelector('.dashboard-app')) {
+    initDashboard();
+    
+    // Настройка обновления данных
+    setupAutoRefresh();
+    
+    // Обработчики для элементов управления
+    const timeRangeElement = document.getElementById('time-range');
+    const autoRefreshElement = document.getElementById('auto-refresh');
+    
+    if (timeRangeElement) {
+      timeRangeElement.addEventListener('change', updateTimeRange);
+    }
+    
+    if (autoRefreshElement) {
+      autoRefreshElement.addEventListener('change', updateRefreshInterval);
+    }
+  }
 });
 
 // Глобальные переменные для хранения графиков
@@ -40,7 +50,13 @@ function initDashboard() {
 }
 
 function fetchMetricsData() {
-  const timeRange = document.getElementById('time-range').value;
+  const timeRangeElement = document.getElementById('time-range');
+  if (!timeRangeElement) {
+    console.warn('Элемент time-range не найден');
+    return;
+  }
+  
+  const timeRange = timeRangeElement.value;
   
   // Fetch data from our backend which queries Prometheus
   fetch(`/dashboard/metrics?time_range=${timeRange}`)

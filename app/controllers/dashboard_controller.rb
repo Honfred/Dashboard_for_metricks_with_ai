@@ -1,74 +1,144 @@
 class DashboardController < ApplicationController
   def index
-    @metrics = fetch_metrics
-    @settings = user_dashboard_settings
+    begin
+      @metrics = fetch_metrics
+      @settings = user_dashboard_settings
+    rescue => e
+      Rails.logger.error("Error in dashboard index: #{e.message}")
+      flash.now[:alert] = "Проблема с загрузкой метрик. Попробуйте обновить страницу позже."
+      @metrics = []
+      @settings = default_settings
+    end
   end
 
   # API эндпоинт для получения метрик
   def metrics
-    time_range = params[:time_range] || user_dashboard_settings[:time_range] || "1h"
-    metrics_data = fetch_metrics_for_range(time_range)
-
-    render json: metrics_data
+    begin
+      time_range = params[:time_range] || user_dashboard_settings[:time_range] || "1h"
+      metrics_data = fetch_metrics_for_range(time_range)
+      
+      render json: metrics_data
+    rescue => e
+      Rails.logger.error("Error fetching metrics API: #{e.message}")
+      render json: { error: "Не удалось получить метрики. Пожалуйста, попробуйте позже." }, status: :service_unavailable
+    end
   end
 
   # API эндпоинт для сохранения настроек дашборда
   def save_settings
-    settings_data = params.require(:settings).permit!.to_h
-    
-    # Сохраняем настройки в базе данных
-    dashboard_setting = DashboardSetting.current('default')
-    dashboard_setting.update(settings: settings_data)
-    
-    respond_to do |format|
-      format.json { render json: { success: true, settings: dashboard_setting.merged_settings } }
+    begin
+      settings_data = params.require(:settings).permit!.to_h
+      
+      # Сохраняем настройки в базе данных
+      dashboard_setting = DashboardSetting.current('default')
+      dashboard_setting.update(settings: settings_data)
+      
+      respond_to do |format|
+        format.json { render json: { success: true, settings: dashboard_setting.merged_settings } }
+      end
+    rescue => e
+      Rails.logger.error("Error saving dashboard settings: #{e.message}")
+      respond_to do |format|
+        format.json { render json: { success: false, error: "Не удалось сохранить настройки" }, status: :unprocessable_entity }
+      end
     end
   end
 
   private
 
+  def default_settings
+    {
+      time_range: "1h",
+      refresh_interval: 60,
+      displayed_panels: ["services_status", "response_time", "throughput", "error_rate", "resource_usage"]
+    }
+  end
+
   def user_dashboard_settings
     # Получаем настройки из базы данных или используем настройки по умолчанию
-    DashboardSetting.current('default').merged_settings
+    begin
+      DashboardSetting.current('default').merged_settings
+    rescue => e
+      Rails.logger.error("Error loading dashboard settings: #{e.message}")
+      default_settings
+    end
   end
 
   def fetch_metrics
-    PrometheusClient.new.fetch_metrics
+    Rails.cache.fetch("prometheus_metrics", expires_in: 30.seconds) do
+      PrometheusClient.new.fetch_metrics
+    end
+  rescue => e
+    Rails.logger.error("Error in fetch_metrics: #{e.message}")
+    { "error" => e.message }
   end
 
   def fetch_metrics_for_range(time_range)
-    client = PrometheusClient.new
-    end_time = Time.now
-    start_time = calculate_start_time(end_time, time_range)
-    step = calculate_step(time_range)
+    cache_key = "prometheus_metrics_range_#{time_range}"
+    cache_expiration = calculate_cache_expiration(time_range)
+    
+    Rails.cache.fetch(cache_key, expires_in: cache_expiration) do
+      client = PrometheusClient.new
+      end_time = Time.now
+      start_time = calculate_start_time(end_time, time_range)
+      step = calculate_step(time_range)
 
-    {
-      services_status: fetch_services_status(client),
-      response_time: fetch_response_time(client, start_time, end_time, step),
-      throughput: fetch_throughput(client, start_time, end_time, step),
-      error_rate: fetch_error_rate(client, start_time, end_time, step),
-      resource_usage: fetch_resource_usage(client, start_time, end_time, step)
-    }
+      {
+        services_status: fetch_services_status(client),
+        response_time: fetch_response_time(client, start_time, end_time, step),
+        throughput: fetch_throughput(client, start_time, end_time, step),
+        error_rate: fetch_error_rate(client, start_time, end_time, step),
+        resource_usage: fetch_resource_usage(client, start_time, end_time, step)
+      }
+    end
+  rescue => e
+    Rails.logger.error("Error in fetch_metrics_for_range: #{e.message}")
+    { error: e.message }
+  end
+
+  def calculate_cache_expiration(time_range)
+    case time_range
+    when "15m" then 15.seconds
+    when "1h" then 30.seconds
+    when "3h" then 1.minute
+    when "6h" then 2.minutes
+    when "12h" then 3.minutes
+    when "24h" then 5.minutes
+    when "7d" then 10.minutes
+    else 30.seconds
+    end
   end
 
   def fetch_services_status(client)
     result = client.fetch_metrics("up")
     parse_status_results(result)
+  rescue => e
+    Rails.logger.error("Error fetching service status: #{e.message}")
+    []
   end
 
   def fetch_response_time(client, start_time, end_time, step)
     result = client.fetch_range_metrics("http_request_duration_seconds", start_time, end_time, step)
     parse_time_series(result)
+  rescue => e
+    Rails.logger.error("Error fetching response time: #{e.message}")
+    []
   end
 
   def fetch_throughput(client, start_time, end_time, step)
     result = client.fetch_range_metrics("rate(http_requests_total[1m])", start_time, end_time, step)
     parse_time_series(result)
+  rescue => e
+    Rails.logger.error("Error fetching throughput: #{e.message}")
+    []
   end
 
   def fetch_error_rate(client, start_time, end_time, step)
     result = client.fetch_range_metrics('rate(http_requests_total{status=~"5.."}[1m]) / rate(http_requests_total[1m])', start_time, end_time, step)
     parse_time_series(result)
+  rescue => e
+    Rails.logger.error("Error fetching error rate: #{e.message}")
+    []
   end
 
   def fetch_resource_usage(client, start_time, end_time, step)
@@ -79,6 +149,9 @@ class DashboardController < ApplicationController
       cpu: parse_time_series(cpu_result),
       memory: parse_time_series(memory_result)
     }
+  rescue => e
+    Rails.logger.error("Error fetching resource usage: #{e.message}")
+    { cpu: [], memory: [] }
   end
 
   def parse_status_results(result)

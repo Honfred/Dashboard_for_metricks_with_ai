@@ -18,6 +18,9 @@ Rails.application.routes.draw do
   # Добавляем маршрут для проверки статуса источников данных Prometheus
   get 'prometheus/status', to: 'prometheus#status'
   
+  # Добавляем маршрут для пользовательских метрик для Prometheus
+  get 'custom-metrics', to: 'metrics#custom_metrics'
+  
   # Маршруты для анализа метрик с помощью AI без привязки к метрике
   resources :ai_analyses, only: [:index, :show, :destroy]
 

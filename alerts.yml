@@ -1,0 +1,47 @@
+groups:
+  - name: example
+    rules:
+    - alert: HighCPUUsage
+      expr: system_cpu_usage > 80
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Высокая загрузка CPU на {{ $labels.instance }}"
+        description: "Загрузка CPU на сервере {{ $labels.instance }} составляет {{ $value }}%"
+
+    - alert: HighApiResponseTime
+      expr: api_response_time > 300
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Медленные ответы API для {{ $labels.endpoint }}"
+        description: "Время ответа API для endpoint {{ $labels.endpoint }} составляет {{ $value }}ms"
+
+    - alert: ApiErrors
+      expr: rate(api_errors_count[5m]) > 0.1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Высокий уровень ошибок API для {{ $labels.endpoint }}"
+        description: "Уровень ошибок для endpoint {{ $labels.endpoint }} составляет {{ $value }}"
+
+    - alert: DatabaseConnectionsHigh
+      expr: database_connections > 20
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Много подключений к БД {{ $labels.database }}"
+        description: "Количество подключений к базе данных {{ $labels.database }} составляет {{ $value }}"
+
+    - alert: InstanceDown
+      expr: up == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Инстанс {{ $labels.instance }} недоступен"
+        description: "Инстанс {{ $labels.instance }} с job {{ $labels.job }} недоступен более 1 минуты" 

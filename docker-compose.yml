@@ -88,6 +88,8 @@ services:
       - web
       - postgres-exporter
       - redis-exporter
+      - node-exporter
+      - pushgateway
     restart: unless-stopped
 
   postgres-exporter:
@@ -114,6 +116,32 @@ services:
       - dashboard_net
     depends_on:
       - redis
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: dashboard_node_exporter
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - "9100:9100"
+    networks:
+      - dashboard_net
+    restart: unless-stopped
+
+  pushgateway:
+    image: prom/pushgateway:latest
+    container_name: dashboard_pushgateway
+    ports:
+      - "9091:9091"
+    networks:
+      - dashboard_net
     restart: unless-stopped
 
 networks:
