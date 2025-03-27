@@ -1,4 +1,4 @@
-.PHONY: start stop build rebuild restart restart-web restart-sidekiq
+.PHONY: start stop build rebuild restart restart-web restart-sidekiq generate-test-data
 
 start:
 	docker compose up -d
@@ -19,3 +19,6 @@ restart-web:
 
 restart-sidekiq:
 	docker compose restart sidekiq
+
+generate-test-data:
+	docker compose exec web rails runner 'MetricsGenerator.generate_test_data'
