@@ -698,81 +698,161 @@
     }
     
     function setupDragAndDrop() {
-      // Инициализация Sortable для строк
-      rowsSortable = new Sortable(document.getElementById('metrics-grid'), {
-        group: 'rows',
-        animation: 150,
-        disabled: true, // Изначально отключено
-        ghostClass: 'sortable-ghost',
-        chosenClass: 'sortable-chosen',
-        dragClass: 'sortable-drag',
-        onStart: function(evt) {
-          document.body.classList.add('dragging-active');
-        },
-        onEnd: function(evt) {
-          document.body.classList.remove('dragging-active');
-          saveLayout();
+      // Проверяем, что Sortable существует в глобальном контексте
+      if (typeof Sortable === 'undefined') {
+        console.error('Библиотека Sortable не найдена! Плитки не будут перетаскиваться.');
+        return;
+      }
+      
+      // Очищаем предыдущие экземпляры Sortable, если таковые были
+      if (rowsSortable) {
+        try {
+          rowsSortable.destroy();
+        } catch (e) {
+          console.warn('Ошибка при уничтожении предыдущего экземпляра Sortable:', e);
         }
-      });
-
-      // Инициализация Sortable для панелей в каждой строке
+      }
+      
+      if (panelSortables && panelSortables.length) {
+        panelSortables.forEach(sortable => {
+          try {
+            if (sortable && typeof sortable.destroy === 'function') {
+              sortable.destroy();
+            }
+          } catch (e) {
+            console.warn('Ошибка при уничтожении экземпляра Sortable для панели:', e);
+          }
+        });
+      }
+      
+      // Инициализируем массив для хранения экземпляров Sortable
       panelSortables = [];
-      document.querySelectorAll('.grid-row').forEach(row => {
-        const sortable = new Sortable(row, {
-          group: 'panels',
+      
+      // Инициализация Sortable для строк
+      const gridContainer = document.getElementById('metrics-grid');
+      if (!gridContainer) {
+        console.error('Контейнер с id "metrics-grid" не найден!');
+        return;
+      }
+      
+      try {
+        rowsSortable = new Sortable(gridContainer, {
+          group: 'rows',
           animation: 150,
           disabled: true, // Изначально отключено
           ghostClass: 'sortable-ghost',
           chosenClass: 'sortable-chosen',
           dragClass: 'sortable-drag',
-          swapThreshold: 0.65,
-          emptyInsertThreshold: 10,
-          // Улучшенные настройки для более отзывчивого перетаскивания
           onStart: function(evt) {
             document.body.classList.add('dragging-active');
-            evt.item.classList.add('being-dragged');
           },
           onEnd: function(evt) {
             document.body.classList.remove('dragging-active');
-            evt.item.classList.remove('being-dragged');
-            
-            // Принудительное обновление для гарантии правильного отображения после перетаскивания
-            setTimeout(function() {
-              evt.item.style.transform = '';
-              evt.item.style.opacity = '';
-            }, 10);
-            
             saveLayout();
           }
         });
-        panelSortables.push(sortable);
+      } catch (e) {
+        console.error('Ошибка при инициализации Sortable для строк:', e);
+      }
+
+      // Инициализация Sortable для панелей в каждой строке
+      document.querySelectorAll('.grid-row').forEach(row => {
+        try {
+          const sortable = new Sortable(row, {
+            group: 'panels',
+            animation: 150,
+            disabled: true, // Изначально отключено
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            swapThreshold: 0.65,
+            emptyInsertThreshold: 10,
+            // Улучшенные настройки для более отзывчивого перетаскивания
+            onStart: function(evt) {
+              document.body.classList.add('dragging-active');
+              evt.item.classList.add('being-dragged');
+            },
+            onEnd: function(evt) {
+              document.body.classList.remove('dragging-active');
+              evt.item.classList.remove('being-dragged');
+              
+              // Принудительное обновление для гарантии правильного отображения после перетаскивания
+              setTimeout(function() {
+                evt.item.style.transform = '';
+                evt.item.style.opacity = '';
+              }, 10);
+              
+              saveLayout();
+            }
+          });
+          panelSortables.push(sortable);
+        } catch (e) {
+          console.error('Ошибка при инициализации Sortable для панелей в строке:', e);
+        }
       });
       
       // Проверяем, не был ли включен режим редактирования ранее
       const container = document.querySelector('.dashboard-container');
-      if (container.classList.contains('edit-mode')) {
+      if (container && container.classList.contains('edit-mode')) {
         enableDragAndDrop();
       }
     }
     
     function enableDragAndDrop() {
       // Включаем перетаскивание строк
-      rowsSortable.option('disabled', false);
+      if (rowsSortable && typeof rowsSortable.option === 'function') {
+        try {
+          rowsSortable.option('disabled', false);
+        } catch (e) {
+          console.error('Ошибка при включении перетаскивания строк:', e);
+        }
+      } else {
+        console.warn('rowsSortable не инициализирован или поврежден, переинициализируем...');
+        setupDragAndDrop();
+        return;
+      }
       
       // Включаем перетаскивание панелей внутри строк
-      panelSortables.forEach(sortable => {
-        sortable.option('disabled', false);
-      });
+      if (panelSortables && panelSortables.length) {
+        panelSortables.forEach((sortable, index) => {
+          if (sortable && typeof sortable.option === 'function') {
+            try {
+              sortable.option('disabled', false);
+            } catch (e) {
+              console.error(`Ошибка при включении перетаскивания панелей (индекс ${index}):`, e);
+            }
+          } else {
+            console.warn(`Экземпляр Sortable для панелей с индексом ${index} не инициализирован или поврежден`);
+          }
+        });
+      } else {
+        console.warn('panelSortables не инициализирован или пуст, переинициализируем...');
+        setupDragAndDrop();
+      }
     }
     
     function disableDragAndDrop() {
       // Отключаем перетаскивание строк
-      rowsSortable.option('disabled', true);
+      if (rowsSortable && typeof rowsSortable.option === 'function') {
+        try {
+          rowsSortable.option('disabled', true);
+        } catch (e) {
+          console.error('Ошибка при отключении перетаскивания строк:', e);
+        }
+      }
       
       // Отключаем перетаскивание панелей внутри строк
-      panelSortables.forEach(sortable => {
-        sortable.option('disabled', true);
-      });
+      if (panelSortables && panelSortables.length) {
+        panelSortables.forEach((sortable, index) => {
+          if (sortable && typeof sortable.option === 'function') {
+            try {
+              sortable.option('disabled', true);
+            } catch (e) {
+              console.error(`Ошибка при отключении перетаскивания панелей (индекс ${index}):`, e);
+            }
+          }
+        });
+      }
     }
     
     function toggleEditMode() {

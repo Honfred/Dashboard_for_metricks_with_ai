@@ -126,51 +126,75 @@ function renderServicesStatus(statusData) {
 
 function renderResponseTimeChart(responseTimeData) {
   const ctx = getChartContext('response-time-chart', charts.responseTime);
-  if (!ctx) return;
+  if (!ctx) {
+    console.error('Не удалось получить контекст для графика времени отклика');
+    return;
+  }
   
   const chartData = prepareTimeSeriesData(responseTimeData, 'Время отклика (мс)');
   
-  charts.responseTime = new Chart(ctx, {
-    type: 'line',
-    data: chartData,
-    options: getChartOptions('Время отклика', 'Время', 'мс', true)
-  });
+  try {
+    charts.responseTime = new Chart(ctx, {
+      type: 'line',
+      data: chartData,
+      options: getChartOptions('Время отклика', 'Время', 'мс', true)
+    });
+  } catch (e) {
+    console.error('Ошибка при создании графика времени отклика:', e);
+    showChartError('response-time-chart', 'Ошибка отображения графика: ' + e.message);
+  }
 }
 
 function renderThroughputChart(throughputData) {
   const ctx = getChartContext('throughput-chart', charts.throughput);
-  if (!ctx) return;
+  if (!ctx) {
+    console.error('Не удалось получить контекст для графика пропускной способности');
+    return;
+  }
   
   const chartData = prepareTimeSeriesData(throughputData, 'Запросов в секунду');
   
-  charts.throughput = new Chart(ctx, {
-    type: 'line',
-    data: chartData,
-    options: getChartOptions('Пропускная способность', 'Время', 'req/s', false)
-  });
+  try {
+    charts.throughput = new Chart(ctx, {
+      type: 'line',
+      data: chartData,
+      options: getChartOptions('Пропускная способность', 'Время', 'req/s', false)
+    });
+  } catch (e) {
+    console.error('Ошибка при создании графика пропускной способности:', e);
+    showChartError('throughput-chart', 'Ошибка отображения графика: ' + e.message);
+  }
 }
 
 function renderErrorRateChart(errorRateData) {
   const ctx = getChartContext('error-rate-chart', charts.errorRate);
-  if (!ctx) return;
+  if (!ctx) {
+    console.error('Не удалось получить контекст для графика уровня ошибок');
+    return;
+  }
   
   const chartData = prepareTimeSeriesData(errorRateData, 'Процент ошибок');
   
-  charts.errorRate = new Chart(ctx, {
-    type: 'line',
-    data: chartData,
-    options: getChartOptions('Уровень ошибок', 'Время', '%', false, {
-      y: {
-        min: 0,
-        max: 1,
-        ticks: {
-          callback: function(value) {
-            return (value * 100).toFixed(1) + '%';
+  try {
+    charts.errorRate = new Chart(ctx, {
+      type: 'line',
+      data: chartData,
+      options: getChartOptions('Уровень ошибок', 'Время', '%', false, {
+        y: {
+          min: 0,
+          max: 1,
+          ticks: {
+            callback: function(value) {
+              return (value * 100).toFixed(1) + '%';
+            }
           }
         }
-      }
-    })
-  });
+      })
+    });
+  } catch (e) {
+    console.error('Ошибка при создании графика уровня ошибок:', e);
+    showChartError('error-rate-chart', 'Ошибка отображения графика: ' + e.message);
+  }
 }
 
 function renderResourceUsageCharts(resourceData) {
@@ -179,11 +203,18 @@ function renderResourceUsageCharts(resourceData) {
   if (cpuCtx) {
     const cpuChartData = prepareTimeSeriesData(resourceData.cpu, 'CPU');
     
-    charts.cpuUsage = new Chart(cpuCtx, {
-      type: 'line',
-      data: cpuChartData,
-      options: getChartOptions('Использование CPU', 'Время', 'ядра', false)
-    });
+    try {
+      charts.cpuUsage = new Chart(cpuCtx, {
+        type: 'line',
+        data: cpuChartData,
+        options: getChartOptions('Использование CPU', 'Время', 'ядра', false)
+      });
+    } catch (e) {
+      console.error('Ошибка при создании графика использования CPU:', e);
+      showChartError('cpu-usage-chart', 'Ошибка отображения графика: ' + e.message);
+    }
+  } else {
+    console.error('Не удалось получить контекст для графика использования CPU');
   }
   
   // Memory Usage
@@ -191,36 +222,56 @@ function renderResourceUsageCharts(resourceData) {
   if (memoryCtx) {
     const memoryChartData = prepareTimeSeriesData(resourceData.memory, 'Память');
     
-    charts.memoryUsage = new Chart(memoryCtx, {
-      type: 'line',
-      data: memoryChartData,
-      options: getChartOptions('Использование памяти', 'Время', 'МБ', false, {
-        y: {
-          ticks: {
-            callback: function(value) {
-              return (value / (1024 * 1024)).toFixed(1) + ' MB';
+    try {
+      charts.memoryUsage = new Chart(memoryCtx, {
+        type: 'line',
+        data: memoryChartData,
+        options: getChartOptions('Использование памяти', 'Время', 'МБ', false, {
+          y: {
+            ticks: {
+              callback: function(value) {
+                return (value / (1024 * 1024)).toFixed(1) + ' MB';
+              }
             }
           }
-        }
-      })
-    });
+        })
+      });
+    } catch (e) {
+      console.error('Ошибка при создании графика использования памяти:', e);
+      showChartError('memory-usage-chart', 'Ошибка отображения графика: ' + e.message);
+    }
+  } else {
+    console.error('Не удалось получить контекст для графика использования памяти');
   }
 }
 
 function getChartContext(containerId, existingChart) {
   const container = document.getElementById(containerId);
   
-  if (!container) return null;
+  if (!container) {
+    console.error(`Контейнер с id "${containerId}" не найден`);
+    return null;
+  }
   
   // Если график уже существует, уничтожаем его
   if (existingChart) {
-    existingChart.destroy();
+    try {
+      existingChart.destroy();
+    } catch (e) {
+      console.error(`Ошибка при уничтожении существующего графика: ${e.message}`);
+    }
   }
   
   // Очищаем контейнер и добавляем новый canvas
   container.innerHTML = '';
   const canvas = document.createElement('canvas');
   container.appendChild(canvas);
+  
+  // Проверяем, что canvas был создан корректно
+  if (!canvas || !canvas.getContext) {
+    console.error(`Не удалось создать canvas в контейнере ${containerId}`);
+    return null;
+  }
   
   return canvas.getContext('2d');
 }
@@ -382,4 +433,17 @@ function updateTimeRange() {
 
 function updateRefreshInterval() {
   setupAutoRefresh();
+}
+
+// Функция для отображения ошибки в контейнере графика
+function showChartError(containerId, message) {
+  const container = document.getElementById(containerId);
+  if (container) {
+    container.innerHTML = `
+      <div class="chart-error">
+        <i class="fa fa-exclamation-triangle"></i>
+        <p>${message}</p>
+      </div>
+    `;
+  }
 } 
