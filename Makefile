@@ -7,7 +7,7 @@ stop:
 	docker compose down
 
 build:
-	docker compose build
+	COMPOSE_BAKE=true docker compose build
 
 rebuild: stop build start
 

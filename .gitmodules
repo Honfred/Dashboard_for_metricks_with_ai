@@ -1,0 +1,3 @@
+[submodule "modules/AI_api"]
+	path = modules/AI_api
+	url = git@github.com:notqpe/PRIMAL_comment_server.git

@@ -144,6 +144,36 @@ services:
       - dashboard_net
     restart: unless-stopped
 
+  ai-api:
+    build:
+      context: ./modules/AI_api
+      dockerfile: Dockerfile
+    container_name: ai-api
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./modules/AI_api:/app
+    depends_on:
+      - ollama
+    networks:
+      - dashboard_net
+    environment:
+      - LLAMA_HOST=ollama
+      - LLAMA_PORT=11434
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama
+    container_name: llama-service
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - dashboard_net
+    command: ["serve"]
+    restart: unless-stopped
+
 networks:
   dashboard_net:
     driver: bridge
@@ -152,3 +182,4 @@ volumes:
   db-data:
   redis-data:
   prometheus-data:
+  ollama-data:
