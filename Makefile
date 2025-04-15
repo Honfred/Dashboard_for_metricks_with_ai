@@ -21,6 +21,7 @@ restart-sidekiq:
 	docker compose restart sidekiq
 
 setup-db:
+	docker compose exec web rails db:create
 	docker compose exec web rails db:migrate
 
 generate-test-data: setup-db
