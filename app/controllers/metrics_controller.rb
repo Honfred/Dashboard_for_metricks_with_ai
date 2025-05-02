@@ -67,6 +67,31 @@ class MetricsController < ApplicationController
     end
   end
 
+  def analyze
+    @metric = Metric.find(params[:id])
+    
+    # Получаем данные метрики
+    end_time = Time.now
+    start_time = end_time - 24.hours # За последние 24 часа
+    
+    data = MetricsService.fetch_data(
+      metric_name: @metric.name,
+      start_time: start_time.to_i,
+      end_time: end_time.to_i,
+      step: '5m' # Шаг 5 минут для анализа
+    )
+    
+    # Выполняем анализ данных
+    anomalies = detect_anomalies(@metric.name, data)
+    trend = predict_trend(@metric.name)
+    
+    render json: {
+      metric: @metric,
+      anomalies: anomalies,
+      trend: trend
+    }
+  end
+
   private
 
   def set_metric
@@ -139,5 +164,25 @@ class MetricsController < ApplicationController
     end
     
     output.join("\n")
+  end
+
+  def detect_anomalies(metric_name, data)
+    return { error: "No data available" } if data[:values].empty?
+    
+    MlService.detect_anomalies(
+      metric_name,
+      data[:values],
+      data[:timestamps]
+    )
+  rescue => e
+    Rails.logger.error("Error detecting anomalies: #{e.message}")
+    { error: "Failed to detect anomalies: #{e.message}" }
+  end
+  
+  def predict_trend(metric_name)
+    MlService.predict_trend(metric_name, 24) # Прогноз на 24 часа вперед
+  rescue => e
+    Rails.logger.error("Error predicting trend: #{e.message}")
+    { error: "Failed to predict trend: #{e.message}" }
   end
 end

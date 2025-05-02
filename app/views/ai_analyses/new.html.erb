@@ -28,16 +28,18 @@
 
             <div class="mb-3">
               <%= form.label :analysis_type, 'Тип анализа', class: 'form-label' %>
-              <% if @available_analysis_types && @available_analysis_types["types"] %>
-                <%= form.select :analysis_type, 
-                    @available_analysis_types["types"].map { |type| [type["name"], type["id"]] }, 
-                    { prompt: "Выберите тип анализа" }, 
-                    class: 'form-select' %>
-              <% else %>
-                <%= form.select :analysis_type, 
-                    AiAnalysis.analysis_types.keys.map { |key| [key.humanize, key] }, 
-                    { prompt: "Выберите тип анализа" }, 
-                    class: 'form-select' %>
+              <%= form.select :analysis_type, 
+                  [
+                    ['Обнаружение аномалий', 'anomaly_detection'],
+                    ['Прогнозирование трендов', 'trend_prediction'],
+                    ['Анализ производительности', 'performance_insight']
+                  ], 
+                  { selected: @ai_analysis.analysis_type }, 
+                  class: 'form-select' %>
+              <% if @ai_analysis.analysis_type.present? %>
+                <div class="form-text text-success">
+                  Выбран тип анализа: <%= @ai_analysis.analysis_type.humanize %>
+                </div>
               <% end %>
             </div>
 

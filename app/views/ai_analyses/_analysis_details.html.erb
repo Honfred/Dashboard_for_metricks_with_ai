@@ -1,0 +1,225 @@
+<% if analysis_type == 'anomaly_detection' %>
+  <!-- Детали анализа аномалий -->
+  <div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+      <h5 class="mb-0">Обнаружение аномалий</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <canvas id="anomaly-chart" height="250" data-controller="anomaly-chart" 
+                  data-anomaly-chart-data-value="<%= @analysis_data.to_json %>"></canvas>
+        </div>
+        <div class="col-md-4">
+          <h6 class="text-muted">Статистика</h6>
+          <% if @analysis_data && @analysis_data["statistics"] %>
+            <ul class="list-group list-group-flush">
+              <% @analysis_data["statistics"].each do |key, value| %>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span><%= key %></span>
+                  <span class="font-weight-bold"><%= value %></span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p>Данные недоступны</p>
+          <% end %>
+          
+          <hr>
+          <h6 class="text-danger">Ключевые аномалии</h6>
+          <% if @analysis_data && @analysis_data["events"] && @analysis_data["events"].any? %>
+            <div class="list-group">
+              <% @analysis_data["events"].first(3).each do |event| %>
+                <div class="list-group-item">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">Значение: <%= event["value"] %></h6>
+                    <small><%= Time.at(event["timestamp"]).strftime("%d.%m %H:%M") %></small>
+                  </div>
+                  <p class="mb-1">Отклонение: <span class="badge bg-danger"><%= event["deviation"] %>%</span></p>
+                </div>
+              <% end %>
+            </div>
+            <% if @analysis_data["events"].size > 3 %>
+              <div class="text-center mt-2">
+                <small>Показаны 3 из <%= @analysis_data["events"].size %> аномалий</small>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% elsif analysis_type == 'trend_prediction' %>
+  <!-- Детали анализа трендов -->
+  <div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+      <h5 class="mb-0">Прогнозирование трендов</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <canvas id="trend-chart" height="250" data-controller="trend-chart" 
+                  data-trend-chart-data-value="<%= @analysis_data.to_json %>"></canvas>
+        </div>
+        <div class="col-md-4">
+          <div class="alert 
+            <% if @analysis_data && @analysis_data["statistics"] && @analysis_data["statistics"]["Изменение"] %>
+              <% change = @analysis_data["statistics"]["Изменение"].to_s %>
+              <% if change.start_with?('+') && change.to_f > 10 %>
+                alert-danger
+              <% elsif change.start_with?('+') %>
+                alert-warning
+              <% elsif change.start_with?('-') && change.to_f < -10 %>
+                alert-primary
+              <% else %>
+                alert-success
+              <% end %>
+            <% else %>
+              alert-secondary
+            <% end %>">
+            <h6 class="alert-heading">Прогноз изменения</h6>
+            <% if @analysis_data && @analysis_data["statistics"] && @analysis_data["statistics"]["Изменение"] %>
+              <h4><%= @analysis_data["statistics"]["Изменение"] %></h4>
+            <% else %>
+              <h4>Н/Д</h4>
+            <% end %>
+            <hr>
+            <p class="mb-0">
+              <% if @analysis_data && @analysis_data["insights"] && @analysis_data["insights"].first && @analysis_data["insights"].first["title"] %>
+                <%= @analysis_data["insights"].first["title"] %>
+              <% else %>
+                Нет данных о прогнозе
+              <% end %>
+            </p>
+          </div>
+          
+          <h6 class="text-muted mt-3">Статистика</h6>
+          <% if @analysis_data && @analysis_data["statistics"] %>
+            <ul class="list-group list-group-flush">
+              <% @analysis_data["statistics"].except("Изменение").each do |key, value| %>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span><%= key %></span>
+                  <span class="font-weight-bold"><%= value %></span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p>Данные недоступны</p>
+          <% end %>
+          
+          <h6 class="text-warning mt-3">Точки прогноза</h6>
+          <% if @analysis_data && @analysis_data["events"] && @analysis_data["events"].any? %>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Дата</th>
+                    <th>Значение</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @analysis_data["events"].first(5).each do |event| %>
+                    <tr>
+                      <td><%= Time.at(event["timestamp"]).strftime("%d.%m %H:%M") %></td>
+                      <td><%= event["value"] %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% else %>
+            <p>Данные о прогнозе недоступны</p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% elsif analysis_type == 'performance_insight' %>
+  <!-- Детали анализа производительности -->
+  <div class="card mb-4">
+    <div class="card-header bg-info text-white">
+      <h5 class="mb-0">Анализ производительности</h5>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <!-- Добавляем круговую диаграмму для факторов влияния -->
+          <div class="card mb-3">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">Факторы, влияющие на производительность</h6>
+            </div>
+            <div class="card-body">
+              <% if @analysis_data && @analysis_data["feature_importance"] %>
+                <canvas id="feature-importance-chart" height="250" data-controller="feature-chart" 
+                        data-feature-chart-data-value="<%= @analysis_data["feature_importance"].to_json %>"></canvas>
+              <% else %>
+                <div class="alert alert-warning">Данные о факторах производительности недоступны</div>
+              <% end %>
+            </div>
+          </div>
+          
+          <!-- Добавляем график предсказанных значений -->
+          <div class="card">
+            <div class="card-header bg-light">
+              <h6 class="mb-0">Предсказанные значения</h6>
+            </div>
+            <div class="card-body">
+              <% if @analysis_data && @analysis_data["predictions"] %>
+                <canvas id="predictions-chart" height="200" data-controller="predictions-chart" 
+                        data-predictions-chart-data-value="<%= @analysis_data["predictions"].to_json %>"></canvas>
+              <% else %>
+                <div class="alert alert-warning">Данные о предсказаниях недоступны</div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <h6 class="text-muted">Статистика</h6>
+          <% if @analysis_data && @analysis_data["statistics"] %>
+            <ul class="list-group list-group-flush">
+              <% @analysis_data["statistics"].each do |key, value| %>
+                <li class="list-group-item d-flex justify-content-between">
+                  <span><%= key %></span>
+                  <span class="font-weight-bold"><%= value %></span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p>Данные недоступны</p>
+          <% end %>
+          
+          <hr>
+          <h6 class="text-info">Выводы ИИ</h6>
+          <% if @analysis_data && @analysis_data["insights"] && @analysis_data["insights"].any? %>
+            <div class="accordion" id="insightsAccordion">
+              <% @analysis_data["insights"].each_with_index do |insight, index| %>
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading<%= index %>">
+                    <button class="accordion-button <%= index > 0 ? 'collapsed' : '' %>" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" 
+                            aria-expanded="<%= index == 0 ? 'true' : 'false' %>" aria-controls="collapse<%= index %>">
+                      <%= insight["title"] %>
+                    </button>
+                  </h2>
+                  <div id="collapse<%= index %>" class="accordion-collapse collapse <%= index == 0 ? 'show' : '' %>" 
+                       aria-labelledby="heading<%= index %>" data-bs-parent="#insightsAccordion">
+                    <div class="accordion-body">
+                      <p><%= insight["description"] %></p>
+                      <% if insight["recommendation"].present? %>
+                        <div class="alert alert-info">
+                          <strong>Рекомендация:</strong> <%= insight["recommendation"] %>
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="alert alert-secondary">Нет доступных выводов</div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

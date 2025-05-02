@@ -6,10 +6,12 @@ gem "sprockets-rails"
 
 gem 'prometheus-client'
 gem 'sidekiq'
+gem 'sidekiq-scheduler'
 gem 'redis'
 gem 'chartkick'
 gem 'groupdate'
 gem 'pg', '~> 1.5', '>= 1.5.6'
+gem 'httparty'
 
 gem "puma", ">= 5.0"
 gem "importmap-rails"

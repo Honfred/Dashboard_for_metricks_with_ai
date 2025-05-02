@@ -56,6 +56,8 @@ Rails.application.routes.draw do
     collection do
       get "metrics"
       post "save_settings"
+      # Панель управления ИИ-анализом
+      get "ai_overview"
     end
   end
 end

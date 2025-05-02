@@ -7,7 +7,8 @@ class AiAnalysesController < ApplicationController
   end
 
   def show
-    @analysis_data = AiAnalysis.fetch_latest_analysis(@metric.id, @ai_analysis.analysis_type)
+    # Получаем данные анализа из отчета, если он есть, иначе запрашиваем через AI Service
+    @analysis_data = @ai_analysis.report.present? ? @ai_analysis.report : AiAnalysis.fetch_latest_analysis(@metric.id, @ai_analysis.analysis_type)
 
     respond_to do |format|
       format.html
@@ -17,17 +18,37 @@ class AiAnalysesController < ApplicationController
 
   def new
     @ai_analysis = @metric.ai_analyses.new
+    
+    # Применяем тип анализа из параметров, если он предоставлен
+    if params[:analysis_type].present? && AiAnalysis.analysis_types.keys.include?(params[:analysis_type])
+      @ai_analysis.analysis_type = params[:analysis_type]
+    end
+    
     @available_analysis_types = AiService.new.available_analysis_types
+    
+    # Проверяем доступность ML-сервиса
+    @ml_service_available = MlService.check_connection
   end
 
   def create
-    @ai_analysis = @metric.ai_analyses.new(ai_analysis_params)
+    @ai_analysis = @metric.ai_analyses.new(ai_analysis_params.merge(status: 'pending'))
 
     if @ai_analysis.save
       # Запускаем анализ асинхронно
-      AnalysisJob.perform_later(@ai_analysis.id)
+      Rails.logger.info("AI Analyses Controller: Scheduling AnalysisJob for analysis #{@ai_analysis.id}")
+      
+      # Проверяем параметр для тестового режима
+      if params[:test_mode].present? && params[:test_mode] == "true"
+        Rails.logger.info("AI Analyses Controller: Using test mode for analysis #{@ai_analysis.id}")
+        TestAnalysisJob.perform_later(@ai_analysis.id)
+      else
+        AnalysisJob.perform_later(@ai_analysis.id)
+      end
+      
       redirect_to [@metric, @ai_analysis], notice: "Анализ успешно запущен."
     else
+      @available_analysis_types = AiService.new.available_analysis_types
+      @ml_service_available = MlService.check_connection
       render :new
     end
   end
