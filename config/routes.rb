@@ -56,6 +56,7 @@ Rails.application.routes.draw do
     collection do
       get "metrics"
       post "save_settings"
+      get "settings"  # Добавляем маршрут для получения настроек
       # Панель управления ИИ-анализом
       get "ai_overview"
     end

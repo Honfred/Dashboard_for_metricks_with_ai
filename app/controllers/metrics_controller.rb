@@ -7,12 +7,20 @@ class MetricsController < ApplicationController
   end
 
   def show
-    @metric_data = Metric.fetch_from_prometheus(@metric.name, params[:time_range] || "1h")
+    Rails.logger.info("MetricsController#show - Запрос метрики #{@metric.name} с диапазоном #{params[:time_range] || '1h'}")
+    
+    # Получаем данные метрики из единого метода
+    @metric_data = get_metric_data(@metric.name, params[:time_range] || "1h")
+    
     @ai_analyses = @metric.ai_analyses.order(created_at: :desc).limit(5)
 
     respond_to do |format|
       format.html
-      format.json { render json: { metric: @metric, data: @metric_data } }
+      format.json { 
+        response_data = { metric: @metric, data: @metric_data }
+        Rails.logger.info("MetricsController#show - Отдаю JSON: #{response_data.inspect.truncate(100)}") 
+        render json: response_data
+      }
     end
   end
 
@@ -100,6 +108,24 @@ class MetricsController < ApplicationController
 
   def metric_params
     params.require(:metric).permit(:name, :description, :metric_type)
+  end
+
+  # Метод для получения данных метрики (реальных или демонстрационных)
+  def get_metric_data(metric_name, time_range)
+    # Пытаемся получить данные из Prometheus
+    data = Metric.fetch_from_prometheus(metric_name, time_range)
+    
+    # Проверяем, есть ли данные
+    if data.blank? || !data.is_a?(Array) || data.empty? || (data.first && data.first[:values].blank?)
+      Rails.logger.warn("MetricsController#get_metric_data - Данные метрики отсутствуют или пусты, генерируем демо-данные для #{metric_name}")
+      # Генерируем демо-данные, если нет реальных
+      data = Demo::MetricsData.generate(metric_name, time_range)
+      Rails.logger.info("MetricsController#get_metric_data - Сгенерированы демо-данные: #{data.inspect.truncate(100)}")
+    else
+      Rails.logger.info("MetricsController#get_metric_data - Получены реальные данные от Prometheus")
+    end
+    
+    data
   end
 
   # Метод для создания демонстрационных метрик

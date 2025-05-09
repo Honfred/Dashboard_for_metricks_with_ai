@@ -71,6 +71,18 @@ class DashboardController < ApplicationController
     end
   end
 
+  # API эндпоинт для получения настроек дашборда
+  def settings
+    begin
+      settings = user_dashboard_settings
+      
+      render json: { success: true, settings: settings }
+    rescue => e
+      Rails.logger.error("Error fetching dashboard settings API: #{e.message}")
+      render json: { success: false, error: "Не удалось получить настройки. Пожалуйста, попробуйте позже." }, status: :service_unavailable
+    end
+  end
+
   private
 
   def default_settings
