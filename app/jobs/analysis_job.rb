@@ -1,6 +1,7 @@
 class AnalysisJob < ApplicationJob
   include MetricDataFetchable
   queue_as :ml
+  retry_on StandardError, wait: 5.seconds, attempts: 3, queue: :ml
 
   def perform(ai_analysis_id)
     Rails.logger.info("AnalysisJob: Starting analysis for ID: #{ai_analysis_id}")
@@ -11,18 +12,17 @@ class AnalysisJob < ApplicationJob
       return
     end
     
+    # Добавляем защиту от повторного запуска для уже завершенного анализа
+    if ai_analysis.completed? || ai_analysis.failed?
+      Rails.logger.info("AnalysisJob: Analysis #{ai_analysis_id} is already #{ai_analysis.status}, skipping")
+      return
+    end
+    
     # Обновляем статус на "processing"
     ai_analysis.update(status: 'processing')
     Rails.logger.info("AnalysisJob: Analysis status set to 'processing'")
     
     metric = ai_analysis.metric
-    unless metric
-      Rails.logger.error("AnalysisJob: Metric not found for analysis #{ai_analysis_id}")
-      ai_analysis.update(status: 'failed', results: { "status" => "error", "message" => "Метрика не найдена" })
-      return
-    end
-    
-    Rails.logger.info("AnalysisJob: Fetching data for metric #{metric.name} with type #{ai_analysis.analysis_type}")
 
     # Получаем данные метрики за соответствующий период
     data = case ai_analysis.analysis_type

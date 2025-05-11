@@ -44,6 +44,9 @@ Rails.application.routes.draw do
     end
   end
 
+  # Добавляем маршрут для проверки статуса ML-сервиса
+  get 'check_ml_service', to: 'metrics#check_ml_service'
+
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check

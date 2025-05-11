@@ -26,6 +26,22 @@ export const charts = {
 export function renderCharts(data) {
   console.log('Начинаем рендеринг графиков...');
   
+  // Проверяем наличие объекта Chart
+  if (typeof Chart === 'undefined') {
+    console.warn('Объект Chart не найден. Пробуем отложить рендеринг...');
+    // Откладываем рендеринг на небольшое время, чтобы дать библиотеке Chart.js загрузиться
+    setTimeout(() => {
+      if (typeof Chart === 'undefined') {
+        console.error('Библиотека Chart.js не загружена. Графики не будут отображены.');
+        showChartError('Ошибка загрузки библиотеки Chart.js. Пожалуйста, обновите страницу.');
+        return;
+      }
+      // Повторяем попытку рендеринга
+      renderCharts(data);
+    }, 500);
+    return;
+  }
+  
   // Если данные не переданы, используем имеющиеся или генерируем новые
   if (!data) {
     console.log('Данные для графиков не переданы, генерируем новые');
@@ -341,6 +357,14 @@ export function prepareTimeSeriesData(data, labelPrefix) {
   // Форматируем временные метки для отображения
   const labels = timestamps.map(ts => new Date(ts).toLocaleTimeString());
   
+  // Определяем, связан ли этот график с использованием ресурсов
+  const isResourcesRelated = (prefix) => {
+    return prefix.indexOf('Использование') !== -1 || 
+           prefix.indexOf('CPU') !== -1 || 
+           prefix.indexOf('ресурсов') !== -1 || 
+           prefix.indexOf('памяти') !== -1;
+  };
+  
   // Подготавливаем наборы данных для каждой серии
   const datasets = data.map((series, index) => {
     // Создаем хэш-карту значений для быстрого доступа
@@ -350,12 +374,24 @@ export function prepareTimeSeriesData(data, labelPrefix) {
     const dataPoints = timestamps.map(ts => valueMap.get(ts) || null);
     
     // Формируем метку для серии
-    let label = labelPrefix;
+    let label = "";
     if (series.metric) {
+      // Определяем отображаемую метку в зависимости от типа графика
       if (series.metric.instance) {
-        label += ` (${series.metric.instance})`;
+        // Для графиков ресурсов сохраняем полное название с метрикой
+        if (isResourcesRelated(labelPrefix)) {
+          label = `${series.metric.instance} - ${labelPrefix}`;
+        } else {
+          // Для других графиков указываем только имя сервиса без метрики
+          label = series.metric.instance;
+        }
       } else if (series.metric.job) {
-        label += ` (${series.metric.job})`;
+        // Аналогично для job
+        if (isResourcesRelated(labelPrefix)) {
+          label = `${series.metric.job} - ${labelPrefix}`;
+        } else {
+          label = series.metric.job;
+        }
       }
     }
     

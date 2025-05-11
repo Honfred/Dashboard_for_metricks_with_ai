@@ -1,3 +1,7 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "metrics" %>
+<% end %>
+
 <div class="container mt-4" data-controller="metrics-chart">
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -34,7 +38,7 @@
           <span class="badge bg-secondary">Тип: <%= @metric.metric_type %></span>
         </div>
         <div class="card-body">
-          <canvas id="metrics-chart" data-metrics-chart-target="chart" style="height: 400px;" data-metric-name="<%= @metric.name %>" data-metric-id="<%= @metric.id %>" data-time-range="<%= params[:time_range] || '1h' %>"></canvas>
+          <canvas id="metrics-chart" data-metrics-chart-target="chart" data-metric-name="<%= @metric.name %>" data-metric-id="<%= @metric.id %>" data-time-range="<%= params[:time_range] || '1h' %>"></canvas>
         </div>
       </div>
     </div>

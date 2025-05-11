@@ -39,6 +39,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
+  // Обработчик для обновления всех графиков (используется при выходе из полноэкранного режима)
+  document.addEventListener('dashboard:refresh-all-charts', function() {
+    // Обновляем все графики с текущими данными
+    if (currentDemoData) {
+      Charts.renderCharts(currentDemoData);
+    } else {
+      const demoData = Data.createDemoData();
+      currentDemoData = demoData;
+      Charts.renderCharts(demoData);
+    }
+  });
+  
   // Обработчики для элементов управления
   document.getElementById('time-range').addEventListener('change', updateTimeRange);
   document.getElementById('auto-refresh').addEventListener('change', updateRefreshInterval);
@@ -81,27 +93,39 @@ function initDashboard() {
   console.log('Инициализация дашборда начата...');
   
   try {
-    // Загружаем настройки и применяем их
-    loadSettings().then(() => {
-      // Генерируем данные для графиков
-      currentDemoData = Data.createDemoData();
-      
-      // Рендерим графики
-      Charts.renderCharts(currentDemoData);
-      
-      // Проверяем данные на аномалии
-      Alerts.checkAnomalies(currentDemoData);
-      
+    // Сразу генерируем данные для графиков, чтобы они отображались при первой загрузке
+    currentDemoData = Data.createDemoData();
+    Charts.renderCharts(currentDemoData);
+    
+    // Проверяем данные на аномалии
+    Alerts.checkAnomalies(currentDemoData);
+    
+    // Загружаем настройки асинхронно (это не блокирует отображение графиков)
+    loadSettings().then(settings => {
+      if (settings) {
+        // Применяем загруженные настройки, но не перерисовываем графики если они уже есть
+        Settings.applySettings(settings, {
+          setupAutoRefresh: setupAutoRefresh,
+          togglePanelVisibility: Layout.togglePanelVisibility,
+          applyLayout: applyLayout
+        });
+      }
       console.log('Дашборд инициализирован успешно');
     }).catch(error => {
       console.error('Ошибка при загрузке настроек:', error);
-      // Генерируем демо-данные даже при ошибке
-      currentDemoData = Data.createDemoData();
-      Charts.renderCharts(currentDemoData);
+      // Не генерируем данные повторно, так как они уже созданы
     });
   } catch (e) {
     console.error('Ошибка при инициализации дашборда:', e);
     Charts.showChartError('Ошибка при инициализации дашборда: ' + e.message);
+    
+    // Попытка восстановления при ошибке - создаем данные заново
+    try {
+      currentDemoData = Data.createDemoData();
+      Charts.renderCharts(currentDemoData);
+    } catch (recoveryError) {
+      console.error('Не удалось восстановиться после ошибки:', recoveryError);
+    }
   }
 }
 

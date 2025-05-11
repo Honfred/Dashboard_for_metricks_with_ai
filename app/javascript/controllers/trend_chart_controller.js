@@ -1,118 +1,88 @@
 import { Controller } from "@hotwired/stimulus"
-import Chart from 'chart.js/auto'
+import Chart from "chart.js/auto"
 
 export default class extends Controller {
   static values = { data: Object }
-
+  
   connect() {
-    this.initChart()
-  }
+    if (!this.dataValue) return
+    
+    const chartData = this.dataValue.chart_data
+    if (!chartData) return
 
-  initChart() {
-    if (!this.dataValue || !this.element) return
+    // Получаем текущие и прогнозные данные
+    const currentData = chartData.current
+    const predictionData = chartData.prediction
     
-    const data = this.dataValue
+    if (!currentData || !predictionData) return
     
-    // Данные для исторических значений и прогнозов
-    let historicalData = []
-    let forecastData = []
-    
-    // Если есть текущие данные для исторических значений
-    if (data.current_data && data.current_data.timestamps && data.current_data.values) {
-      data.current_data.timestamps.forEach((timestamp, i) => {
-        historicalData.push({
-          x: new Date(timestamp * 1000),
-          y: data.current_data.values[i]
-        })
-      })
+    // Форматируем метки времени
+    const formatTimestamp = (ts) => {
+      const date = new Date(ts * 1000)
+      return date.toLocaleString('ru', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })
     }
     
-    // Если есть данные событий (прогнозов)
-    if (data.events && data.events.length > 0) {
-      data.events.forEach((event) => {
-        if (event.type === 'prediction') {
-          forecastData.push({
-            x: new Date(event.timestamp * 1000),
-            y: event.value
-          })
-        }
-      })
-    }
+    const currentLabels = currentData.timestamps.map(formatTimestamp)
+    const predictionLabels = predictionData.timestamps.map(formatTimestamp)
+    
+    // Объединяем метки и данные
+    const labels = [...currentLabels, ...predictionLabels]
+    
+    // Создаем массивы данных для графика
+    const currentValues = [...currentData.values, ...Array(predictionData.values.length).fill(null)]
+    const predictionValues = [...Array(currentData.values.length).fill(null), ...predictionData.values]
     
     // Создаем график
-    new Chart(this.element, {
+    const ctx = this.element.getContext('2d')
+    
+    new Chart(ctx, {
       type: 'line',
       data: {
+        labels: labels,
         datasets: [
           {
-            label: 'Исторические значения',
-            data: historicalData,
-            fill: false,
-            borderColor: 'rgba(54, 162, 235, 1)',
+            label: 'Текущие значения',
+            data: currentValues,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
             tension: 0.1,
-            pointRadius: 2
+            pointRadius: 3
           },
           {
             label: 'Прогноз',
-            data: forecastData,
-            fill: false,
-            borderColor: 'rgba(255, 159, 64, 1)',
-            borderDash: [5, 5],
+            data: predictionValues,
+            borderColor: 'rgba(255, 205, 86, 1)',
+            backgroundColor: 'rgba(255, 205, 86, 0.2)',
             tension: 0.1,
-            pointRadius: 2
+            pointRadius: 3,
+            borderDash: [5, 5]
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: {
-          title: {
-            display: true,
-            text: 'Прогнозирование трендов'
-          },
-          tooltip: {
-            callbacks: {
-              title: function(context) {
-                const date = new Date(context[0].parsed.x)
-                return new Intl.DateTimeFormat('ru-RU', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }).format(date)
-              }
+        scales: {
+          x: {
+            grid: {
+              display: false
             }
           }
         },
-        scales: {
-          x: {
-            type: 'time',
-            time: {
-              unit: 'hour',
-              displayFormats: {
-                hour: 'dd.MM HH:mm'
-              }
-            },
-            title: {
-              display: true,
-              text: 'Дата и время'
-            }
+        plugins: {
+          tooltip: {
+            mode: 'index',
+            intersect: false
           },
-          y: {
-            title: {
-              display: true,
-              text: 'Значение'
-            },
-            beginAtZero: false
+          legend: {
+            position: 'top',
+          },
+          title: {
+            display: true,
+            text: 'Прогноз поведения метрики'
           }
         }
       }
     })
-  }
-  
-  disconnect() {
-    // Очистка ресурсов при отключении контроллера
   }
 }

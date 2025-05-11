@@ -1,3 +1,7 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "ai_analysis" %>
+<% end %>
+
 <div class="container-fluid mt-4">
   <h2 class="mb-4">Панель управления ИИ-анализом</h2>
   
@@ -84,7 +88,7 @@
           <h5 class="mb-0">Последние обнаруженные аномалии</h5>
         </div>
         <div class="card-body">
-          <div id="recent-anomalies-chart" style="height: 300px;"></div>
+          <div id="recent-anomalies-chart" class="analysis-chart-container"></div>
           <hr>
           <div class="table-responsive">
             <table class="table table-sm table-hover">
@@ -123,7 +127,7 @@
           <h5 class="mb-0">Прогнозы трендов метрик</h5>
         </div>
         <div class="card-body">
-          <div id="trends-forecast-chart" style="height: 300px;"></div>
+          <div id="trends-forecast-chart" class="analysis-chart-container"></div>
           <hr>
           <div class="table-responsive">
             <table class="table table-sm table-hover">

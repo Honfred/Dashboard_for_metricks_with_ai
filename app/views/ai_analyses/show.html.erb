@@ -34,12 +34,27 @@
               <%= link_to 'Попробовать снова', new_metric_ai_analysis_path(@metric, type: @ai_analysis.analysis_type), class: 'btn btn-primary' %>
             </div>
           <% else %>
-            <div class="text-center py-5">
+            <div class="text-center py-5" data-refresh-status="<%= !@ai_analysis.completed? && !@ai_analysis.failed? %>">
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Загрузка...</span>
               </div>
               <h5 class="mt-3">Анализ выполняется...</h5>
               <p class="text-muted">Это может занять некоторое время в зависимости от объема данных.</p>
+              <% if Time.current - @ai_analysis.created_at > 5.minutes %>
+                <div class="alert alert-warning mt-3">
+                  <p><strong>Внимание!</strong> Анализ выполняется дольше обычного.</p>
+                  <p>Возможные причины:</p>
+                  <ul class="text-start">
+                    <li>Большой объем данных для обработки</li>
+                    <li>Высокая нагрузка на сервер</li>
+                    <li>Проблемы с подключением к ML-сервису</li>
+                  </ul>
+                  <div class="mt-3">
+                    <%= link_to 'Обновить страницу', metric_ai_analysis_path(@metric, @ai_analysis), class: 'btn btn-outline-primary' %>
+                    <%= link_to 'Проверить статус ML-сервиса', '#', class: 'btn btn-outline-secondary ml-2', id: 'check-ml-service' %>
+                  </div>
+                </div>
+              <% end %>
             </div>
           <% end %>
         </div>
@@ -47,6 +62,7 @@
     </div>
   </div>
 
+  <% if @ai_analysis.completed? || (@analysis_data && @analysis_data.present?) %>
   <div class="row">
     <div class="col-12">
       <div class="card">
@@ -126,13 +142,9 @@
       </div>
     </div>
   </div>
+  <% end %>
 </div>
 
-<script>
-  // Автоматическое обновление страницы каждые 5 секунд, если анализ все еще выполняется
-  <% unless @ai_analysis.completed? || @ai_analysis.failed? %>
-    setTimeout(function() {
-      location.reload();
-    }, 5000);
-  <% end %>
-</script>
+<% content_for :head do %>
+  <%= javascript_import_module_tag "ai_analysis_poller" %>
+<% end %>

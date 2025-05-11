@@ -65,18 +65,23 @@ class MlService
     Rails.logger.info("ML Service: Making POST request to #{url}")
     
     begin
-      response = self.post(endpoint, {
-        body: body.to_json,
-        headers: { 'Content-Type' => 'application/json' }
-      })
+      Timeout::timeout(60) do  # Добавляем таймаут в 60 секунд для запросов
+        response = self.post(endpoint, {
+          body: body.to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        })
 
-      if response.success?
-        Rails.logger.info("ML Service: Successful response with code #{response.code}")
-        return response.parsed_response
-      else
-        Rails.logger.error("ML Service error: #{response.code} - #{response.body}")
-        return { "status" => "error", "message" => "Ошибка сервиса ML: #{response.message}" }
+        if response.success?
+          Rails.logger.info("ML Service: Successful response with code #{response.code}")
+          return response.parsed_response
+        else
+          Rails.logger.error("ML Service error: #{response.code} - #{response.body}")
+          return { "status" => "error", "message" => "Ошибка сервиса ML: #{response.message}" }
+        end
       end
+    rescue Timeout::Error => e
+      Rails.logger.error("ML Service request timed out after 60 seconds")
+      return { "status" => "error", "message" => "Превышен таймаут запроса к ML-сервису (60 сек.)" }
     rescue => e
       Rails.logger.error("ML Service exception: #{e.class.name} - #{e.message}")
       return { "status" => "error", "message" => "Ошибка соединения с ML сервисом: #{e.message}" }

@@ -1,93 +1,72 @@
 import { Controller } from "@hotwired/stimulus"
-import Chart from 'chart.js/auto'
+import Chart from "chart.js/auto"
 
 export default class extends Controller {
   static values = { data: Object }
-
+  
   connect() {
-    this.initChart()
-  }
+    if (!this.dataValue) return
 
-  initChart() {
-    if (!this.dataValue || !this.element) return
+    const featureImportance = this.dataValue
     
-    const featureData = this.dataValue
-    
-    // Подготовка данных для круговой диаграммы
+    // Преобразуем данные в формат для круговой диаграммы
     const labels = []
     const values = []
     const backgroundColors = [
       'rgba(255, 99, 132, 0.7)',
       'rgba(54, 162, 235, 0.7)',
       'rgba(255, 206, 86, 0.7)',
-      'rgba(75, 192, 192, 0.7)',
-      'rgba(153, 102, 255, 0.7)'
+      'rgba(75, 192, 192, 0.7)'
     ]
     
-    // Преобразование ключей в более читаемые названия
-    // и извлечение значений
-    Object.entries(featureData).forEach(([key, value], index) => {
-      let label = key
-      
-      // Преобразуем ключи в более понятные названия
-      switch(key) {
-        case '0':
-          label = 'CPU'
-          break
-        case '1':
-          label = 'Память'
-          break
-        case '2':
-          label = 'Запросы'
-          break
-        case '3':
-          label = 'Пользователи'
-          break
-        default:
-          label = `Фактор ${parseInt(key) + 1}`
-      }
-      
-      labels.push(label)
-      values.push(value * 100) // Преобразуем в проценты для лучшего отображения
+    // Определяем названия факторов
+    const featureLabels = {
+      "0": "CPU",
+      "1": "Память",
+      "2": "Запросы"
+    }
+    
+    Object.entries(featureImportance).forEach(([key, value]) => {
+      labels.push(featureLabels[key] || `Фактор ${key}`)
+      values.push(value)
     })
     
-    // Создаем круговую диаграмму
-    new Chart(this.element, {
-      type: 'pie',
+    // Создаем график
+    const ctx = this.element.getContext('2d')
+    
+    new Chart(ctx, {
+      type: 'doughnut',
       data: {
         labels: labels,
         datasets: [{
           data: values,
           backgroundColor: backgroundColors,
-          borderColor: backgroundColors.map(color => color.replace('0.7', '1')),
-          borderWidth: 1
+          hoverOffset: 4
         }]
       },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'right',
+            position: 'top',
           },
           title: {
             display: true,
-            text: 'Влияние факторов на производительность (%)'
+            text: 'Влияние факторов на производительность'
           },
           tooltip: {
             callbacks: {
               label: function(context) {
                 const label = context.label || '';
-                const value = context.parsed || 0;
-                return `${label}: ${value.toFixed(1)}%`;
+                const value = context.formattedValue;
+                const percentage = Math.round(parseFloat(value) * 100);
+                return `${label}: ${percentage}%`;
               }
             }
           }
         }
       }
     })
-  }
-  
-  disconnect() {
-    // Очистка ресурсов при отключении контроллера
   }
 }

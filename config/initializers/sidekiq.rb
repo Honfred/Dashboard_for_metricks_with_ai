@@ -2,7 +2,9 @@ require 'sidekiq'
 require 'sidekiq-scheduler'
 
 Sidekiq.configure_server do |config|
-  config.options[:concurrency] = 2
+  config.concurrency = 2
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://redis:6379/0' }
+  config.queues = ['ml', 'default']
   
   # Настройка планировщика задач
   config.on(:startup) do
@@ -19,5 +21,5 @@ Sidekiq.configure_server do |config|
 end
 
 Sidekiq.configure_client do |config|
-  config.redis = { url: ENV['REDIS_URL'] || 'redis://localhost:6379/1' }
+  config.redis = { url: ENV['REDIS_URL'] || 'redis://redis:6379/0' }
 end

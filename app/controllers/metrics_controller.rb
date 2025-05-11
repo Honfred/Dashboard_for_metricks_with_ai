@@ -100,6 +100,11 @@ class MetricsController < ApplicationController
     }
   end
 
+  def check_ml_service
+    status = MlService.check_connection ? 'ok' : 'error'
+    render json: { status: status }
+  end
+
   private
 
   def set_metric

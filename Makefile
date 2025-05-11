@@ -11,8 +11,7 @@ build:
 
 rebuild: stop build start
 
-restart:
-	docker compose restart
+restart: stop start
 
 restart-web:
 	docker compose restart web

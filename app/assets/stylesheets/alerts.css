@@ -1,0 +1,227 @@
+/* Стили для оповещений */
+.alert-details-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.alert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.alert-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.alert-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 25px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.alert-status-badge {
+  position: absolute;
+  top: -10px;
+  right: 20px;
+  padding: 8px 16px;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.alert-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.alert-info-item {
+  flex: 1;
+  margin-right: 20px;
+}
+
+.alert-info-item:last-child {
+  margin-right: 0;
+}
+
+.alert-info-item h3 {
+  font-size: 14px;
+  color: #6c757d;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+}
+
+.alert-info-item p {
+  font-size: 18px;
+  margin: 0;
+}
+
+.alert-value,
+.alert-threshold {
+  font-weight: bold;
+  font-size: 22px;
+}
+
+.alert-timeline {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.alert-message {
+  margin-bottom: 20px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.alert-form {
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-actions {
+  margin-top: 20px;
+}
+
+/* Стили списка оповещений */
+.alerts-list-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.alerts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filters-section {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filters-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+  margin-right: 10px;
+  display: inline-block;
+}
+
+.filter-buttons {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.alerts-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.alerts-table th {
+  text-align: left;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.alerts-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.alert-row {
+  background: white;
+  transition: background-color 0.2s;
+}
+
+.alert-row:hover {
+  background: #f8f9fa;
+}
+
+.alert-severity {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.severity-info {
+  background-color: #17a2b8;
+}
+
+.severity-warning {
+  background-color: #ffc107;
+}
+
+.severity-critical {
+  background-color: #dc3545;
+}
+
+.alert-actions-cell {
+  white-space: nowrap;
+}
+
+.pagination-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Дополнительные стили для списка оповещений */
+.alerts-container {
+  max-width: 100%;
+  padding: 20px;
+}
+
+.alerts-filters {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 5px;
+}
+
+.alerts-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.alert-row.critical {
+  background-color: rgba(255, 0, 0, 0.05);
+}
+
+.alert-row.warning {
+  background-color: rgba(255, 193, 7, 0.05);
+}
+
+.alert-row.info {
+  background-color: rgba(13, 202, 240, 0.05);
+}

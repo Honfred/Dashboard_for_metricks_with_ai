@@ -199,7 +199,11 @@ export function toggleEditMode() {
 
 export function togglePanelVisibility(panelId, isVisible) {
   document.querySelectorAll(`.grid-panel[data-panel="${panelId}"]`).forEach(panel => {
-    panel.style.display = isVisible ? 'block' : 'none';
+    if (isVisible) {
+      panel.classList.remove('panel-hidden');
+    } else {
+      panel.classList.add('panel-hidden');
+    }
   });
   
   // Проверяем, есть ли видимые панели в каждом ряду
@@ -213,8 +217,8 @@ export function checkEmptyRows() {
   document.querySelectorAll('.grid-row').forEach(row => {
     // Проверяем наличие видимых панелей в ряду
     const hasVisiblePanels = Array.from(row.querySelectorAll('.grid-panel')).some(panel => {
-      // Учитываем как display:none, так и класс d-none
-      return panel.style.display !== 'none' && !panel.classList.contains('d-none');
+      // Проверяем отсутствие класса panel-hidden
+      return !panel.classList.contains('panel-hidden') && !panel.classList.contains('d-none');
     });
     
     // Если нет видимых панелей, скрываем ряд
@@ -252,7 +256,7 @@ export function showAllPanels() {
     checkbox.checked = true;
     const panel = checkbox.dataset.panel;
     document.querySelectorAll(`.grid-panel[data-panel="${panel}"]`).forEach(panelEl => {
-      panelEl.style.display = 'block';
+      panelEl.classList.remove('panel-hidden');
     });
   });
   
@@ -268,6 +272,9 @@ export function toggleFullscreen(e) {
   // Получаем панель, в которой находится кнопка
   const panel = this.closest('.grid-panel');
   const panelType = panel.dataset.panel; // Получаем тип панели по data-panel атрибуту
+  
+  // Определяем, был ли панель в полноэкранном режиме до переключения
+  const wasFullscreen = panel.classList.contains('fullscreen');
   
   // Переключаем класс fullscreen
   panel.classList.toggle('fullscreen');
@@ -285,11 +292,15 @@ export function toggleFullscreen(e) {
   
   // Пересоздаем график в полноэкранном режиме для корректного размера
   setTimeout(() => {
-    // Здесь мы будем вызывать функцию обновления графиков из внешнего модуля
-    // Пока просто публикуем событие, которое будет обрабатываться в основном коде
-    document.dispatchEvent(new CustomEvent('dashboard:resize-chart', { 
-      detail: { panelType: panelType } 
-    }));
+    // Если мы выходим из полноэкранного режима, обновляем все графики
+    if (wasFullscreen) {
+      document.dispatchEvent(new CustomEvent('dashboard:refresh-all-charts'));
+    } else {
+      // Если входим в полноэкранный режим, обновляем только текущий график
+      document.dispatchEvent(new CustomEvent('dashboard:resize-chart', { 
+        detail: { panelType: panelType } 
+      }));
+    }
   }, 300); // Небольшая задержка для завершения анимации
 }
 
@@ -304,7 +315,7 @@ export function getCurrentLayout() {
       return {
         id: panelId,
         dataPanel: panelEl.dataset.panel,
-        visible: panelEl.style.display !== 'none'
+        visible: !panelEl.classList.contains('panel-hidden')
       };
     });
     rows.push({ panels: panels });

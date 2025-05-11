@@ -7,8 +7,36 @@ class AiAnalysesController < ApplicationController
   end
 
   def show
-    # Получаем данные анализа из отчета, если он есть, иначе запрашиваем через AI Service
-    @analysis_data = @ai_analysis.report.present? ? @ai_analysis.report : AiAnalysis.fetch_latest_analysis(@metric.id, @ai_analysis.analysis_type)
+    # Получаем данные анализа из отчета, если он есть
+    if @ai_analysis.report.present?
+      @analysis_data = @ai_analysis.report
+    else
+      # Проверяем, не был ли анализ создан в тестовом режиме
+      test_mode = ActiveModel::Type::Boolean.new.cast(@ai_analysis.parameters.try(:[], "test_mode"))
+      
+      if test_mode
+        # Для тестовых анализов запускаем TestAnalysisJob напрямую, если отчёт отсутствует
+        Rails.logger.info("AI Analyses Controller: Re-running TestAnalysisJob for analysis #{@ai_analysis.id}")
+        test_job = TestAnalysisJob.new
+        
+        # Получаем тестовый отчет и результаты для обновления анализа
+        test_report = test_job.generate_test_report_for(@ai_analysis.analysis_type, @ai_analysis.metric.name)
+        test_result = test_job.generate_test_result_for(@ai_analysis.analysis_type)
+        
+        # Обновляем и отчет, и результаты анализа
+        @ai_analysis.update(
+          status: 'completed',
+          report: test_report,
+          results: test_result,
+          completed_at: Time.current
+        )
+        
+        @analysis_data = test_report
+      else
+        # Только для нетестовых анализов пытаемся обратиться к ML-сервису
+        @analysis_data = AiAnalysis.fetch_latest_analysis(@metric.id, @ai_analysis.analysis_type)
+      end
+    end
 
     respond_to do |format|
       format.html
@@ -31,17 +59,44 @@ class AiAnalysesController < ApplicationController
   end
 
   def create
-    @ai_analysis = @metric.ai_analyses.new(ai_analysis_params.merge(status: 'pending'))
+    # Добавляем параметр test_mode к остальным параметрам анализа
+    parameters = ai_analysis_params[:parameters].present? ? JSON.parse(ai_analysis_params[:parameters]) : {}
+    
+    # Сохраняем информацию о тестовом режиме в параметрах анализа
+    test_mode = params[:test_mode].present? && params[:test_mode] == "true"
+    if test_mode
+      parameters["test_mode"] = true
+    end
+    
+    # Создаем анализ с обновленными параметрами
+    @ai_analysis = @metric.ai_analyses.new(ai_analysis_params.merge(
+      status: 'pending',
+      parameters: parameters
+    ))
 
     if @ai_analysis.save
-      # Запускаем анализ асинхронно
-      Rails.logger.info("AI Analyses Controller: Scheduling AnalysisJob for analysis #{@ai_analysis.id}")
+      Rails.logger.info("AI Analyses Controller: Scheduling analysis job for analysis #{@ai_analysis.id}")
       
-      # Проверяем параметр для тестового режима
-      if params[:test_mode].present? && params[:test_mode] == "true"
+      # В тестовом режиме сразу генерируем и сохраняем тестовые данные
+      if test_mode
         Rails.logger.info("AI Analyses Controller: Using test mode for analysis #{@ai_analysis.id}")
-        TestAnalysisJob.perform_later(@ai_analysis.id)
+        
+        # Создаем экземпляр тестового задания
+        test_job = TestAnalysisJob.new
+        
+        # Генерируем тестовые результаты и отчет
+        test_result = test_job.generate_test_result_for(@ai_analysis.analysis_type)
+        test_report = test_job.generate_test_report_for(@ai_analysis.analysis_type, @metric.name)
+        
+        # Сохраняем данные в базе данных
+        @ai_analysis.update(
+          status: 'completed',
+          results: test_result,
+          report: test_report,
+          completed_at: Time.current
+        )
       else
+        # Запускаем реальный анализ асинхронно
         AnalysisJob.perform_later(@ai_analysis.id)
       end
       

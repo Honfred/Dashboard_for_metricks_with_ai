@@ -7,7 +7,7 @@ services:
     container_name: dashboard_web
     command: ash -c "rm -f tmp/pids/server.pid && rails server -b 0.0.0.0"
     environment:
-      ML_SERVICE_URL: http://ml_service:5000
+      ML_SERVICE_URL: http://ml-service:5000
       RAILS_ENV: development
       PG_HOST: postgres
       DB_USERNAME: postgres
@@ -32,7 +32,7 @@ services:
   sidekiq:
     image: dashboard:latest
     container_name: dashboard_sidekiq
-    command: bundle exec sidekiq
+    command: bundle exec sidekiq -q ml -q default
     environment:
       RAILS_ENV: development
       PG_HOST: postgres

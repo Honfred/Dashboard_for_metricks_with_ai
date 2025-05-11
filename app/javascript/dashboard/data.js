@@ -59,7 +59,14 @@ export function getSelectedService() {
 export function createDemoData() {
   // Генерируем тестовые данные для демонстрации
   const now = new Date();
-  const timeRange = document.getElementById('time-range').value;
+  
+  // Безопасное получение значения временного диапазона
+  let timeRange = '1h'; // Значение по умолчанию
+  const timeRangeElement = document.getElementById('time-range');
+  if (timeRangeElement && timeRangeElement.value) {
+    timeRange = timeRangeElement.value;
+  }
+  
   const numPoints = getNumPointsForTimeRange(timeRange);
   const interval = getIntervalForTimeRange(timeRange);
   
@@ -102,25 +109,26 @@ function generateDataForAllServices(numPoints, interval) {
     const cpuFactor = 0.7 + (index * 0.1);
     const memoryFactor = 0.9 - (index * 0.05);
     
-    // Добавляем сервис-специфичные датасеты
+    // Добавляем сервис-специфичные датасеты (без дублирования метрик в названиях)
     const responseTimeData = generateTimeSeriesDataForService(
       numPoints, interval, 200 * responseTimeFactor, 800 * responseTimeFactor, 
-      `${service} - Время отклика`, 'мс', false, service
+      service, 'мс', false, service
     )[0];
     responseTimeDatasets.push(responseTimeData);
     
     const throughputData = generateTimeSeriesDataForService(
       numPoints, interval, 50 * throughputFactor, 150 * throughputFactor, 
-      `${service} - Пропускная способность`, 'req/s', false, service
+      service, 'req/s', false, service
     )[0];
     throughputDatasets.push(throughputData);
     
     const errorRateData = generateTimeSeriesDataForService(
       numPoints, interval, 0, 0.05 * errorRateFactor, 
-      `${service} - Процент ошибок`, '%', false, service
+      service, '%', false, service
     )[0];
     errorRateDatasets.push(errorRateData);
     
+    // Оставляем полные названия только для графиков ресурсов
     const cpuData = generateTimeSeriesDataForService(
       numPoints, interval, 10 * cpuFactor, 90 * cpuFactor, 
       `${service} - CPU`, '%', false, service
