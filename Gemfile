@@ -9,7 +9,7 @@ gem 'sidekiq'
 gem 'redis'
 gem 'chartkick'
 gem 'groupdate'
-gem 'pg', '~> 1.5', '>= 1.5.6'
+gem 'pg', '~> 1.6'
 
 gem "puma", ">= 5.0"
 gem "importmap-rails"
