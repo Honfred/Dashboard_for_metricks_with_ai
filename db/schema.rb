@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_03_27_230812) do
+ActiveRecord::Schema[7.2].define(version: 2025_04_24_143107) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -21,6 +21,9 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_27_230812) do
     t.json "results"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "status"
+    t.json "report"
+    t.datetime "completed_at"
     t.index ["metric_id"], name: "index_ai_analyses_on_metric_id"
   end
 
@@ -39,10 +42,11 @@ ActiveRecord::Schema[7.2].define(version: 2025_03_27_230812) do
   end
 
   create_table "dashboard_settings", force: :cascade do |t|
-    t.string "name"
+    t.string "name", null: false
     t.text "settings"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_dashboard_settings_on_name", unique: true
   end
 
   create_table "metrics", force: :cascade do |t|

@@ -7,12 +7,11 @@ stop:
 	docker compose down
 
 build:
-	docker compose build
+	COMPOSE_BAKE=true docker compose build
 
 rebuild: stop build start
 
-restart:
-	docker compose restart
+restart: stop start
 
 restart-web:
 	docker compose restart web
@@ -21,6 +20,7 @@ restart-sidekiq:
 	docker compose restart sidekiq
 
 setup-db:
+	docker compose exec web rails db:create
 	docker compose exec web rails db:migrate
 
 generate-test-data: setup-db

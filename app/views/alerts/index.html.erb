@@ -1,3 +1,7 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "alerts" %>
+<% end %>
+
 <div class="alerts-container">
   <h1>Оповещения</h1>
   
@@ -84,41 +88,3 @@
     <% end %>
   </div>
 </div>
-
-<style>
-  .alerts-container {
-    max-width: 100%;
-    padding: 20px;
-  }
-  
-  .alerts-filters {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 5px;
-  }
-  
-  .filter-group {
-    margin-right: 10px;
-    display: inline-block;
-  }
-  
-  .alerts-actions {
-    display: flex;
-    gap: 10px;
-  }
-  
-  .alert-row.critical {
-    background-color: rgba(255, 0, 0, 0.05);
-  }
-  
-  .alert-row.warning {
-    background-color: rgba(255, 193, 7, 0.05);
-  }
-  
-  .alert-row.info {
-    background-color: rgba(13, 202, 240, 0.05);
-  }
-</style>

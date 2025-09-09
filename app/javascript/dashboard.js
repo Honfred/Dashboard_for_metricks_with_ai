@@ -1,449 +1,451 @@
-// Dashboard.js - Функциональность для дашборда метрик
+// Основной файл дашборда
+import * as Charts from './dashboard/charts';
+import * as Layout from './dashboard/layout';
+import * as Settings from './dashboard/settings';
+import * as Alerts from './dashboard/alerts';
+import * as Data from './dashboard/data';
+
+// Глобальные переменные
+let refreshController = null;
+let currentDemoData = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Инициализация графиков только на странице дашборда
-  if (document.querySelector('.dashboard-app')) {
-    initDashboard();
+  // Инициализация дашборда
+  initDashboard();
+  
+  // Настройка обновления данных
+  setupAutoRefresh();
+  
+  // Настройка перетаскивания панелей (drag-and-drop)
+  Layout.setupDragAndDrop();
+  
+  // Инициализация системы оповещений
+  Alerts.initAlerts();
+  
+  // Проверка скрытых панелей при загрузке
+  Layout.checkEmptyRows();
+  Layout.checkAllPanelsDisabled();
+  
+  // Инициализируем массив для выбранных сервисов в глобальном контексте
+  window.dashboardSelectedServices = [];
+  
+  // Обработчик для события выбора сервиса из таблицы service-health
+  document.addEventListener('dashboard:toggle-service', function(event) {
+    const serviceName = event.detail.service;
+    const ctrlKey = event.detail.ctrlKey;
     
-    // Настройка обновления данных
-    setupAutoRefresh();
-    
-    // Обработчики для элементов управления
-    const timeRangeElement = document.getElementById('time-range');
-    const autoRefreshElement = document.getElementById('auto-refresh');
-    
-    if (timeRangeElement) {
-      timeRangeElement.addEventListener('change', updateTimeRange);
+    if (serviceName) {
+      toggleServiceSelection(serviceName, ctrlKey);
     }
-    
-    if (autoRefreshElement) {
-      autoRefreshElement.addEventListener('change', updateRefreshInterval);
+  });
+  
+  // Обработчик для обновления всех графиков (используется при выходе из полноэкранного режима)
+  document.addEventListener('dashboard:refresh-all-charts', function() {
+    // Обновляем все графики с текущими данными
+    if (currentDemoData) {
+      Charts.renderCharts(currentDemoData);
+    } else {
+      const demoData = Data.createDemoData();
+      currentDemoData = demoData;
+      Charts.renderCharts(demoData);
     }
+  });
+  
+  // Обработчики для элементов управления
+  document.getElementById('time-range').addEventListener('change', updateTimeRange);
+  document.getElementById('auto-refresh').addEventListener('change', updateRefreshInterval);
+  document.getElementById('save-layout').addEventListener('click', saveCurrentSettings);
+  document.getElementById('toggle-edit-mode').addEventListener('click', Layout.toggleEditMode);
+  
+  // Обработчики для переключателей видимости панелей
+  document.querySelectorAll('.panel-toggle').forEach(function(checkbox) {
+    checkbox.addEventListener('change', function() {
+      Layout.togglePanelVisibility(this.dataset.panel, this.checked);
+    });
+  });
+  
+  // Обработчики для действий с панелями
+  document.querySelectorAll('.panel-fullscreen').forEach(function(button) {
+    button.addEventListener('click', Layout.toggleFullscreen);
+  });
+  
+  // Обработчик для кнопки "Показать все панели"
+  const showAllBtn = document.getElementById('show-all-panels');
+  if (showAllBtn) {
+    showAllBtn.addEventListener('click', Layout.showAllPanels);
   }
+  
+  // Обработчик событий для обновления графиков при изменении размера панелей
+  document.addEventListener('dashboard:resize-chart', function(event) {
+    handleChartResize(event.detail.panelType);
+  });
+  
+  // Обработчик событий для сохранения макета
+  document.addEventListener('dashboard:save-layout', function(event) {
+    saveCurrentSettings();
+  });
+  
+  // Загружаем настройки дашборда
+  loadSettings();
 });
 
-// Глобальные переменные для хранения графиков
-const charts = {
-  servicesStatus: null,
-  responseTime: null,
-  throughput: null,
-  errorRate: null,
-  cpuUsage: null,
-  memoryUsage: null
-};
-
-// Цвета для графиков
-const chartColors = [
-  'rgba(52, 152, 219, 0.8)',
-  'rgba(46, 204, 113, 0.8)',
-  'rgba(155, 89, 182, 0.8)',
-  'rgba(231, 76, 60, 0.8)',
-  'rgba(241, 196, 15, 0.8)',
-  'rgba(230, 126, 34, 0.8)',
-  'rgba(52, 73, 94, 0.8)',
-  'rgba(149, 165, 166, 0.8)'
-];
-
 function initDashboard() {
-  // Загрузка и отображение данных от Prometheus
-  fetchMetricsData();
+  console.log('Инициализация дашборда начата...');
+  
+  try {
+    // Сразу генерируем данные для графиков, чтобы они отображались при первой загрузке
+    currentDemoData = Data.createDemoData();
+    Charts.renderCharts(currentDemoData);
+    
+    // Проверяем данные на аномалии
+    Alerts.checkAnomalies(currentDemoData);
+    
+    // Загружаем настройки асинхронно (это не блокирует отображение графиков)
+    loadSettings().then(settings => {
+      if (settings) {
+        // Применяем загруженные настройки, но не перерисовываем графики если они уже есть
+        Settings.applySettings(settings, {
+          setupAutoRefresh: setupAutoRefresh,
+          togglePanelVisibility: Layout.togglePanelVisibility,
+          applyLayout: applyLayout
+        });
+      }
+      console.log('Дашборд инициализирован успешно');
+    }).catch(error => {
+      console.error('Ошибка при загрузке настроек:', error);
+      // Не генерируем данные повторно, так как они уже созданы
+    });
+  } catch (e) {
+    console.error('Ошибка при инициализации дашборда:', e);
+    Charts.showChartError('Ошибка при инициализации дашборда: ' + e.message);
+    
+    // Попытка восстановления при ошибке - создаем данные заново
+    try {
+      currentDemoData = Data.createDemoData();
+      Charts.renderCharts(currentDemoData);
+    } catch (recoveryError) {
+      console.error('Не удалось восстановиться после ошибки:', recoveryError);
+    }
+  }
 }
 
-function fetchMetricsData() {
-  const timeRangeElement = document.getElementById('time-range');
-  if (!timeRangeElement) {
-    console.warn('Элемент time-range не найден');
-    return;
+// Переключение выбора сервиса (с учетом Ctrl для множественного выбора)
+function toggleServiceSelection(serviceName, isMultiSelect) {
+  console.log('Переключение выбора сервиса:', serviceName, 'множественный выбор:', isMultiSelect);
+  
+  // Получаем текущий список выбранных сервисов
+  let selectedServices = window.dashboardSelectedServices || [];
+  
+  if (isMultiSelect) {
+    // Режим множественного выбора - добавляем или удаляем сервис из списка
+    const serviceIndex = selectedServices.indexOf(serviceName);
+    if (serviceIndex !== -1) {
+      // Если сервис уже выбран, удаляем его
+      selectedServices.splice(serviceIndex, 1);
+    } else {
+      // Иначе добавляем его
+      selectedServices.push(serviceName);
+    }
+  } else {
+    // Режим одиночного выбора - либо выбираем только этот сервис, либо сбрасываем выбор
+    if (selectedServices.length === 1 && selectedServices[0] === serviceName) {
+      // Если был выбран только этот сервис, сбрасываем выбор
+      selectedServices = [];
+    } else {
+      // Иначе выбираем только этот сервис
+      selectedServices = [serviceName];
+    }
   }
   
-  const timeRange = timeRangeElement.value;
+  console.log('Новый список выбранных сервисов:', selectedServices);
   
-  // Fetch data from our backend which queries Prometheus
-  fetch(`/dashboard/metrics?time_range=${timeRange}`)
-    .then(response => response.json())
-    .then(data => {
-      renderCharts(data);
+  // Обновляем глобальный список выбранных сервисов
+  window.dashboardSelectedServices = selectedServices;
+  
+  // Обновляем выбор в модуле Data
+  Data.setSelectedServices(selectedServices);
+  
+  // Обновляем интерфейс
+  updateServiceSelection(selectedServices);
+  
+  // Обновляем графики
+  refreshChartsWithSelectedServices(selectedServices);
+}
+
+// Выбор одного сервиса (сбрасывает все предыдущие выборы)
+function selectOneService(serviceName) {
+  window.dashboardSelectedServices = [serviceName];
+  Data.setSelectedServices([serviceName]);
+  updateServiceSelection([serviceName]);
+  refreshChartsWithSelectedServices([serviceName]);
+}
+
+// Очистка выбора сервисов
+function clearServiceSelection() {
+  window.dashboardSelectedServices = [];
+  Data.setSelectedServices([]);
+  updateServiceSelection([]);
+  refreshChartsWithSelectedServices([]);
+}
+
+// Обновление интерфейса в соответствии с выбранными сервисами
+function updateServiceSelection(selectedServices) {
+  // Обновляем выделение строк в таблице сервисов
+  document.querySelectorAll('.service-row').forEach(row => {
+    const serviceName = row.dataset.service;
+    if (selectedServices.includes(serviceName)) {
+      row.classList.add('selected');
+    } else {
+      row.classList.remove('selected');
+    }
+  });
+  
+  // Обновляем индикаторы на графиках
+  updateSelectedServiceIndicators(selectedServices);
+}
+
+// Обновляет индикаторы выбранных сервисов на панелях
+function updateSelectedServiceIndicators(services) {
+  // Удаляем все существующие индикаторы
+  document.querySelectorAll('.selected-service-indicator').forEach(el => el.remove());
+  
+  if (services.length === 0) return; // Не показываем индикаторы, если не выбраны сервисы
+  
+  // Добавляем индикаторы на все панели, кроме service-health
+  document.querySelectorAll('.grid-panel:not(.service-health)').forEach(panel => {
+    const indicator = document.createElement('div');
+    indicator.className = 'selected-service-indicator';
+    
+    // Формируем текст индикатора в зависимости от количества выбранных сервисов
+    if (services.length === 1) {
+      indicator.textContent = `Сервис: ${services[0]}`;
+    } else {
+      indicator.textContent = `Выбрано сервисов: ${services.length}`;
+    }
+    
+    panel.appendChild(indicator);
+    
+    // Показываем индикатор
+    indicator.style.display = 'block';
+  });
+}
+
+// Обновление графиков с учетом выбранных сервисов
+function refreshChartsWithSelectedServices(services) {
+  if (currentDemoData) {
+    // Фильтруем данные для выбранных сервисов или показываем все
+    const filteredData = services.length === 0 ? currentDemoData : 
+                        Data.filterDataByServices(currentDemoData, services);
+    
+    Charts.renderCharts(filteredData);
+  } else {
+    const demoData = Data.createDemoData(); // Создаем новый набор данных
+    currentDemoData = demoData; // Сохраняем для последующего использования
+    Charts.renderCharts(demoData);
+  }
+}
+
+function loadSettings() {
+  return Settings.loadSavedSettings()
+    .then(settings => {
+      if (settings) {
+        // Применяем загруженные настройки
+        Settings.applySettings(settings, {
+          setupAutoRefresh: setupAutoRefresh,
+          togglePanelVisibility: Layout.togglePanelVisibility,
+          applyLayout: applyLayout
+        });
+      }
+      return settings;
     })
     .catch(error => {
-      console.error('Error fetching metrics data:', error);
+      console.error('Ошибка при загрузке настроек дашборда:', error);
+      return null;
     });
-}
-
-function renderCharts(data) {
-  renderServicesStatus(data.services_status);
-  renderResponseTimeChart(data.response_time);
-  renderThroughputChart(data.throughput);
-  renderErrorRateChart(data.error_rate);
-  renderResourceUsageCharts(data.resource_usage);
-}
-
-function renderServicesStatus(statusData) {
-  const container = document.getElementById('services-status-chart');
-  
-  if (!statusData || statusData.length === 0) {
-    container.innerHTML = '<div class="no-data">Нет данных о состоянии сервисов</div>';
-    return;
-  }
-  
-  // Очищаем контейнер
-  container.innerHTML = '';
-  
-  // Создаем таблицу статусов
-  const table = document.createElement('table');
-  table.className = 'status-table';
-  
-  // Заголовок таблицы
-  const thead = document.createElement('thead');
-  const headerRow = document.createElement('tr');
-  ['Сервис', 'Статус'].forEach(text => {
-    const th = document.createElement('th');
-    th.textContent = text;
-    headerRow.appendChild(th);
-  });
-  thead.appendChild(headerRow);
-  table.appendChild(thead);
-  
-  // Тело таблицы
-  const tbody = document.createElement('tbody');
-  statusData.forEach(service => {
-    const row = document.createElement('tr');
-    
-    const nameCell = document.createElement('td');
-    nameCell.textContent = service.name;
-    row.appendChild(nameCell);
-    
-    const statusCell = document.createElement('td');
-    statusCell.className = service.status ? 'status-up' : 'status-down';
-    statusCell.textContent = service.status ? 'Работает' : 'Не работает';
-    row.appendChild(statusCell);
-    
-    tbody.appendChild(row);
-  });
-  table.appendChild(tbody);
-  
-  container.appendChild(table);
-}
-
-function renderResponseTimeChart(responseTimeData) {
-  const ctx = getChartContext('response-time-chart', charts.responseTime);
-  if (!ctx) {
-    console.error('Не удалось получить контекст для графика времени отклика');
-    return;
-  }
-  
-  const chartData = prepareTimeSeriesData(responseTimeData, 'Время отклика (мс)');
-  
-  try {
-    charts.responseTime = new Chart(ctx, {
-      type: 'line',
-      data: chartData,
-      options: getChartOptions('Время отклика', 'Время', 'мс', true)
-    });
-  } catch (e) {
-    console.error('Ошибка при создании графика времени отклика:', e);
-    showChartError('response-time-chart', 'Ошибка отображения графика: ' + e.message);
-  }
-}
-
-function renderThroughputChart(throughputData) {
-  const ctx = getChartContext('throughput-chart', charts.throughput);
-  if (!ctx) {
-    console.error('Не удалось получить контекст для графика пропускной способности');
-    return;
-  }
-  
-  const chartData = prepareTimeSeriesData(throughputData, 'Запросов в секунду');
-  
-  try {
-    charts.throughput = new Chart(ctx, {
-      type: 'line',
-      data: chartData,
-      options: getChartOptions('Пропускная способность', 'Время', 'req/s', false)
-    });
-  } catch (e) {
-    console.error('Ошибка при создании графика пропускной способности:', e);
-    showChartError('throughput-chart', 'Ошибка отображения графика: ' + e.message);
-  }
-}
-
-function renderErrorRateChart(errorRateData) {
-  const ctx = getChartContext('error-rate-chart', charts.errorRate);
-  if (!ctx) {
-    console.error('Не удалось получить контекст для графика уровня ошибок');
-    return;
-  }
-  
-  const chartData = prepareTimeSeriesData(errorRateData, 'Процент ошибок');
-  
-  try {
-    charts.errorRate = new Chart(ctx, {
-      type: 'line',
-      data: chartData,
-      options: getChartOptions('Уровень ошибок', 'Время', '%', false, {
-        y: {
-          min: 0,
-          max: 1,
-          ticks: {
-            callback: function(value) {
-              return (value * 100).toFixed(1) + '%';
-            }
-          }
-        }
-      })
-    });
-  } catch (e) {
-    console.error('Ошибка при создании графика уровня ошибок:', e);
-    showChartError('error-rate-chart', 'Ошибка отображения графика: ' + e.message);
-  }
-}
-
-function renderResourceUsageCharts(resourceData) {
-  // CPU Usage
-  const cpuCtx = getChartContext('cpu-usage-chart', charts.cpuUsage);
-  if (cpuCtx) {
-    const cpuChartData = prepareTimeSeriesData(resourceData.cpu, 'CPU');
-    
-    try {
-      charts.cpuUsage = new Chart(cpuCtx, {
-        type: 'line',
-        data: cpuChartData,
-        options: getChartOptions('Использование CPU', 'Время', 'ядра', false)
-      });
-    } catch (e) {
-      console.error('Ошибка при создании графика использования CPU:', e);
-      showChartError('cpu-usage-chart', 'Ошибка отображения графика: ' + e.message);
-    }
-  } else {
-    console.error('Не удалось получить контекст для графика использования CPU');
-  }
-  
-  // Memory Usage
-  const memoryCtx = getChartContext('memory-usage-chart', charts.memoryUsage);
-  if (memoryCtx) {
-    const memoryChartData = prepareTimeSeriesData(resourceData.memory, 'Память');
-    
-    try {
-      charts.memoryUsage = new Chart(memoryCtx, {
-        type: 'line',
-        data: memoryChartData,
-        options: getChartOptions('Использование памяти', 'Время', 'МБ', false, {
-          y: {
-            ticks: {
-              callback: function(value) {
-                return (value / (1024 * 1024)).toFixed(1) + ' MB';
-              }
-            }
-          }
-        })
-      });
-    } catch (e) {
-      console.error('Ошибка при создании графика использования памяти:', e);
-      showChartError('memory-usage-chart', 'Ошибка отображения графика: ' + e.message);
-    }
-  } else {
-    console.error('Не удалось получить контекст для графика использования памяти');
-  }
-}
-
-function getChartContext(containerId, existingChart) {
-  const container = document.getElementById(containerId);
-  
-  if (!container) {
-    console.error(`Контейнер с id "${containerId}" не найден`);
-    return null;
-  }
-  
-  // Если график уже существует, уничтожаем его
-  if (existingChart) {
-    try {
-      existingChart.destroy();
-    } catch (e) {
-      console.error(`Ошибка при уничтожении существующего графика: ${e.message}`);
-    }
-  }
-  
-  // Очищаем контейнер и добавляем новый canvas
-  container.innerHTML = '';
-  const canvas = document.createElement('canvas');
-  container.appendChild(canvas);
-  
-  // Проверяем, что canvas был создан корректно
-  if (!canvas || !canvas.getContext) {
-    console.error(`Не удалось создать canvas в контейнере ${containerId}`);
-    return null;
-  }
-  
-  return canvas.getContext('2d');
-}
-
-function prepareTimeSeriesData(data, labelPrefix) {
-  if (!data || data.length === 0) {
-    return {
-      labels: [],
-      datasets: [{
-        label: labelPrefix,
-        data: [],
-        borderColor: chartColors[0],
-        backgroundColor: 'transparent'
-      }]
-    };
-  }
-  
-  // Собираем все временные метки из всех серий данных
-  const allTimestamps = new Set();
-  data.forEach(series => {
-    series.values.forEach(point => {
-      allTimestamps.add(point[0]);
-    });
-  });
-  
-  // Сортируем метки времени
-  const timestamps = Array.from(allTimestamps).sort((a, b) => a - b);
-  
-  // Форматируем временные метки для отображения
-  const labels = timestamps.map(ts => new Date(ts).toLocaleTimeString());
-  
-  // Подготавливаем наборы данных для каждой серии
-  const datasets = data.map((series, index) => {
-    // Создаем хэш-карту значений для быстрого доступа
-    const valueMap = new Map(series.values.map(point => [point[0], point[1]]));
-    
-    // Для каждой временной метки получаем соответствующее значение
-    const dataPoints = timestamps.map(ts => valueMap.get(ts) || null);
-    
-    // Формируем метку для серии
-    let label = labelPrefix;
-    if (series.metric) {
-      if (series.metric.instance) {
-        label += ` (${series.metric.instance})`;
-      } else if (series.metric.job) {
-        label += ` (${series.metric.job})`;
-      }
-    }
-    
-    return {
-      label: label,
-      data: dataPoints,
-      borderColor: chartColors[index % chartColors.length],
-      backgroundColor: 'transparent',
-      pointRadius: 2,
-      borderWidth: 2,
-      tension: 0.1
-    };
-  });
-  
-  return { labels, datasets };
-}
-
-function getChartOptions(title, xAxisLabel, yAxisLabel, logarithmic, scaleOverrides = {}) {
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      title: {
-        display: false,
-        text: title
-      },
-      tooltip: {
-        mode: 'index',
-        intersect: false
-      },
-      legend: {
-        position: 'top',
-        labels: {
-          boxWidth: 12,
-          font: {
-            size: 11
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: xAxisLabel
-        },
-        grid: {
-          display: false
-        }
-      },
-      y: {
-        title: {
-          display: true,
-          text: yAxisLabel
-        },
-        type: logarithmic ? 'logarithmic' : 'linear',
-        grid: {
-          color: 'rgba(0, 0, 0, 0.05)'
-        }
-      }
-    },
-    animation: {
-      duration: 300
-    }
-  };
-  
-  // Применяем переопределения для осей
-  if (scaleOverrides.x) {
-    options.scales.x = { ...options.scales.x, ...scaleOverrides.x };
-  }
-  
-  if (scaleOverrides.y) {
-    options.scales.y = { ...options.scales.y, ...scaleOverrides.y };
-  }
-  
-  return options;
 }
 
 function setupAutoRefresh() {
-  let refreshInterval;
-  
-  function startRefresh() {
-    const refreshValue = document.getElementById('auto-refresh').value;
-    if (refreshValue === 'off') {
-      clearInterval(refreshInterval);
-      return;
-    }
-    
-    // Преобразование выбранного значения в миллисекунды
-    const timeInMs = convertToMs(refreshValue);
-    
-    clearInterval(refreshInterval);
-    refreshInterval = setInterval(fetchMetricsData, timeInMs);
+  // Останавливаем предыдущий контроллер обновления, если он существует
+  if (refreshController && typeof refreshController.stop === 'function') {
+    refreshController.stop();
   }
   
-  function convertToMs(timeString) {
-    const unit = timeString.slice(-1);
-    const value = parseInt(timeString.slice(0, -1));
-    
-    switch(unit) {
-      case 's': return value * 1000;
-      case 'm': return value * 60 * 1000;
-      default: return 30000; // Default to 30 seconds
-    }
-  }
-  
-  startRefresh();
+  // Создаем новый контроллер обновления
+  refreshController = Settings.setupAutoRefresh(function() {
+    // Функция для периодического обновления данных
+    currentDemoData = Data.createDemoData();
+    Charts.renderCharts(currentDemoData);
+    Alerts.checkAnomalies(currentDemoData);
+  });
 }
 
 function updateTimeRange() {
-  fetchMetricsData();
+  // Обновляем данные при изменении временного диапазона
+  currentDemoData = Data.createDemoData();
+  Charts.renderCharts(currentDemoData);
 }
 
 function updateRefreshInterval() {
   setupAutoRefresh();
 }
 
-// Функция для отображения ошибки в контейнере графика
-function showChartError(containerId, message) {
-  const container = document.getElementById(containerId);
-  if (container) {
-    container.innerHTML = `
-      <div class="chart-error">
-        <i class="fa fa-exclamation-triangle"></i>
-        <p>${message}</p>
-      </div>
-    `;
+function applyLayout(layoutData) {
+  // Проверяем, что данные макета корректны
+  if (!layoutData || !layoutData.rows || !Array.isArray(layoutData.rows)) {
+    console.error('Некорректные данные макета:', layoutData);
+    return;
   }
-} 
+  
+  const gridContainer = document.getElementById('metrics-grid');
+  if (!gridContainer) {
+    console.error('Не найден контейнер с id "metrics-grid"');
+    return;
+  }
+  
+  // Сохраняем все оригинальные панели по их data-panel, а не по id
+  const originalPanels = {};
+  document.querySelectorAll('.grid-panel').forEach(panel => {
+    const panelType = panel.dataset.panel;
+    if (panelType) {
+      originalPanels[panelType] = panel.cloneNode(true);
+    }
+  });
+  
+  // Очищаем текущий контейнер
+  gridContainer.innerHTML = '';
+  
+  // Воссоздаем структуру строк и панелей на основе сохраненных данных
+  layoutData.rows.forEach((rowData, rowIndex) => {
+    // Создаем новую строку
+    const rowEl = document.createElement('div');
+    rowEl.className = 'grid-row';
+    rowEl.id = `row-${rowIndex + 1}`;
+    rowEl.dataset.row = rowIndex;
+    
+    // Добавляем панели в строку
+    if (rowData.panels) {
+      // Обрабатываем панели в разных форматах
+      rowData.panels.forEach(panelData => {
+        let panelType; // Тип панели (service-health, response-time и т.д.)
+        let panelId; // ID панели для уникальной идентификации
+        let isVisible = true; // Видимость панели
+
+        // Определяем тип панели в зависимости от формата данных
+        if (typeof panelData === 'string') {
+          // Если панель - просто строка
+          panelType = panelData;
+          panelId = `panel-${panelType}`;
+        } else if (panelData && typeof panelData === 'object') {
+          // Если панель - это объект с полями
+          if (panelData.dataPanel) {
+            panelType = panelData.dataPanel;
+          } else if (panelData.id && panelData.id.startsWith('panel-')) {
+            // Извлекаем тип из ID, если возможно
+            panelType = panelData.id.replace('panel-', '');
+          }
+          
+          panelId = panelData.id || `panel-${panelType}`;
+          
+          // Проверяем видимость, если она указана
+          if (panelData.hasOwnProperty('visible')) {
+            isVisible = panelData.visible;
+          }
+        }
+        
+        if (!panelType) {
+          console.warn(`Невозможно определить тип панели для данных:`, panelData);
+          return; // Пропускаем эту панель
+        }
+        
+        // Получаем существующую панель или создаем заглушку
+        let panelEl;
+        
+        if (originalPanels[panelType]) {
+          // Используем клон оригинальной панели
+          panelEl = originalPanels[panelType].cloneNode(true);
+          
+          // Убеждаемся, что id соответствует панели
+          panelEl.id = panelId;
+          
+          // Применяем видимость
+          panelEl.style.display = isVisible ? 'block' : 'none';
+        } else {
+          // Создаем заглушку, если панель не найдена
+          console.warn(`Панель с типом ${panelType} не найдена`);
+          panelEl = Layout.createSamplePanel(panelType);
+          
+          // Применяем видимость
+          if (!isVisible) {
+            panelEl.style.display = 'none';
+          }
+        }
+        
+        // Добавляем панель в строку
+        rowEl.appendChild(panelEl);
+      });
+    }
+    
+    // Добавляем строку в контейнер
+    gridContainer.appendChild(rowEl);
+  });
+  
+  // Повторно инициализируем drag-and-drop функциональность
+  Layout.setupDragAndDrop();
+  
+  // Повторно подключаем обработчики событий для кнопок и функций
+  Layout.setupPanelInteractions();
+  
+  // Проверяем пустые ряды и скрытые панели
+  Layout.checkEmptyRows();
+  Layout.checkAllPanelsDisabled();
+  
+  // Обновляем графики
+  try {
+    const demoData = Data.createDemoData();
+    Charts.renderCharts(demoData);
+  } catch (e) {
+    console.error('Ошибка при рендеринге графиков после применения макета:', e);
+  }
+}
+
+function handleChartResize(panelType) {
+  // Обрабатываем изменение размера графика в полноэкранном режиме
+  if (panelType === 'service-health') {
+    // Для таблицы сервисов не нужно пересоздавать график
+    const container = document.querySelector(`.grid-panel[data-panel="${panelType}"] .chart-container`);
+    if (container && !container.querySelector('.status-table')) {
+      Charts.renderServiceHealthTable(container.id, Data.generateServiceHealthData());
+    }
+  } else {
+    // Обновляем соответствующий график
+    const demoData = Data.createDemoData();
+    
+    if (panelType === 'response-time' && demoData.response_time) {
+      Charts.renderCharts({ response_time: demoData.response_time });
+    } else if (panelType === 'throughput' && demoData.throughput) {
+      Charts.renderCharts({ throughput: demoData.throughput });
+    } else if (panelType === 'error-rate' && demoData.error_rate) {
+      Charts.renderCharts({ error_rate: demoData.error_rate });
+    } else if (panelType === 'resource-usage' && demoData.resource_usage) {
+      Charts.renderCharts({ resource_usage: demoData.resource_usage });
+    }
+  }
+}
+
+function saveCurrentSettings() {
+  // Собираем текущий макет
+  const layoutData = Layout.getCurrentLayout();
+  
+  // Собираем и сохраняем все настройки
+  const settings = Settings.saveCurrentSettings(layoutData);
+  
+  // Отправляем на сервер
+  Settings.saveSettingsToServer(settings)
+    .then(data => {
+      alert('Настройки успешно сохранены');
+    })
+    .catch(error => {
+      console.error('Ошибка при сохранении настроек:', error);
+      alert('Настройки сохранены локально, но не удалось сохранить на сервере: ' + error.message);
+    });
+}

@@ -134,4 +134,11 @@
   background-color: #f8f9fa;
   border-radius: 5px;
   color: #6c757d;
-} 
+}
+
+/* Стиль для канваса графика метрик */
+#metrics-chart {
+  height: 400px;
+  width: 100%;
+  margin-bottom: 15px;
+}

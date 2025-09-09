@@ -166,6 +166,44 @@ select:focus {
   margin: 20px 0;
 }
 
+/* Стили для выбранных сервисов в таблице */
+.service-row {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.service-row:hover {
+  background-color: #f5f5f5;
+}
+
+.service-row.selected {
+  background-color: rgba(52, 152, 219, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(52, 152, 219, 0.3);
+}
+
+/* Индикатор выбранных сервисов на панелях */
+.selected-service-indicator {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+  padding: 4px 8px;
+  background-color: rgba(52, 152, 219, 0.8);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  z-index: 2;
+  display: none;
+}
+
+/* Помощь для выделения сервисов */
+.selection-helper {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
 @media (max-width: 960px) {
   .metrics-panels {
     grid-template-columns: 1fr;
@@ -182,4 +220,455 @@ select:focus {
   .time-selector, .refresh-control {
     margin-bottom: 10px;
   }
-} 
+}
+
+/* Добавленные стили из встроенного CSS */
+
+.metrics-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.grid-row {
+  display: flex;
+  gap: 15px;
+  min-height: 350px;
+}
+
+.grid-panel {
+  flex: 1;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 15px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 350px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 10px;
+  border-radius: 4px 4px 0 0;
+  flex-shrink: 0;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #495057;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.panel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.chart-container {
+  flex: 1;
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  margin-top: 5px;
+  border: 1px solid #eee;
+  overflow: hidden;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Стили для редактирования дашборда */
+.edit-mode .grid-panel {
+  border: 2px dashed #3498db;
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: move !important;
+}
+
+.edit-mode .grid-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.edit-mode .grid-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(52, 152, 219, 0.05);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 1;
+}
+
+.edit-mode .grid-panel:hover::before {
+  opacity: 1;
+}
+
+/* Стили для перетаскивания (Sortable) */
+.sortable-ghost {
+  opacity: 0.4 !important;
+  background-color: #f0f0f0 !important;
+  border: 2px dashed #ccc !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.sortable-chosen {
+  background-color: #fff !important;
+  z-index: 1100 !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+}
+
+.sortable-drag {
+  opacity: 0.9 !important;
+  background-color: #fff !important;
+  transform: rotate(1deg) scale(1.02) !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2) !important;
+  z-index: 1200 !important;
+}
+
+.being-dragged {
+  cursor: grabbing !important;
+  cursor: -webkit-grabbing !important;
+}
+
+.dragging-active .grid-panel:not(.being-dragged):not(.sortable-ghost) {
+  transition: transform 0.2s ease;
+}
+
+.dragging-active .grid-panel:not(.being-dragged):not(.sortable-ghost):hover {
+  transform: translateY(5px);
+}
+
+.panel-header-actions button {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 5px;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.panel-header-actions button:hover {
+  color: #3498db;
+}
+
+.panel-fullscreen {
+  background: none;
+  border: none;
+  color: #6c757d;
+  padding: 5px 8px;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.panel-fullscreen:hover {
+  background-color: #f0f0f0;
+}
+
+/* Полноэкранный режим */
+.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 9999;
+  background-color: white;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: white;
+}
+
+.panel-visibility-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 200px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+  padding: 10px;
+  border-radius: 5px;
+  right: 0;
+}
+
+.panel-visibility-dropdown:hover .dropdown-content {
+  display: block;
+}
+
+.dropdown-content label {
+  display: block;
+  padding: 8px 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-content label:hover {
+  background-color: #f0f0f0;
+}
+
+.dropdown-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.dropdown-toggle::after {
+  content: "";
+  display: inline-block;
+  margin-left: 5px;
+  vertical-align: middle;
+  border-top: 4px solid;
+  border-right: 4px solid transparent;
+  border-left: 4px solid transparent;
+}
+
+/* Улучшенные стили для кнопок */
+.btn {
+  padding: 8px 15px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.btn-primary {
+  background-color: #3498db;
+  color: white;
+  border: 1px solid #2980b9;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+  border-color: #2573a7;
+}
+
+.btn-secondary {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+
+.btn-secondary:hover {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+.btn-outline-primary {
+  background-color: transparent;
+  color: #3498db;
+  border: 1px solid #3498db;
+}
+
+.btn-outline-primary:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+.btn-success {
+  background-color: #28a745;
+  color: white;
+  border: 1px solid #1e7e34;
+}
+
+.btn-success:hover {
+  background-color: #218838;
+  border-color: #1c7430;
+}
+
+/* Сообщение при отсутствии видимых панелей */
+.no-panels-message {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.no-panels-message .alert {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  text-align: center;
+}
+
+.no-panels-message .fa-info-circle {
+  font-size: 32px;
+  margin-bottom: 15px;
+  color: #17a2b8;
+}
+
+.no-panels-message p {
+  margin-bottom: 15px;
+  font-size: 16px;
+}
+
+/* Стили для модального окна с оповещениями */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+  background-color: white;
+  margin: 10% auto;
+  padding: 20px;
+  border-radius: 5px;
+  width: 60%;
+  max-width: 600px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.close {
+  color: #aaa;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #000;
+}
+
+.alert {
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+.alert-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffecb5;
+}
+
+.alert-critical {
+  background-color: #f8d7da;
+  border: 1px solid #f5c2c7;
+}
+
+.alert-info {
+  background-color: #d1ecf1;
+  border: 1px solid #bee5eb;
+  color: #0c5460;
+}
+
+/* Полноэкранный режим панелей */
+.grid-panel.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100vh;
+  z-index: 9999;
+  background-color: white;
+  padding: 20px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+  margin: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.grid-panel.fullscreen .chart-container {
+  flex: 1;
+  height: calc(100vh - 100px);
+  min-height: 500px;
+  max-height: none;
+}
+
+.grid-panel.fullscreen .panel-header {
+  margin-bottom: 15px;
+}
+
+.grid-panel.fullscreen.service-health .chart-container {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.grid-panel.fullscreen .status-table {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.grid-panel.fullscreen .status-table th,
+.grid-panel.fullscreen .status-table td {
+  padding: 12px 15px;
+  font-size: 16px;
+}
+
+/* Стили для специальных панелей */
+.service-health .chart-container {
+  overflow-y: auto;
+  display: block;
+  padding: 10px;
+}
+
+.service-health .status-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.service-health .status-table th, 
+.service-health .status-table td {
+  padding: 10px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Класс для скрытия панелей */
+.panel-hidden {
+  display: none;
+}

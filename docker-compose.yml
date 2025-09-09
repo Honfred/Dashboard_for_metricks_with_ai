@@ -7,6 +7,7 @@ services:
     container_name: dashboard_web
     command: ash -c "rm -f tmp/pids/server.pid && rails server -b 0.0.0.0"
     environment:
+      ML_SERVICE_URL: http://ml-service:5000
       RAILS_ENV: development
       PG_HOST: postgres
       DB_USERNAME: postgres
@@ -31,7 +32,7 @@ services:
   sidekiq:
     image: dashboard:latest
     container_name: dashboard_sidekiq
-    command: bundle exec sidekiq
+    command: bundle exec sidekiq -q ml -q default
     environment:
       RAILS_ENV: development
       PG_HOST: postgres
@@ -144,6 +145,36 @@ services:
       - dashboard_net
     restart: unless-stopped
 
+  ml-service:
+    build:
+      context: ./modules/AI_api
+      dockerfile: Dockerfile
+    container_name: ml-service
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./modules/AI_api:/app
+    # depends_on:
+    #   - ollama
+    networks:
+      - dashboard_net
+    environment:
+      - LLAMA_HOST=ollama
+      - LLAMA_PORT=11434
+    restart: unless-stopped
+
+  # ollama:
+  #   image: ollama/ollama
+  #   container_name: ai-service
+  #   volumes:
+  #     - ollama-data:/root/.ollama
+  #   ports:
+  #     - "11434:11434"
+  #   networks:
+  #     - dashboard_net
+  #   command: ["serve"]
+  #   restart: unless-stopped
+
 networks:
   dashboard_net:
     driver: bridge
@@ -152,3 +183,4 @@ volumes:
   db-data:
   redis-data:
   prometheus-data:
+  ollama-data:

@@ -7,12 +7,20 @@ class MetricsController < ApplicationController
   end
 
   def show
-    @metric_data = Metric.fetch_from_prometheus(@metric.name, params[:time_range] || "1h")
+    Rails.logger.info("MetricsController#show - Запрос метрики #{@metric.name} с диапазоном #{params[:time_range] || '1h'}")
+    
+    # Получаем данные метрики из единого метода
+    @metric_data = get_metric_data(@metric.name, params[:time_range] || "1h")
+    
     @ai_analyses = @metric.ai_analyses.order(created_at: :desc).limit(5)
 
     respond_to do |format|
       format.html
-      format.json { render json: { metric: @metric, data: @metric_data } }
+      format.json { 
+        response_data = { metric: @metric, data: @metric_data }
+        Rails.logger.info("MetricsController#show - Отдаю JSON: #{response_data.inspect.truncate(100)}") 
+        render json: response_data
+      }
     end
   end
 
@@ -67,6 +75,36 @@ class MetricsController < ApplicationController
     end
   end
 
+  def analyze
+    @metric = Metric.find(params[:id])
+    
+    # Получаем данные метрики
+    end_time = Time.now
+    start_time = end_time - 24.hours # За последние 24 часа
+    
+    data = MetricsService.fetch_data(
+      metric_name: @metric.name,
+      start_time: start_time.to_i,
+      end_time: end_time.to_i,
+      step: '5m' # Шаг 5 минут для анализа
+    )
+    
+    # Выполняем анализ данных
+    anomalies = detect_anomalies(@metric.name, data)
+    trend = predict_trend(@metric.name)
+    
+    render json: {
+      metric: @metric,
+      anomalies: anomalies,
+      trend: trend
+    }
+  end
+
+  def check_ml_service
+    status = MlService.check_connection ? 'ok' : 'error'
+    render json: { status: status }
+  end
+
   private
 
   def set_metric
@@ -75,6 +113,24 @@ class MetricsController < ApplicationController
 
   def metric_params
     params.require(:metric).permit(:name, :description, :metric_type)
+  end
+
+  # Метод для получения данных метрики (реальных или демонстрационных)
+  def get_metric_data(metric_name, time_range)
+    # Пытаемся получить данные из Prometheus
+    data = Metric.fetch_from_prometheus(metric_name, time_range)
+    
+    # Проверяем, есть ли данные
+    if data.blank? || !data.is_a?(Array) || data.empty? || (data.first && data.first[:values].blank?)
+      Rails.logger.warn("MetricsController#get_metric_data - Данные метрики отсутствуют или пусты, генерируем демо-данные для #{metric_name}")
+      # Генерируем демо-данные, если нет реальных
+      data = Demo::MetricsData.generate(metric_name, time_range)
+      Rails.logger.info("MetricsController#get_metric_data - Сгенерированы демо-данные: #{data.inspect.truncate(100)}")
+    else
+      Rails.logger.info("MetricsController#get_metric_data - Получены реальные данные от Prometheus")
+    end
+    
+    data
   end
 
   # Метод для создания демонстрационных метрик
@@ -139,5 +195,25 @@ class MetricsController < ApplicationController
     end
     
     output.join("\n")
+  end
+
+  def detect_anomalies(metric_name, data)
+    return { error: "No data available" } if data[:values].empty?
+    
+    MlService.detect_anomalies(
+      metric_name,
+      data[:values],
+      data[:timestamps]
+    )
+  rescue => e
+    Rails.logger.error("Error detecting anomalies: #{e.message}")
+    { error: "Failed to detect anomalies: #{e.message}" }
+  end
+  
+  def predict_trend(metric_name)
+    MlService.predict_trend(metric_name, 24) # Прогноз на 24 часа вперед
+  rescue => e
+    Rails.logger.error("Error predicting trend: #{e.message}")
+    { error: "Failed to predict trend: #{e.message}" }
   end
 end

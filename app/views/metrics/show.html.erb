@@ -1,3 +1,7 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "metrics" %>
+<% end %>
+
 <div class="container mt-4" data-controller="metrics-chart">
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
@@ -34,7 +38,7 @@
           <span class="badge bg-secondary">Тип: <%= @metric.metric_type %></span>
         </div>
         <div class="card-body">
-          <canvas id="metrics-chart" data-metrics-chart-target="chart" style="height: 400px;" data-metric-name="<%= @metric.name %>" data-metric-id="<%= @metric.id %>" data-time-range="<%= params[:time_range] || '1h' %>"></canvas>
+          <canvas id="metrics-chart" data-metrics-chart-target="chart" data-metric-name="<%= @metric.name %>" data-metric-id="<%= @metric.id %>" data-time-range="<%= params[:time_range] || '1h' %>"></canvas>
         </div>
       </div>
     </div>
@@ -105,79 +109,3 @@
     </div>
   </div>
 </div>
-
-<script nonce="<%= request.content_security_policy_nonce %>">
-// Код для обновления статистики
-document.addEventListener('DOMContentLoaded', function() {
-  // При загрузке страницы делаем запрос данных
-  fetchMetricData();
-  
-  // Кнопка обновления данных
-  const refreshButton = document.querySelector('[data-action="metrics-chart#refreshData"]');
-  if (refreshButton) {
-    refreshButton.addEventListener('click', fetchMetricData);
-  }
-  
-  function fetchMetricData() {
-    const metricId = <%= @metric.id %>;
-    const timeRange = '<%= params[:time_range] || "1h" %>';
-    
-    fetch(`/metrics/${metricId}.json?time_range=${timeRange}`)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Ошибка загрузки данных');
-        }
-        return response.json();
-      })
-      .then(data => {
-        updateStatistics(data);
-      })
-      .catch(error => {
-        console.error('Ошибка при загрузке данных метрики:', error);
-      });
-  }
-  
-  function updateStatistics(data) {
-    if (!data || !data.data || data.data.length === 0) {
-      document.getElementById("metric-average").textContent = "Нет данных";
-      document.getElementById("metric-maximum").textContent = "Нет данных";
-      document.getElementById("metric-minimum").textContent = "Нет данных";
-      document.getElementById("metric-p95").textContent = "Нет данных";
-      return;
-    }
-    
-    // Объединяем все значения со всех метрик
-    let allValues = [];
-    
-    data.data.forEach(metricItem => {
-      if (metricItem.values && metricItem.values.length > 0) {
-        const values = metricItem.values
-          .map(point => Array.isArray(point) && point.length >= 2 ? parseFloat(point[1]) : NaN)
-          .filter(val => !isNaN(val));
-        
-        allValues = allValues.concat(values);
-      }
-    });
-    
-    if (allValues.length === 0) {
-      document.getElementById("metric-average").textContent = "Нет данных";
-      document.getElementById("metric-maximum").textContent = "Нет данных";
-      document.getElementById("metric-minimum").textContent = "Нет данных";
-      document.getElementById("metric-p95").textContent = "Нет данных";
-      return;
-    }
-    
-    const average = allValues.reduce((sum, val) => sum + val, 0) / allValues.length;
-    const maximum = Math.max(...allValues);
-    const minimum = Math.min(...allValues);
-    const sorted = [...allValues].sort((a, b) => a - b);
-    const p95Index = Math.floor(sorted.length * 0.95);
-    const p95 = sorted[p95Index];
-    
-    document.getElementById("metric-average").textContent = average.toFixed(2);
-    document.getElementById("metric-maximum").textContent = maximum.toFixed(2);
-    document.getElementById("metric-minimum").textContent = minimum.toFixed(2);
-    document.getElementById("metric-p95").textContent = p95.toFixed(2);
-  }
-});
-</script>

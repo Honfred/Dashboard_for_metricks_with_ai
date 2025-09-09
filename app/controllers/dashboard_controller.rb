@@ -11,6 +11,33 @@ class DashboardController < ApplicationController
     end
   end
 
+  def ai_overview
+    # Получаем статистику по всем типам ИИ-анализа
+    @anomaly_analyses_count = AiAnalysis.where(analysis_type: 'anomaly_detection', status: 'completed').count
+    @trend_analyses_count = AiAnalysis.where(analysis_type: 'trend_prediction', status: 'completed').count
+    @performance_analyses_count = AiAnalysis.where(analysis_type: 'performance_insight', status: 'completed').count
+    
+    # Получаем последние завершенные анализы каждого типа для графиков
+    @recent_anomalies = AiAnalysis.where(analysis_type: 'anomaly_detection', status: 'completed')
+                                 .includes(:metric)
+                                 .order(created_at: :desc)
+                                 .limit(5)
+    
+    @recent_trends = AiAnalysis.where(analysis_type: 'trend_prediction', status: 'completed')
+                              .includes(:metric)
+                              .order(created_at: :desc)
+                              .limit(5)
+                              
+    @recent_performances = AiAnalysis.where(analysis_type: 'performance_insight', status: 'completed')
+                                    .includes(:metric)
+                                    .order(created_at: :desc)
+                                    .limit(5)
+                                    
+    # Подготовка данных для графиков
+    @anomaly_chart_data = prepare_anomaly_chart_data(@recent_anomalies)
+    @trend_chart_data = prepare_trend_chart_data(@recent_trends)
+  end
+
   # API эндпоинт для получения метрик
   def metrics
     begin
@@ -41,6 +68,18 @@ class DashboardController < ApplicationController
       respond_to do |format|
         format.json { render json: { success: false, error: "Не удалось сохранить настройки" }, status: :unprocessable_entity }
       end
+    end
+  end
+
+  # API эндпоинт для получения настроек дашборда
+  def settings
+    begin
+      settings = user_dashboard_settings
+      
+      render json: { success: true, settings: settings }
+    rescue => e
+      Rails.logger.error("Error fetching dashboard settings API: #{e.message}")
+      render json: { success: false, error: "Не удалось получить настройки. Пожалуйста, попробуйте позже." }, status: :service_unavailable
     end
   end
 
@@ -200,5 +239,32 @@ class DashboardController < ApplicationController
     when "7d" then "1h"
     else "30s"
     end
+  end
+
+  def prepare_anomaly_chart_data(analyses)
+    analyses.map do |analysis|
+      next unless analysis.report.present? && analysis.report["events"].present?
+      
+      events = analysis.report["events"].take(10)
+      {
+        metric_name: analysis.metric.name,
+        timestamps: events.map { |e| Time.at(e["timestamp"]).strftime("%d.%m %H:%M") },
+        values: events.map { |e| e["value"] },
+        deviations: events.map { |e| e["deviation"] }
+      }
+    end.compact
+  end
+  
+  def prepare_trend_chart_data(analyses)
+    analyses.map do |analysis|
+      next unless analysis.report.present? && analysis.report["events"].present?
+      
+      events = analysis.report["events"].take(10)
+      {
+        metric_name: analysis.metric.name,
+        timestamps: events.map { |e| Time.at(e["timestamp"]).strftime("%d.%м %H:%M") },
+        values: events.map { |e| e["value"] }
+      }
+    end.compact
   end
 end

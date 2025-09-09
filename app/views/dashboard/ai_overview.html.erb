@@ -1,0 +1,209 @@
+<% content_for :head do %>
+  <%= stylesheet_link_tag "ai_analysis" %>
+<% end %>
+
+<div class="container-fluid mt-4">
+  <h2 class="mb-4">Панель управления ИИ-анализом</h2>
+  
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Обзор моделей ИИ</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Аномалии -->
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header bg-danger text-white">
+                  <h5 class="mb-0">Обнаружение аномалий</h5>
+                </div>
+                <div class="card-body text-center">
+                  <div class="display-4 mb-3">
+                    <% anomaly_count = AiAnalysis.where(analysis_type: :anomaly_detection).select(&:completed?).count %>
+                    <%= anomaly_count %>
+                  </div>
+                  <p>Завершенных анализов</p>
+                  <hr>
+                  <p>
+                    <small>Используется модель LSTM для поиска аномалий в метриках</small>
+                  </p>
+                  <%= link_to 'Просмотреть все', ai_analyses_path(type: 'anomaly_detection'), class: 'btn btn-outline-danger' %>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Тренды -->
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header bg-warning text-dark">
+                  <h5 class="mb-0">Прогнозирование трендов</h5>
+                </div>
+                <div class="card-body text-center">
+                  <div class="display-4 mb-3">
+                    <% trend_count = AiAnalysis.where(analysis_type: :trend_prediction).select(&:completed?).count %>
+                    <%= trend_count %>
+                  </div>
+                  <p>Завершенных анализов</p>
+                  <hr>
+                  <p>
+                    <small>Предсказание поведения метрик на основе временных рядов</small>
+                  </p>
+                  <%= link_to 'Просмотреть все', ai_analyses_path(type: 'trend_prediction'), class: 'btn btn-outline-warning' %>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Производительность -->
+            <div class="col-md-4">
+              <div class="card">
+                <div class="card-header bg-info text-white">
+                  <h5 class="mb-0">Анализ производительности</h5>
+                </div>
+                <div class="card-body text-center">
+                  <div class="display-4 mb-3">
+                    <% perf_count = AiAnalysis.where(analysis_type: :performance_insight).select(&:completed?).count %>
+                    <%= perf_count %>
+                  </div>
+                  <p>Завершенных анализов</p>
+                  <hr>
+                  <p>
+                    <small>Выявление факторов, влияющих на производительность системы</small>
+                  </p>
+                  <%= link_to 'Просмотреть все', ai_analyses_path(type: 'performance_insight'), class: 'btn btn-outline-info' %>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Последние обнаруженные аномалии</h5>
+        </div>
+        <div class="card-body">
+          <div id="recent-anomalies-chart" class="analysis-chart-container"></div>
+          <hr>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th>Метрика</th>
+                  <th>Время обнаружения</th>
+                  <th>Отклонение</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recent_anomalies = AiAnalysis.where(analysis_type: 'anomaly_detection', status: 'completed')
+                                   .order(created_at: :desc).limit(5) %>
+                <% recent_anomalies.each do |analysis| %>
+                  <% if analysis.report.present? && analysis.report["events"].present? %>
+                    <% event = analysis.report["events"].first %>
+                    <tr>
+                      <td><%= analysis.metric.name %></td>
+                      <td><%= analysis.completed_at&.strftime("%d.%m.%Y %H:%M") %></td>
+                      <td><span class="badge bg-danger"><%= event["deviation"] %>%</span></td>
+                      <td><%= link_to 'Подробнее', metric_ai_analysis_path(analysis.metric, analysis), class: 'btn btn-sm btn-outline-primary' %></td>
+                    </tr>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Прогнозы трендов метрик</h5>
+        </div>
+        <div class="card-body">
+          <div id="trends-forecast-chart" class="analysis-chart-container"></div>
+          <hr>
+          <div class="table-responsive">
+            <table class="table table-sm table-hover">
+              <thead>
+                <tr>
+                  <th>Метрика</th>
+                  <th>Прогноз</th>
+                  <th>Изменение</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recent_trends = AiAnalysis.where(analysis_type: 'trend_prediction', status: 'completed')
+                                  .order(created_at: :desc).limit(5) %>
+                <% recent_trends.each do |analysis| %>
+                  <% if analysis.report.present? && analysis.report["statistics"].present? %>
+                    <tr>
+                      <td><%= analysis.metric.name %></td>
+                      <td><%= analysis.report["statistics"]["Среднее прогнозируемое значение"] %></td>
+                      <td>
+                        <% change = analysis.report["statistics"]["Изменение"] %>
+                        <% if change.to_s.start_with?('+') %>
+                          <span class="badge bg-success"><%= change %></span>
+                        <% elsif change.to_s.start_with?('-') %>
+                          <span class="badge bg-danger"><%= change %></span>
+                        <% else %>
+                          <span class="badge bg-secondary"><%= change %></span>
+                        <% end %>
+                      </td>
+                      <td><%= link_to 'Подробнее', metric_ai_analysis_path(analysis.metric, analysis), class: 'btn btn-sm btn-outline-primary' %></td>
+                    </tr>
+                  <% end %>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Запустить новый ИИ-анализ</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3" data-controller="ai-launcher">
+            <div class="col-md-4">
+              <label for="metric_select" class="form-label">Выберите метрику</label>
+              <select id="metric_select" class="form-select" data-ai-launcher-target="metric">
+                <option value="">-- Выберите метрику --</option>
+                <% Metric.all.each do |metric| %>
+                  <option value="<%= metric.id %>"><%= metric.name %> (<%= metric.description %>)</option>
+                <% end %>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="analysis_type" class="form-label">Выберите тип анализа</label>
+              <select id="analysis_type" class="form-select" data-ai-launcher-target="analysisType">
+                <option value="">-- Выберите тип анализа --</option>
+                <option value="anomaly_detection">Обнаружение аномалий</option>
+                <option value="trend_prediction">Прогнозирование трендов</option>
+                <option value="performance_insight">Анализ производительности</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label invisible">Действие</label>
+              <div>
+                <button data-action="click->ai-launcher#launch" class="btn btn-primary">Запустить анализ</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
