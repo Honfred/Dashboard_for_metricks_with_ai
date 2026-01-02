@@ -71,7 +71,9 @@
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="localeDropdown">
                   <% I18n.available_locales.each do |locale| %>
                     <li>
-                      <a class="dropdown-item <%= locale == I18n.locale ? 'active' : '' %>" href="<%= set_locale_path(locale) %>">
+                      <a class="dropdown-item <%= locale == I18n.locale ? 'active' : '' %>" 
+                         href="<%= set_locale_path(locale) %>"
+                         data-turbo="false">
                         <%= t("locale.#{locale}") %>
                       </a>
                     </li>

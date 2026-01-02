@@ -168,11 +168,13 @@ export function disableDragAndDrop() {
 export function toggleEditMode() {
   const container = document.querySelector('.dashboard-container');
   const button = document.querySelector('#toggle-edit-mode');
+  const t = window.dashboardTranslations?.editMode || {};
   
   if (container.classList.contains('edit-mode')) {
     // Выключаем режим редактирования
     container.classList.remove('edit-mode');
-    button.innerHTML = '<i class="fa fa-edit"></i> Режим редактирования';
+    const startText = t.start || 'Режим редактирования';
+    button.innerHTML = `<i class="fa fa-edit"></i> ${startText}`;
     button.classList.remove('btn-danger');
     button.classList.add('btn-primary');
     
@@ -186,7 +188,8 @@ export function toggleEditMode() {
   } else {
     // Включаем режим редактирования
     container.classList.add('edit-mode');
-    button.innerHTML = '<i class="fa fa-check"></i> Завершить редактирование';
+    const finishText = t.finish || 'Завершить редактирование';
+    button.innerHTML = `<i class="fa fa-check"></i> ${finishText}`;
     button.classList.remove('btn-primary');
     button.classList.add('btn-danger');
     

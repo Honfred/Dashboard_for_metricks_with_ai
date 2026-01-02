@@ -27,7 +27,7 @@
     </div>
     
     <div class="dashboard-actions">
-      <button id="save-layout" class="btn btn-primary">Сохранить настройки</button>
+      <button id="save-layout" class="btn btn-primary"><%= t('dashboard.save_settings') %></button>
       <button id="toggle-edit-mode" class="btn btn-primary">
         <i class="fas fa-edit"></i> <%= t('dashboard.edit_mode') %>
       </button>
@@ -104,6 +104,51 @@
   <!-- Подключаем библиотеки Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  
+  <!-- Переводы для графиков и сообщений -->
+  <script>
+    window.dashboardTranslations = {
+      charts: {
+        responseTime: "<%= j t('dashboard.charts.response_time') %>",
+        throughput: "<%= j t('dashboard.charts.throughput') %>",
+        errorRate: "<%= j t('dashboard.charts.error_rate') %>",
+        resourceUsage: "<%= j t('dashboard.charts.resource_usage') %>",
+        cpuUsage: "<%= j t('dashboard.charts.cpu_usage') %>",
+        memoryUsage: "<%= j t('dashboard.charts.memory_usage') %>"
+      },
+      messages: {
+        settingsSaved: "<%= j t('dashboard.messages.settings_saved') %>",
+        settingsSavedLocally: "<%= j t('dashboard.messages.settings_saved_locally') %>",
+        chartLoadingError: "<%= j t('dashboard.messages.chart_loading_error') %>",
+        chartCreationError: "<%= j t('dashboard.messages.chart_creation_error') %>",
+        canvasNotFound: "<%= j t('dashboard.messages.canvas_not_found') %>",
+        chartError: "<%= j t('dashboard.messages.chart_error') %>",
+        initError: "<%= j t('dashboard.messages.init_error') %>",
+        refreshPage: "<%= j t('dashboard.messages.refresh_page') %>"
+      },
+      editMode: {
+        start: "<%= j t('dashboard.edit_mode_start') %>",
+        finish: "<%= j t('dashboard.edit_mode_finish') %>"
+      },
+      serviceHealth: {
+        service: "<%= j t('dashboard.service_health_table.service') %>",
+        status: "<%= j t('dashboard.service_health_table.status') %>",
+        uptime: "<%= j t('dashboard.service_health_table.uptime') %>",
+        statusUp: "<%= j t('dashboard.service_health_table.status_up') %>",
+        statusDown: "<%= j t('dashboard.service_health_table.status_down') %>"
+      },
+      alertsWidget: {
+        noActiveAlerts: "<%= j t('dashboard.alerts_widget.no_active_alerts') %>",
+        metricLabel: "<%= j t('dashboard.alerts_widget.metric_label') %>",
+        valueLabel: "<%= j t('dashboard.alerts_widget.value_label') %>",
+        thresholdLabel: "<%= j t('dashboard.alerts_widget.threshold_label') %>",
+        timeLabel: "<%= j t('dashboard.alerts_widget.time_label') %>"
+      },
+      timeAxis: "<%= j t('dashboard.time_axis') %>",
+      serviceLabel: "<%= j t('dashboard.service_label') %>",
+      timeLabel: "<%= j t('dashboard.time_label') %>"
+    };
+  </script>
   
   <!-- Импортируем модули JavaScript для дашборда -->
   <%= javascript_import_module_tag "dashboard" %>

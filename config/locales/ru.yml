@@ -84,8 +84,42 @@ ru:
       throughput: "Пропускная способность"
       error_rate: "Уровень ошибок"
       resource_usage: "Использование ресурсов"
+    charts:
+      response_time: "Время отклика (мс)"
+      throughput: "Пропускная способность (запросов/сек)"
+      error_rate: "Уровень ошибок (%)"
+      resource_usage: "Общее использование ресурсов (%)"
+      cpu_usage: "Использование CPU (%)"
+      memory_usage: "Использование памяти (%)"
     alerts_modal_title: "Оповещения"
     fullscreen: "На весь экран"
+    save_settings: "Сохранить настройки"
+    edit_mode_start: "Режим редактирования"
+    edit_mode_finish: "Завершить редактирование"
+    service_health_table:
+      service: "Сервис"
+      status: "Статус"
+      uptime: "Время работы"
+      status_up: "Работает"
+      status_down: "Не работает"
+    time_axis: "Время"
+    service_label: "Сервис"
+    time_label: "Время"
+    alerts_widget:
+      no_active_alerts: "Нет активных оповещений"
+      metric_label: "Метрика"
+      value_label: "Значение"
+      threshold_label: "порог"
+      time_label: "Время"
+    messages:
+      settings_saved: "Настройки успешно сохранены"
+      settings_saved_locally: "Настройки сохранены локально, но не удалось сохранить на сервере"
+      chart_loading_error: "Ошибка загрузки библиотеки Chart.js. Пожалуйста, обновите страницу."
+      chart_creation_error: "Ошибка при создании графиков"
+      canvas_not_found: "Ошибка: не найден canvas для графика"
+      chart_error: "Ошибка при создании графика"
+      init_error: "Ошибка при инициализации дашборда"
+      refresh_page: "Обновить страницу"
 
   # Страница оповещений
   alerts:

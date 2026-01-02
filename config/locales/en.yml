@@ -84,8 +84,42 @@ en:
       throughput: "Throughput"
       error_rate: "Error Rate"
       resource_usage: "Resource Usage"
+    charts:
+      response_time: "Response Time (ms)"
+      throughput: "Throughput (requests/sec)"
+      error_rate: "Error Rate (%)"
+      resource_usage: "Overall Resource Usage (%)"
+      cpu_usage: "CPU Usage (%)"
+      memory_usage: "Memory Usage (%)"
     alerts_modal_title: "Alerts"
     fullscreen: "Fullscreen"
+    save_settings: "Save settings"
+    edit_mode_start: "Edit mode"
+    edit_mode_finish: "Finish editing"
+    service_health_table:
+      service: "Service"
+      status: "Status"
+      uptime: "Uptime"
+      status_up: "Running"
+      status_down: "Down"
+    time_axis: "Time"
+    service_label: "Service"
+    time_label: "Time"
+    alerts_widget:
+      no_active_alerts: "No active alerts"
+      metric_label: "Metric"
+      value_label: "Value"
+      threshold_label: "threshold"
+      time_label: "Time"
+    messages:
+      settings_saved: "Settings saved successfully"
+      settings_saved_locally: "Settings saved locally, but failed to save on server"
+      chart_loading_error: "Error loading Chart.js library. Please refresh the page."
+      chart_creation_error: "Error creating charts"
+      canvas_not_found: "Error: canvas not found for chart"
+      chart_error: "Error creating chart"
+      init_error: "Error initializing dashboard"
+      refresh_page: "Refresh page"
 
   # Alerts page
   alerts:

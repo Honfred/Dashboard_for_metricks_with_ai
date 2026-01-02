@@ -33,7 +33,8 @@ export function renderCharts(data) {
     setTimeout(() => {
       if (typeof Chart === 'undefined') {
         console.error('Библиотека Chart.js не загружена. Графики не будут отображены.');
-        showChartError('Ошибка загрузки библиотеки Chart.js. Пожалуйста, обновите страницу.');
+        const msg = window.dashboardTranslations?.messages?.chartLoadingError || 'Ошибка загрузки библиотеки Chart.js. Пожалуйста, обновите страницу.';
+        showChartError(msg);
         return;
       }
       // Повторяем попытку рендеринга
@@ -57,6 +58,16 @@ export function renderCharts(data) {
   
   console.log('Рендеринг графиков с данными:', data);
   
+  // Получаем переводы из глобального объекта
+  const t = window.dashboardTranslations?.charts || {
+    responseTime: 'Время отклика (мс)',
+    throughput: 'Пропускная способность (запросов/сек)',
+    errorRate: 'Уровень ошибок (%)',
+    resourceUsage: 'Общее использование ресурсов (%)',
+    cpuUsage: 'Использование CPU (%)',
+    memoryUsage: 'Использование памяти (%)'
+  };
+  
   try {
     // Отрисовываем время отклика
     if (data.response_time) {
@@ -64,7 +75,7 @@ export function renderCharts(data) {
       if (container) {
         charts.responseTime = createLineChart(
           'response-time-chart',
-          'Время отклика (мс)',
+          t.responseTime,
           data.response_time
         );
       }
@@ -76,7 +87,7 @@ export function renderCharts(data) {
       if (container) {
         charts.throughput = createLineChart(
           'throughput-chart',
-          'Пропускная способность (запросов/сек)',
+          t.throughput,
           data.throughput
         );
       }
@@ -88,7 +99,7 @@ export function renderCharts(data) {
       if (container) {
         charts.errorRate = createLineChart(
           'error-rate-chart',
-          'Уровень ошибок (%)',
+          t.errorRate,
           data.error_rate
         );
       }
@@ -104,7 +115,7 @@ export function renderCharts(data) {
         if (container) {
           charts.resourceOverview = createLineChart(
             'resource-usage-chart',
-            'Общее использование ресурсов (%)',
+            t.resourceUsage,
             data.resource_usage.overview
           );
         }
@@ -115,7 +126,7 @@ export function renderCharts(data) {
         if (container) {
           charts.cpuUsage = createLineChart(
             'cpu-usage-chart',
-            'Использование CPU (%)',
+            t.cpuUsage,
             data.resource_usage.cpu
           );
         }
@@ -126,7 +137,7 @@ export function renderCharts(data) {
         if (container) {
           charts.memoryUsage = createLineChart(
             'memory-usage-chart',
-            'Использование памяти (%)',
+            t.memoryUsage,
             data.resource_usage.memory
           );
         }
@@ -144,7 +155,8 @@ export function renderCharts(data) {
     console.log('Рендеринг графиков завершен успешно');
   } catch (error) {
     console.error('Ошибка при рендеринге графиков:', error);
-    showChartError(`Ошибка при создании графиков: ${error.message}`);
+    const msgBase = window.dashboardTranslations?.messages?.chartCreationError || 'Ошибка при создании графиков';
+    showChartError(`${msgBase}: ${error.message}`);
   }
 }
 
@@ -163,7 +175,8 @@ export function createLineChart(elementId, title, datasets) {
   
   if (!canvas) {
     console.error('Не найден canvas с ID:', canvasId);
-    container.innerHTML = `<div style="color: red; padding: 20px;">Ошибка: не найден canvas для графика</div>`;
+    const msg = window.dashboardTranslations?.messages?.canvasNotFound || 'Ошибка: не найден canvas для графика';
+    container.innerHTML = `<div style="color: red; padding: 20px;">${msg}</div>`;
     return null;
   }
   
@@ -219,7 +232,7 @@ export function createLineChart(elementId, title, datasets) {
             },
             title: {
               display: true,
-              text: 'Время'
+              text: window.dashboardTranslations?.timeAxis || 'Время'
             }
           },
           y: {
@@ -238,9 +251,10 @@ export function createLineChart(elementId, title, datasets) {
   } catch (error) {
     console.error('Ошибка при создании графика для', elementId, ':', error);
     // Отображаем сообщение об ошибке прямо в контейнере
+    const chartErrorMsg = window.dashboardTranslations?.messages?.chartError || 'Ошибка при создании графика';
     container.innerHTML = `
       <div style="padding: 20px; text-align: center; color: #dc3545;">
-        <p>Ошибка при создании графика:</p>
+        <p>${chartErrorMsg}:</p>
         <p>${error.message}</p>
       </div>
     `;
@@ -269,6 +283,12 @@ export function renderServiceHealthTable(elementId, services) {
   // Очищаем контейнер
   container.innerHTML = '';
   
+  // Получаем переводы
+  const t = window.dashboardTranslations?.serviceHealth || {};
+  const serviceLabel = t.service || 'Сервис';
+  const statusLabel = t.status || 'Статус';
+  const uptimeLabel = t.uptime || 'Время работы';
+  
   // Создаем таблицу
   const table = document.createElement('table');
   table.className = 'status-table';
@@ -277,9 +297,9 @@ export function renderServiceHealthTable(elementId, services) {
   const thead = document.createElement('thead');
   thead.innerHTML = `
     <tr>
-      <th>Сервис</th>
-      <th>Статус</th>
-      <th>Время работы</th>
+      <th>${serviceLabel}</th>
+      <th>${statusLabel}</th>
+      <th>${uptimeLabel}</th>
     </tr>
   `;
   table.appendChild(thead);
@@ -303,7 +323,7 @@ export function renderServiceHealthTable(elementId, services) {
     
     tr.innerHTML = `
       <td>${service.name}</td>
-      <td><span class="status-${service.status}">${service.status === 'up' ? 'Работает' : 'Не работает'}</span></td>
+      <td><span class="status-${service.status}">${service.status === 'up' ? (t.statusUp || 'Работает') : (t.statusDown || 'Не работает')}</span></td>
       <td>${service.uptime}</td>
     `;
     
@@ -359,10 +379,12 @@ export function prepareTimeSeriesData(data, labelPrefix) {
   
   // Определяем, связан ли этот график с использованием ресурсов
   const isResourcesRelated = (prefix) => {
-    return prefix.indexOf('Использование') !== -1 || 
-           prefix.indexOf('CPU') !== -1 || 
-           prefix.indexOf('ресурсов') !== -1 || 
-           prefix.indexOf('памяти') !== -1;
+    // Поддерживаем как русские, так и английские названия
+    const resourceKeywords = [
+      'Использование', 'CPU', 'ресурсов', 'памяти',
+      'Usage', 'Resource', 'Memory'
+    ];
+    return resourceKeywords.some(keyword => prefix.indexOf(keyword) !== -1);
   };
   
   // Подготавливаем наборы данных для каждой серии
@@ -471,6 +493,7 @@ export function getChartOptions(title, xAxisLabel, yAxisLabel, logarithmic, scal
 }
 
 export function showChartError(message) {
+  const refreshText = window.dashboardTranslations?.messages?.refreshPage || 'Обновить страницу';
   // Отображаем сообщение об ошибке во всех контейнерах графиков
   document.querySelectorAll('.chart-container').forEach(container => {
     container.innerHTML = `
@@ -478,7 +501,7 @@ export function showChartError(message) {
         <i class="fa fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i>
         <p>${message}</p>
         <button onclick="window.location.reload()" class="btn btn-outline-primary" style="margin-top: 10px;">
-          Обновить страницу
+          ${refreshText}
         </button>
       </div>
     `;
