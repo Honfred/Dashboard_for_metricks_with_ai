@@ -9,7 +9,7 @@ class MlModelsController < ApplicationController
                                     .by_type(params[:model_type])
                                     .recent
                                     .page(params[:page])
-                                    .per(20)
+                                    .per(50)
 
     @active_models = {
       anomaly: MlModelVersion.active_model('anomaly'),
@@ -59,7 +59,11 @@ class MlModelsController < ApplicationController
   # GET /ml_models/:id/download
   def download
     if @model_version.model_file.attached?
-      redirect_to rails_blob_path(@model_version.model_file, disposition: 'attachment')
+      # Проксируем файл через контроллер, чтобы избежать проблем с внутренним URL MinIO
+      send_data @model_version.model_file.download,
+                filename: @model_version.model_file.filename.to_s,
+                type: @model_version.model_file.content_type,
+                disposition: 'attachment'
     else
       redirect_to ml_models_path, alert: t('ml_models.file_not_found')
     end

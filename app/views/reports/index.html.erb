@@ -95,16 +95,15 @@
               <td>
                 <div class="btn-group btn-group-sm">
                   <% if report.completed? && report.file.attached? %>
-                    <%= link_to download_report_path(report), class: 'btn btn-outline-primary' do %>
+                    <%= link_to download_report_path(report), class: 'btn btn-outline-primary', title: t('reports.download') do %>
                       <i class="bi bi-download"></i>
                     <% end %>
                   <% end %>
-                  <%= link_to regenerate_report_path(report), method: :post, class: 'btn btn-outline-secondary' do %>
+                  <%= link_to regenerate_report_path(report), data: { turbo_method: :post }, class: 'btn btn-outline-secondary', title: t('reports.regenerate') do %>
                     <i class="bi bi-arrow-clockwise"></i>
                   <% end %>
-                  <%= link_to report, method: :delete, 
-                      data: { confirm: t('common.confirm_delete') },
-                      class: 'btn btn-outline-danger' do %>
+                  <%= link_to report_path(report), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
+                      class: 'btn btn-outline-danger', title: t('common.delete') do %>
                     <i class="bi bi-trash"></i>
                   <% end %>
                 </div>

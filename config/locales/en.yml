@@ -741,6 +741,7 @@ en:
     file_not_found: "Model file not found"
     confirm_deploy: "Are you sure? Current active model will be replaced."
     type: "Type"
+    metric: "Metric"
     version: "Version"
     status: "Status"
     accuracy: "Accuracy"

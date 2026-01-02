@@ -54,7 +54,11 @@ class UploadsController < ApplicationController
   # GET /uploads/:id/download
   def download
     if @uploaded_file.file.attached?
-      redirect_to rails_blob_path(@uploaded_file.file, disposition: 'attachment')
+      # Проксируем файл через контроллер, чтобы избежать проблем с внутренним URL MinIO
+      send_data @uploaded_file.file.download,
+                filename: @uploaded_file.file.filename.to_s,
+                type: @uploaded_file.file.content_type,
+                disposition: 'attachment'
     else
       redirect_to uploads_path, alert: t('uploads.file_not_found')
     end

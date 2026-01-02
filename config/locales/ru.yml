@@ -217,6 +217,11 @@ ru:
       no_sources: "Нет доступных источников данных. Проверьте подключение к Prometheus."
     confirm_delete: "Вы уверены?"
     time_range_label: "Временной диапазон"
+    # Поля для отчётов
+    name: "Название"
+    type: "Тип"
+    unit: "Единица измерения"
+    description: "Описание"
     statistics:
       title: "Статистика"
       average: "Среднее"
@@ -749,6 +754,7 @@ ru:
     file_not_found: "Файл модели не найден"
     confirm_deploy: "Вы уверены? Текущая активная модель будет заменена."
     type: "Тип"
+    metric: "Метрика"
     version: "Версия"
     status: "Статус"
     accuracy: "Точность"

@@ -5,6 +5,9 @@ class MlModelVersion < ApplicationRecord
   has_one_attached :model_file, service: :ml_models
   has_one_attached :training_log, service: :ml_models
 
+  # Callbacks - должны быть перед валидациями для генерации version
+  before_validation :set_version, on: :create
+
   # Validations
   validates :model_type, presence: true, inclusion: { 
     in: %w[anomaly performance trend] 
@@ -16,14 +19,11 @@ class MlModelVersion < ApplicationRecord
   validates :version, uniqueness: { scope: :model_type }
 
   # Scopes
-  scope :by_type, ->(type) { where(model_type: type) }
+  scope :by_type, ->(type) { where(model_type: type) if type.present? }
   scope :active, -> { where(is_active: true) }
   scope :completed, -> { where(status: 'completed') }
   scope :deployed, -> { where(status: 'deployed') }
   scope :recent, -> { order(created_at: :desc) }
-
-  # Callbacks
-  before_create :set_version
 
   # Class methods
   def self.active_model(model_type)
@@ -98,6 +98,20 @@ class MlModelVersion < ApplicationRecord
 
   def f1_score
     metrics['f1_score']
+  end
+
+  # Получить имя метрики из metadata
+  def metric_name
+    metadata['metric_name']
+  end
+
+  # Человекочитаемое название
+  def display_name
+    if metric_name.present?
+      "#{metric_name} (#{model_type})"
+    else
+      "#{model_type} v#{version}"
+    end
   end
 
   private

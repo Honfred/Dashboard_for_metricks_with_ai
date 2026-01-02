@@ -63,12 +63,11 @@
               <td><%= l(file.created_at, format: :short) %></td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <%= link_to download_upload_path(file), class: 'btn btn-outline-primary' do %>
+                  <%= link_to download_upload_path(file), class: 'btn btn-outline-primary', title: t('uploads.download') do %>
                     <i class="bi bi-download"></i>
                   <% end %>
-                  <%= link_to file, method: :delete, 
-                      data: { confirm: t('common.confirm_delete') },
-                      class: 'btn btn-outline-danger' do %>
+                  <%= link_to upload_path(file), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
+                      class: 'btn btn-outline-danger', title: t('common.delete') do %>
                     <i class="bi bi-trash"></i>
                   <% end %>
                 </div>

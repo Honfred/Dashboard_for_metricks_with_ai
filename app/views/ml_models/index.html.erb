@@ -96,10 +96,9 @@
         <thead>
           <tr>
             <th><%= t('ml_models.type') %></th>
+            <th><%= t('ml_models.metric') %></th>
             <th><%= t('ml_models.version') %></th>
             <th><%= t('ml_models.status') %></th>
-            <th><%= t('ml_models.accuracy') %></th>
-            <th><%= t('ml_models.f1_score') %></th>
             <th><%= t('ml_models.trained_at') %></th>
             <th><%= t('common.actions') %></th>
           </tr>
@@ -111,6 +110,9 @@
                 <span class="badge bg-<%= model.model_type == 'anomaly' ? 'primary' : model.model_type == 'performance' ? 'success' : 'warning' %>">
                   <%= model.model_type %>
                 </span>
+              </td>
+              <td>
+                <code><%= model.metric_name || '-' %></code>
               </td>
               <td>
                 <%= model.version %>
@@ -132,26 +134,24 @@
                   <span class="badge bg-secondary"><%= t('ml_models.statuses.deprecated') %></span>
                 <% end %>
               </td>
-              <td><%= model.accuracy ? "#{(model.accuracy * 100).round(1)}%" : '-' %></td>
-              <td><%= model.f1_score ? "#{(model.f1_score * 100).round(1)}%" : '-' %></td>
               <td><%= model.trained_at ? l(model.trained_at, format: :short) : '-' %></td>
               <td>
                 <div class="btn-group btn-group-sm">
-                  <%= link_to model, class: 'btn btn-outline-info' do %>
+                  <%= link_to ml_model_path(model), class: 'btn btn-outline-info', title: t('common.view') do %>
                     <i class="bi bi-eye"></i>
                   <% end %>
                   <% if model.completed? && !model.is_active? %>
-                    <%= link_to deploy_ml_model_path(model), method: :post, class: 'btn btn-outline-success', data: { confirm: t('ml_models.confirm_deploy') } do %>
+                    <%= link_to deploy_ml_model_path(model), data: { turbo_method: :post, turbo_confirm: t('ml_models.confirm_deploy') }, class: 'btn btn-outline-success', title: t('ml_models.deploy') do %>
                       <i class="bi bi-rocket"></i>
                     <% end %>
                   <% end %>
                   <% if model.model_file.attached? %>
-                    <%= link_to download_ml_model_path(model), class: 'btn btn-outline-primary' do %>
+                    <%= link_to download_ml_model_path(model), class: 'btn btn-outline-primary', title: t('ml_models.download') do %>
                       <i class="bi bi-download"></i>
                     <% end %>
                   <% end %>
                   <% unless model.is_active? %>
-                    <%= link_to model, method: :delete, data: { confirm: t('common.confirm_delete') }, class: 'btn btn-outline-danger' do %>
+                    <%= link_to ml_model_path(model), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') }, class: 'btn btn-outline-danger', title: t('common.delete') do %>
                       <i class="bi bi-trash"></i>
                     <% end %>
                   <% end %>

@@ -55,7 +55,11 @@ class ReportsController < ApplicationController
   # GET /reports/:id/download
   def download
     if @report.file.attached? && @report.completed?
-      redirect_to rails_blob_path(@report.file, disposition: 'attachment')
+      # Проксируем файл через контроллер, чтобы избежать проблем с внутренним URL MinIO
+      send_data @report.file.download,
+                filename: @report.file.filename.to_s,
+                type: @report.file.content_type,
+                disposition: 'attachment'
     else
       redirect_to reports_path, alert: t('reports.not_ready')
     end

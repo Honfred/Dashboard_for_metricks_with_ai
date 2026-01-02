@@ -56,6 +56,7 @@
                 <h6 class="mb-0"><%= t('reports.parameters') %></h6>
               </div>
               <div class="card-body">
+                <p class="text-muted small mb-3"><%= t('reports.date_hint', default: 'Оставьте пустым для выборки всех данных') %></p>
                 <div class="row">
                   <div class="col-md-6 mb-3">
                     <%= label_tag 'parameters_start_date', t('reports.start_date'), class: 'form-label' %>
@@ -68,8 +69,8 @@
                 </div>
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <%= label_tag 'parameters_service', t('reports.service'), class: 'form-label' %>
-                    <%= text_field_tag 'report[parameters][service]', nil, class: 'form-control', placeholder: t('reports.service_placeholder') %>
+                    <%= label_tag 'parameters_severity', t('reports.severity'), class: 'form-label' %>
+                    <%= select_tag 'report[parameters][severity]', options_for_select([["", ""], [t('alerts.severities.low'), 'low'], [t('alerts.severities.medium'), 'medium'], [t('alerts.severities.high'), 'high'], [t('alerts.severities.critical'), 'critical']]), class: 'form-select' %>
                   </div>
                   <div class="col-md-6 mb-3">
                     <%= label_tag 'parameters_limit', t('reports.limit'), class: 'form-label' %>

@@ -19,7 +19,7 @@
           </h5>
           <div class="btn-group btn-group-sm">
             <% if @model_version.completed? && !@model_version.is_active? %>
-              <%= link_to deploy_ml_model_path(@model_version), method: :post, class: 'btn btn-success', data: { confirm: t('ml_models.confirm_deploy') } do %>
+              <%= link_to deploy_ml_model_path(@model_version), data: { turbo_method: :post, turbo_confirm: t('ml_models.confirm_deploy') }, class: 'btn btn-success' do %>
                 <i class="bi bi-rocket me-1"></i> <%= t('ml_models.deploy') %>
               <% end %>
             <% end %>
@@ -29,7 +29,7 @@
               <% end %>
             <% end %>
             <% unless @model_version.is_active? %>
-              <%= link_to @model_version, method: :delete, data: { confirm: t('common.confirm_delete') }, class: 'btn btn-danger' do %>
+              <%= link_to ml_model_path(@model_version), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') }, class: 'btn btn-danger' do %>
                 <i class="bi bi-trash me-1"></i> <%= t('common.delete') %>
               <% end %>
             <% end %>

@@ -34,6 +34,18 @@ class ReportExportService
 
     pdf = Prawn::Document.new(page_size: 'A4', margin: 40)
 
+    # Регистрация UTF-8 шрифтов для поддержки кириллицы
+    font_path = Rails.root.join('app', 'assets', 'fonts')
+    pdf.font_families.update(
+      'DejaVuSans' => {
+        normal: font_path.join('DejaVuSans.ttf').to_s,
+        bold: font_path.join('DejaVuSans-Bold.ttf').to_s,
+        italic: font_path.join('DejaVuSans-Oblique.ttf').to_s,
+        bold_italic: font_path.join('DejaVuSans-BoldOblique.ttf').to_s
+      }
+    )
+    pdf.font 'DejaVuSans'
+
     # Заголовок
     pdf.font_size(20) { pdf.text report.name, style: :bold }
     pdf.move_down 10
@@ -99,12 +111,12 @@ class ReportExportService
     pdf.move_down 10
 
     if metrics.any?
-      table_data = [[I18n.t('metrics.name'), I18n.t('metrics.value'), 
-                     I18n.t('metrics.service'), I18n.t('metrics.timestamp')]]
+      table_data = [[I18n.t('metrics.name'), I18n.t('metrics.type'), 
+                     I18n.t('metrics.unit'), I18n.t('metrics.description')]]
       
       metrics.each do |metric|
-        table_data << [metric.name, metric.value.to_s, 
-                       metric.service, metric.created_at.strftime('%Y-%m-%d %H:%M')]
+        table_data << [metric.name, metric.metric_type, 
+                       metric.unit || '-', metric.description.to_s.truncate(50)]
       end
 
       pdf.table(table_data, header: true, width: pdf.bounds.width) do
@@ -124,12 +136,12 @@ class ReportExportService
 
     if alerts.any?
       table_data = [[I18n.t('alerts.service'), I18n.t('alerts.metric'), 
-                     I18n.t('alerts.severity'), I18n.t('alerts.status'), 
+                     I18n.t('alerts.severity_field'), I18n.t('alerts.table.status'), 
                      I18n.t('alerts.triggered_at')]]
       
       alerts.each do |alert|
-        table_data << [alert.service, alert.metric, alert.severity, 
-                       alert.status, alert.triggered_at&.strftime('%Y-%m-%d %H:%M')]
+        table_data << [alert.service.to_s, alert.metric.to_s, alert.severity.to_s, 
+                       alert.status.to_s, alert.triggered_at&.strftime('%Y-%m-%d %H:%M')]
       end
 
       pdf.table(table_data, header: true, width: pdf.bounds.width) do
@@ -177,11 +189,11 @@ class ReportExportService
 
   # CSV generators
   def generate_metrics_csv(csv)
-    csv << ['ID', 'Name', 'Value', 'Service', 'Unit', 'Created At']
+    csv << ['ID', 'Name', 'Display Name', 'Type', 'Unit', 'Description', 'Created At']
     
     fetch_metrics.each do |metric|
-      csv << [metric.id, metric.name, metric.value, metric.service, 
-              metric.unit, metric.created_at.iso8601]
+      csv << [metric.id, metric.name, metric.display_name, metric.metric_type, 
+              metric.unit, metric.description, metric.created_at.iso8601]
     end
   end
 
@@ -217,9 +229,10 @@ class ReportExportService
         {
           id: m.id,
           name: m.name,
-          value: m.value,
-          service: m.service,
+          display_name: m.display_name,
+          metric_type: m.metric_type,
           unit: m.unit,
+          description: m.description,
           created_at: m.created_at.iso8601
         }
       end
@@ -288,16 +301,16 @@ class ReportExportService
   def fetch_metrics
     scope = Metric.all
     
-    if report.parameters['start_date'].present?
+    if report.parameters['start_date'].present? && report.parameters['start_date'].to_s.strip.present?
       scope = scope.where('created_at >= ?', report.parameters['start_date'])
     end
     
-    if report.parameters['end_date'].present?
-      scope = scope.where('created_at <= ?', report.parameters['end_date'])
+    if report.parameters['end_date'].present? && report.parameters['end_date'].to_s.strip.present?
+      scope = scope.where('created_at <= ?', Date.parse(report.parameters['end_date']).end_of_day)
     end
     
-    if report.parameters['service'].present?
-      scope = scope.where(service: report.parameters['service'])
+    if report.parameters['metric_type'].present?
+      scope = scope.where(metric_type: report.parameters['metric_type'])
     end
     
     scope.order(created_at: :desc).limit(report.parameters['limit'] || 1000)
@@ -306,12 +319,12 @@ class ReportExportService
   def fetch_alerts
     scope = Alert.all
     
-    if report.parameters['start_date'].present?
+    if report.parameters['start_date'].present? && report.parameters['start_date'].to_s.strip.present?
       scope = scope.where('triggered_at >= ?', report.parameters['start_date'])
     end
     
-    if report.parameters['end_date'].present?
-      scope = scope.where('triggered_at <= ?', report.parameters['end_date'])
+    if report.parameters['end_date'].present? && report.parameters['end_date'].to_s.strip.present?
+      scope = scope.where('triggered_at <= ?', Date.parse(report.parameters['end_date']).end_of_day)
     end
     
     if report.parameters['severity'].present?

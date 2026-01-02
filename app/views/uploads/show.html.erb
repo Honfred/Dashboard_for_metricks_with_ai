@@ -15,8 +15,7 @@
             <%= link_to download_upload_path(@uploaded_file), class: 'btn btn-primary' do %>
               <i class="bi bi-download me-1"></i> <%= t('uploads.download') %>
             <% end %>
-            <%= link_to @uploaded_file, method: :delete,
-                data: { confirm: t('common.confirm_delete') },
+            <%= link_to upload_path(@uploaded_file), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
                 class: 'btn btn-danger' do %>
               <i class="bi bi-trash me-1"></i> <%= t('common.delete') %>
             <% end %>
