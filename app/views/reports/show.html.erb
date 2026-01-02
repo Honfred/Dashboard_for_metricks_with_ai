@@ -1,0 +1,108 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to t('reports.title'), reports_path %></li>
+      <li class="breadcrumb-item active"><%= @report.name %></li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><%= @report.name %></h5>
+          <div class="btn-group btn-group-sm">
+            <% if @report.completed? && @report.file.attached? %>
+              <%= link_to download_report_path(@report), class: 'btn btn-primary' do %>
+                <i class="bi bi-download me-1"></i> <%= t('reports.download') %>
+              <% end %>
+            <% end %>
+            <%= link_to regenerate_report_path(@report), data: { turbo_method: :post }, class: 'btn btn-secondary' do %>
+              <i class="bi bi-arrow-clockwise me-1"></i> <%= t('reports.regenerate') %>
+            <% end %>
+            <%= link_to report_path(@report), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
+                class: 'btn btn-danger' do %>
+              <i class="bi bi-trash me-1"></i> <%= t('common.delete') %>
+            <% end %>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h6><%= t('reports.status') %></h6>
+              <% case @report.status %>
+              <% when 'pending' %>
+                <span class="badge bg-warning fs-6"><i class="bi bi-hourglass-split me-1"></i><%= t('reports.statuses.pending') %></span>
+              <% when 'processing' %>
+                <span class="badge bg-info fs-6"><i class="bi bi-arrow-repeat me-1"></i><%= t('reports.statuses.processing') %></span>
+              <% when 'completed' %>
+                <span class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i><%= t('reports.statuses.completed') %></span>
+              <% when 'failed' %>
+                <span class="badge bg-danger fs-6"><i class="bi bi-x-circle me-1"></i><%= t('reports.statuses.failed') %></span>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <h6><%= t('reports.format') %></h6>
+              <span class="badge bg-secondary fs-6"><%= @report.format.upcase %></span>
+            </div>
+          </div>
+
+          <dl class="row">
+            <dt class="col-sm-4"><%= t('reports.type') %></dt>
+            <dd class="col-sm-8"><%= @report.report_type.titleize %></dd>
+
+            <dt class="col-sm-4"><%= t('reports.created_at') %></dt>
+            <dd class="col-sm-8"><%= l(@report.created_at, format: :long) %></dd>
+
+            <% if @report.generated_at %>
+              <dt class="col-sm-4"><%= t('reports.generated_at') %></dt>
+              <dd class="col-sm-8"><%= l(@report.generated_at, format: :long) %></dd>
+            <% end %>
+
+            <% if @report.expires_at %>
+              <dt class="col-sm-4"><%= t('reports.expires_at') %></dt>
+              <dd class="col-sm-8">
+                <%= l(@report.expires_at, format: :long) %>
+                <% if @report.expired? %>
+                  <span class="badge bg-danger"><%= t('reports.expired') %></span>
+                <% end %>
+              </dd>
+            <% end %>
+
+            <% if @report.file.attached? %>
+              <dt class="col-sm-4"><%= t('reports.file_size') %></dt>
+              <dd class="col-sm-8"><%= @report.file_size_human %></dd>
+            <% end %>
+          </dl>
+
+          <% if @report.failed? && @report.metadata['error'].present? %>
+            <div class="alert alert-danger">
+              <strong><%= t('reports.error') %>:</strong>
+              <%= @report.metadata['error'] %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0"><%= t('reports.parameters') %></h6>
+        </div>
+        <div class="card-body">
+          <% if @report.parameters.present? %>
+            <dl class="mb-0">
+              <% @report.parameters.each do |key, value| %>
+                <dt><%= key.humanize %></dt>
+                <dd><%= value.presence || '-' %></dd>
+              <% end %>
+            </dl>
+          <% else %>
+            <p class="text-muted mb-0"><%= t('reports.no_parameters') %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

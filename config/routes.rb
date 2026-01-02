@@ -5,6 +5,38 @@ Rails.application.routes.draw do
   # Корневой маршрут
   root 'metrics#index'
 
+  # Маршруты для загрузки файлов
+  resources :uploads do
+    member do
+      get 'download'
+    end
+    collection do
+      post 'bulk', action: :bulk_upload
+    end
+  end
+
+  # Маршруты для отчётов
+  resources :reports do
+    member do
+      get 'download'
+      post 'regenerate'
+    end
+    collection do
+      post 'quick_export'
+    end
+  end
+
+  # Маршруты для ML моделей
+  resources :ml_models, only: [:index, :show, :destroy] do
+    member do
+      post 'deploy'
+      get 'download'
+    end
+    collection do
+      post 'train'
+    end
+  end
+
   # Маршруты для метрик
   resources :metrics do
     resources :ai_analyses, only: [:index, :new, :create, :show]

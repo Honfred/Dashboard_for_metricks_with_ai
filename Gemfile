@@ -14,6 +14,15 @@ gem 'pg', '~> 1.5', '>= 1.5.6'
 gem 'httparty'
 gem 'kaminari'
 
+# ActiveStorage S3 support
+gem 'aws-sdk-s3', require: false
+
+# PDF generation
+gem 'prawn'
+gem 'prawn-table'
+
+# CSV export already in stdlib
+
 gem "puma", ">= 5.0"
 gem "importmap-rails"
 gem "turbo-rails"

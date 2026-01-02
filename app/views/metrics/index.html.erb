@@ -35,8 +35,7 @@
                           <% if current_user&.admin? %>
                             <%= link_to t('common.edit'), edit_metric_path(metric), class: "btn btn-sm btn-outline-secondary" %>
                             <%= link_to t('common.delete'), metric_path(metric), 
-                                      method: :delete, 
-                                      data: { confirm: t('metrics.confirm_delete') }, 
+                                      data: { turbo_method: :delete, turbo_confirm: t('metrics.confirm_delete') }, 
                                       class: "btn btn-sm btn-outline-danger" %>
                           <% end %>
                         </td>

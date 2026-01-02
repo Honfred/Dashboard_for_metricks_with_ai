@@ -1,0 +1,181 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><%= t('ml_models.title') %></h1>
+  </div>
+
+  <!-- Активные модели -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card border-primary">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-graph-up me-2"></i><%= t('ml_models.types.anomaly') %></span>
+          <%= form_tag train_ml_models_path, method: :post, class: 'd-inline' do %>
+            <%= hidden_field_tag :model_type, 'anomaly' %>
+            <%= submit_tag t('ml_models.train'), class: 'btn btn-sm btn-light' %>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% if @active_models[:anomaly] %>
+            <p class="mb-1"><strong><%= t('ml_models.version') %>:</strong> <%= @active_models[:anomaly].version %></p>
+            <p class="mb-1"><strong><%= t('ml_models.accuracy') %>:</strong> <%= @active_models[:anomaly].accuracy ? "#{(@active_models[:anomaly].accuracy * 100).round(1)}%" : '-' %></p>
+            <p class="mb-0"><strong><%= t('ml_models.deployed_at') %>:</strong> <%= @active_models[:anomaly].deployed_at ? l(@active_models[:anomaly].deployed_at, format: :short) : '-' %></p>
+          <% else %>
+            <p class="text-muted mb-0"><%= t('ml_models.no_active_model') %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-speedometer2 me-2"></i><%= t('ml_models.types.performance') %></span>
+          <%= form_tag train_ml_models_path, method: :post, class: 'd-inline' do %>
+            <%= hidden_field_tag :model_type, 'performance' %>
+            <%= submit_tag t('ml_models.train'), class: 'btn btn-sm btn-light' %>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% if @active_models[:performance] %>
+            <p class="mb-1"><strong><%= t('ml_models.version') %>:</strong> <%= @active_models[:performance].version %></p>
+            <p class="mb-1"><strong><%= t('ml_models.accuracy') %>:</strong> <%= @active_models[:performance].accuracy ? "#{(@active_models[:performance].accuracy * 100).round(1)}%" : '-' %></p>
+            <p class="mb-0"><strong><%= t('ml_models.deployed_at') %>:</strong> <%= @active_models[:performance].deployed_at ? l(@active_models[:performance].deployed_at, format: :short) : '-' %></p>
+          <% else %>
+            <p class="text-muted mb-0"><%= t('ml_models.no_active_model') %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card border-warning">
+        <div class="card-header bg-warning d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-graph-up-arrow me-2"></i><%= t('ml_models.types.trend') %></span>
+          <%= form_tag train_ml_models_path, method: :post, class: 'd-inline' do %>
+            <%= hidden_field_tag :model_type, 'trend' %>
+            <%= submit_tag t('ml_models.train'), class: 'btn btn-sm btn-light' %>
+          <% end %>
+        </div>
+        <div class="card-body">
+          <% if @active_models[:trend] %>
+            <p class="mb-1"><strong><%= t('ml_models.version') %>:</strong> <%= @active_models[:trend].version %></p>
+            <p class="mb-1"><strong><%= t('ml_models.accuracy') %>:</strong> <%= @active_models[:trend].accuracy ? "#{(@active_models[:trend].accuracy * 100).round(1)}%" : '-' %></p>
+            <p class="mb-0"><strong><%= t('ml_models.deployed_at') %>:</strong> <%= @active_models[:trend].deployed_at ? l(@active_models[:trend].deployed_at, format: :short) : '-' %></p>
+          <% else %>
+            <p class="text-muted mb-0"><%= t('ml_models.no_active_model') %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <%= form_tag ml_models_path, method: :get, class: 'd-flex gap-3' do %>
+        <div class="flex-grow-1">
+          <%= select_tag :model_type, 
+              options_for_select([
+                [t('ml_models.all_types'), ''],
+                [t('ml_models.types.anomaly'), 'anomaly'],
+                [t('ml_models.types.performance'), 'performance'],
+                [t('ml_models.types.trend'), 'trend']
+              ], params[:model_type]),
+              class: 'form-select' %>
+        </div>
+        <%= submit_tag t('common.filter'), class: 'btn btn-outline-secondary' %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Таблица версий моделей -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0"><%= t('ml_models.versions_history') %></h5>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th><%= t('ml_models.type') %></th>
+            <th><%= t('ml_models.metric') %></th>
+            <th><%= t('ml_models.version') %></th>
+            <th><%= t('ml_models.status') %></th>
+            <th><%= t('ml_models.trained_at') %></th>
+            <th><%= t('common.actions') %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @model_versions.each do |model| %>
+            <tr class="<%= 'table-success' if model.is_active? %>">
+              <td>
+                <span class="badge bg-<%= model.model_type == 'anomaly' ? 'primary' : model.model_type == 'performance' ? 'success' : 'warning' %>">
+                  <%= model.model_type %>
+                </span>
+              </td>
+              <td>
+                <code><%= model.metric_name || '-' %></code>
+              </td>
+              <td>
+                <%= model.version %>
+                <% if model.is_active? %>
+                  <span class="badge bg-success ms-1"><%= t('ml_models.active') %></span>
+                <% end %>
+              </td>
+              <td>
+                <% case model.status %>
+                <% when 'training' %>
+                  <span class="badge bg-info"><i class="bi bi-arrow-repeat spin me-1"></i><%= t('ml_models.statuses.training') %></span>
+                <% when 'completed' %>
+                  <span class="badge bg-success"><%= t('ml_models.statuses.completed') %></span>
+                <% when 'deployed' %>
+                  <span class="badge bg-primary"><%= t('ml_models.statuses.deployed') %></span>
+                <% when 'failed' %>
+                  <span class="badge bg-danger"><%= t('ml_models.statuses.failed') %></span>
+                <% when 'deprecated' %>
+                  <span class="badge bg-secondary"><%= t('ml_models.statuses.deprecated') %></span>
+                <% end %>
+              </td>
+              <td><%= model.trained_at ? l(model.trained_at, format: :short) : '-' %></td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <%= link_to ml_model_path(model), class: 'btn btn-outline-info', title: t('common.view') do %>
+                    <i class="bi bi-eye"></i>
+                  <% end %>
+                  <% if model.completed? && !model.is_active? %>
+                    <%= link_to deploy_ml_model_path(model), data: { turbo_method: :post, turbo_confirm: t('ml_models.confirm_deploy') }, class: 'btn btn-outline-success', title: t('ml_models.deploy') do %>
+                      <i class="bi bi-rocket"></i>
+                    <% end %>
+                  <% end %>
+                  <% if model.model_file.attached? %>
+                    <%= link_to download_ml_model_path(model), class: 'btn btn-outline-primary', title: t('ml_models.download') do %>
+                      <i class="bi bi-download"></i>
+                    <% end %>
+                  <% end %>
+                  <% unless model.is_active? %>
+                    <%= link_to ml_model_path(model), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') }, class: 'btn btn-outline-danger', title: t('common.delete') do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Пагинация -->
+  <div class="d-flex justify-content-center mt-4">
+    <%= paginate @model_versions %>
+  </div>
+</div>
+
+<style>
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

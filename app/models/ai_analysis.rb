@@ -1,6 +1,13 @@
 class AiAnalysis < ApplicationRecord
   belongs_to :metric
 
+  # ActiveStorage attachments
+  has_one_attached :report_pdf    # PDF отчёт анализа
+  has_one_attached :raw_data      # Исходные данные в JSON/CSV
+  
+  # Polymorphic attachments
+  has_many :uploaded_files, as: :uploadable, dependent: :destroy
+
   validates :analysis_type, presence: true
   
   # Enum для типов анализа

@@ -1,4 +1,11 @@
 class Alert < ApplicationRecord
+  # ActiveStorage attachments
+  has_many_attached :screenshots  # Скриншоты ошибок
+  has_many_attached :logs         # Логи для анализа
+  
+  # Polymorphic attachments
+  has_many :uploaded_files, as: :uploadable, dependent: :destroy
+
   # Валидации
   validates :service, :metric, :value, :threshold, :severity, presence: true
   validates :status, presence: true, inclusion: { in: %w(triggered resolved acknowledged) }

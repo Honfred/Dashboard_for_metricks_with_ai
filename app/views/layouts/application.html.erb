@@ -18,6 +18,9 @@
     <!-- Базовые стили CSS Bootstrap для улучшения внешнего вида -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
     <!-- Font Awesome для иконок -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -59,6 +62,20 @@
               </li>
               <li class="nav-item">
                 <a class="nav-link <%= current_page?(dashboard_index_path) ? 'active' : '' %>" href="/dashboard"><%= t('navigation.dashboard') %></a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link <%= controller_name == 'alerts' ? 'active' : '' %>" href="/alerts"><%= t('navigation.alerts') %></a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle <%= %w[uploads reports ml_models].include?(controller_name) ? 'active' : '' %>" href="#" id="storageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-cloud"></i> <%= t('navigation.uploads') %>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="storageDropdown">
+                  <li><a class="dropdown-item <%= controller_name == 'uploads' ? 'active' : '' %>" href="/uploads"><%= t('navigation.uploads') %></a></li>
+                  <li><a class="dropdown-item <%= controller_name == 'reports' ? 'active' : '' %>" href="/reports"><%= t('navigation.reports') %></a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item <%= controller_name == 'ml_models' ? 'active' : '' %>" href="/ml_models"><%= t('navigation.ml_models') %></a></li>
+                </ul>
               </li>
             </ul>
             
