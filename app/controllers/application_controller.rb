@@ -16,7 +16,24 @@ class ApplicationController < ActionController::Base
       session[:locale] = locale
       I18n.locale = locale
     end
-    redirect_back(fallback_location: root_path)
+    
+    # Редирект на предыдущую страницу, но без параметра locale в URL
+    # чтобы локаль бралась из сессии
+    fallback = root_path
+    referer = request.referer
+    
+    if referer.present?
+      uri = URI.parse(referer)
+      # Удаляем параметр locale из query string
+      if uri.query.present?
+        params_hash = Rack::Utils.parse_query(uri.query)
+        params_hash.delete('locale')
+        uri.query = params_hash.empty? ? nil : Rack::Utils.build_query(params_hash)
+      end
+      redirect_to uri.to_s, allow_other_host: false
+    else
+      redirect_to fallback
+    end
   end
 
   private

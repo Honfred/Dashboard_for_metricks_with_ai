@@ -72,7 +72,7 @@ export default class extends Controller {
               display: true,
               text: 'Значение'
             },
-            beginAtZero: true
+            beginAtZero: false
           }
         },
         plugins: {
@@ -81,7 +81,14 @@ export default class extends Controller {
             intersect: false
           },
           legend: {
-            position: 'top'
+            position: 'bottom',
+            labels: {
+              boxWidth: 12,
+              padding: 8,
+              font: {
+                size: 11
+              }
+            }
           }
         }
       }
@@ -307,7 +314,7 @@ export default class extends Controller {
                 display: true,
                 text: 'Значение'
               },
-              beginAtZero: true
+              beginAtZero: false
             }
           },
           plugins: {
@@ -316,7 +323,14 @@ export default class extends Controller {
               intersect: false
             },
             legend: {
-              position: 'top'
+              position: 'bottom',
+              labels: {
+                boxWidth: 12,
+                padding: 8,
+                font: {
+                  size: 11
+                }
+              }
             }
           }
         }
@@ -409,17 +423,27 @@ export default class extends Controller {
         return;
       }
       
-      // Определяем метку для набора данных
+      // Определяем метку для набора данных - используем только ключевые labels
       let datasetLabel = this.metricName || 'Метрика';
       if (metricItem.metric) {
-        const labels = [];
-        for (const key in metricItem.metric) {
-          if (key !== "__name__" && metricItem.metric[key]) {
-            labels.push(`${key}="${metricItem.metric[key]}"`);
+        // Приоритет labels для отображения
+        const priorityLabels = ['instance', 'job', 'database', 'mode'];
+        const labelParts = [];
+        
+        for (const key of priorityLabels) {
+          if (metricItem.metric[key]) {
+            // Сокращаем длинные значения
+            let value = metricItem.metric[key];
+            if (value.length > 20) {
+              value = value.substring(0, 20) + '...';
+            }
+            labelParts.push(value);
+            break; // Берём только первый найденный label
           }
         }
-        if (labels.length > 0) {
-          datasetLabel += ` {${labels.join(", ")}}`;
+        
+        if (labelParts.length > 0) {
+          datasetLabel = labelParts.join(' ');
         }
       }
       

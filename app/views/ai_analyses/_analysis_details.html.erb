@@ -182,7 +182,7 @@
     <div class="card-body">
       <div class="row">
         <div class="col-md-8">
-          <canvas id="trend-chart" width="800" height="250" style="border: 1px solid #ddd;"></canvas>
+          <canvas id="trend-chart" width="800" height="350" style="border: 1px solid #ddd;"></canvas>
           
           <script>
             // Простое создание графика трендов без Stimulus
@@ -215,15 +215,24 @@
                 return;
               }
               
-              // Получаем текущие и прогнозные данные
-              const currentData = chartData.current;
-              const predictionData = chartData.prediction;
+              // Цвета для серий
+              const colors = [
+                { border: 'rgba(75, 192, 192, 1)', bg: 'rgba(75, 192, 192, 0.2)' },
+                { border: 'rgba(255, 99, 132, 1)', bg: 'rgba(255, 99, 132, 0.2)' },
+                { border: 'rgba(54, 162, 235, 1)', bg: 'rgba(54, 162, 235, 0.2)' },
+                { border: 'rgba(255, 206, 86, 1)', bg: 'rgba(255, 206, 86, 0.2)' },
+                { border: 'rgba(153, 102, 255, 1)', bg: 'rgba(153, 102, 255, 0.2)' },
+                { border: 'rgba(255, 159, 64, 1)', bg: 'rgba(255, 159, 64, 0.2)' }
+              ];
               
-              if (!currentData || !predictionData) {
-                console.error('Missing current or prediction data');
-                canvas.style.border = '2px solid orange';
-                return;
-              }
+              const predictionColors = [
+                { border: 'rgba(75, 192, 192, 0.7)', bg: 'rgba(75, 192, 192, 0.1)' },
+                { border: 'rgba(255, 99, 132, 0.7)', bg: 'rgba(255, 99, 132, 0.1)' },
+                { border: 'rgba(54, 162, 235, 0.7)', bg: 'rgba(54, 162, 235, 0.1)' },
+                { border: 'rgba(255, 206, 86, 0.7)', bg: 'rgba(255, 206, 86, 0.1)' },
+                { border: 'rgba(153, 102, 255, 0.7)', bg: 'rgba(153, 102, 255, 0.1)' },
+                { border: 'rgba(255, 159, 64, 0.7)', bg: 'rgba(255, 159, 64, 0.1)' }
+              ];
               
               // Форматируем метки времени
               const formatTimestamp = (ts) => {
@@ -231,15 +240,105 @@
                 return date.toLocaleString('<%= I18n.locale %>', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
               };
               
-              const currentLabels = currentData.timestamps.map(formatTimestamp);
-              const predictionLabels = predictionData.timestamps.map(formatTimestamp);
+              let labels = [];
+              let datasets = [];
               
-              // Объединяем метки и данные
-              const labels = [...currentLabels, ...predictionLabels];
+              // Проверяем есть ли несколько серий
+              if (chartData.series && chartData.series.length > 0) {
+                console.log('Multiple series detected:', chartData.series.length);
+                
+                // Собираем все уникальные временные метки
+                const allTimestamps = new Set();
+                chartData.series.forEach(series => {
+                  (series.current_timestamps || []).forEach(ts => allTimestamps.add(ts));
+                  (series.prediction_timestamps || []).forEach(ts => allTimestamps.add(ts));
+                });
+                
+                const sortedTimestamps = Array.from(allTimestamps).sort((a, b) => a - b);
+                labels = sortedTimestamps.map(formatTimestamp);
+                
+                // Создаем датасеты для каждой серии
+                chartData.series.forEach((series, idx) => {
+                  const colorIdx = idx % colors.length;
+                  const label = series.label || `Series ${idx + 1}`;
+                  
+                  const currentTs = series.current_timestamps || [];
+                  const currentVals = series.current_values || [];
+                  const predTs = series.prediction_timestamps || [];
+                  const predVals = series.prediction_values || [];
+                  
+                  // Текущие данные
+                  const currentData = sortedTimestamps.map(ts => {
+                    const i = currentTs.indexOf(ts);
+                    return i >= 0 ? currentVals[i] : null;
+                  });
+                  
+                  // Прогноз
+                  const predictionData = sortedTimestamps.map(ts => {
+                    const i = predTs.indexOf(ts);
+                    return i >= 0 ? predVals[i] : null;
+                  });
+                  
+                  datasets.push({
+                    label: label,
+                    data: currentData,
+                    borderColor: colors[colorIdx].border,
+                    backgroundColor: colors[colorIdx].bg,
+                    tension: 0.1,
+                    pointRadius: 2
+                  });
+                  
+                  datasets.push({
+                    label: label + ' (<%= t('ai_analysis.chart.forecast') %>)',
+                    data: predictionData,
+                    borderColor: predictionColors[colorIdx].border,
+                    backgroundColor: predictionColors[colorIdx].bg,
+                    tension: 0.1,
+                    pointRadius: 2,
+                    borderDash: [5, 5]
+                  });
+                });
+                
+              } else {
+                // Старый формат - одна серия
+                const currentTimestamps = chartData.current_timestamps || [];
+                const currentValues = chartData.current_values || [];
+                const predictionTimestamps = chartData.prediction_timestamps || [];
+                const predictionValues = chartData.prediction_values || [];
+                
+                const currentLabels = currentTimestamps.map(formatTimestamp);
+                const predictionLabels = predictionTimestamps.map(formatTimestamp);
+                labels = [...currentLabels, ...predictionLabels];
+                
+                const currentDataset = [...currentValues, ...Array(predictionValues.length).fill(null)];
+                const predictionDataset = [...Array(currentValues.length).fill(null), ...predictionValues];
+                
+                datasets = [
+                  {
+                    label: '<%= t('ai_analysis.chart.current_values') %>',
+                    data: currentDataset,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1,
+                    pointRadius: 3
+                  },
+                  {
+                    label: '<%= t('ai_analysis.chart.forecast') %>',
+                    data: predictionDataset,
+                    borderColor: 'rgba(255, 205, 86, 1)',
+                    backgroundColor: 'rgba(255, 205, 86, 0.2)',
+                    tension: 0.1,
+                    pointRadius: 3,
+                    borderDash: [5, 5]
+                  }
+                ];
+              }
               
-              // Создаем массивы данных для графика
-              const currentValues = [...currentData.values, ...Array(predictionData.values.length).fill(null)];
-              const predictionValues = [...Array(currentData.values.length).fill(null), ...predictionData.values];
+              if (labels.length === 0) {
+                console.error('No timestamp data available');
+                canvas.style.border = '2px solid orange';
+                return;
+              }
               
               // Создаем график
               const ctx = canvas.getContext('2d');
@@ -249,25 +348,7 @@
                   type: 'line',
                   data: {
                     labels: labels,
-                    datasets: [
-                      {
-                        label: '<%= t('ai_analysis.chart.current_values') %>',
-                        data: currentValues,
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        tension: 0.1,
-                        pointRadius: 3
-                      },
-                      {
-                        label: '<%= t('ai_analysis.chart.forecast') %>',
-                        data: predictionValues,
-                        borderColor: 'rgba(255, 205, 86, 1)',
-                        backgroundColor: 'rgba(255, 205, 86, 0.2)',
-                        tension: 0.1,
-                        pointRadius: 3,
-                        borderDash: [5, 5]
-                      }
-                    ]
+                    datasets: datasets
                   },
                   options: {
                     responsive: true,
@@ -276,6 +357,10 @@
                       x: {
                         grid: {
                           display: false
+                        },
+                        ticks: {
+                          maxTicksAuto: 10,
+                          maxRotation: 45
                         }
                       }
                     },
@@ -285,7 +370,12 @@
                         intersect: false
                       },
                       legend: {
-                        position: 'top',
+                        position: 'bottom',
+                        labels: {
+                          boxWidth: 12,
+                          padding: 8,
+                          font: { size: 10 }
+                        }
                       },
                       title: {
                         display: true,
@@ -385,34 +475,103 @@
       <h5 class="mb-0"><%= t('ai_analysis.models.performance_insight.title') %></h5>
     </div>
     <div class="card-body">
+      <% chart_data = @analysis_data&.dig("chart_data") || {} %>
+      <% feature_importance = chart_data["feature_importance"] || @analysis_data&.dig("feature_importance") %>
+      <% predictions = chart_data["predictions"] || @analysis_data&.dig("predictions") %>
+      <% current_values = chart_data["current_values"] || [] %>
+      <% current_timestamps = chart_data["current_timestamps"] || [] %>
+      
       <div class="row">
         <div class="col-md-8">
-          <!-- Добавляем круговую диаграмму для факторов влияния -->
+          <!-- График текущих значений метрики -->
+          <% if current_values.any? %>
+          <div class="card mb-3">
+            <div class="card-header bg-light">
+              <h6 class="mb-0"><%= t('ai_analysis.current_metric_values') %></h6>
+            </div>
+            <div class="card-body">
+              <canvas id="performance-current-chart" height="200"></canvas>
+              <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                  const ctx = document.getElementById('performance-current-chart');
+                  if (ctx) {
+                    new Chart(ctx, {
+                      type: 'line',
+                      data: {
+                        labels: <%= current_timestamps.map { |ts| Time.at(ts).strftime('%H:%M') }.to_json.html_safe %>,
+                        datasets: [{
+                          label: '<%= t("ai_analysis.value") %>',
+                          data: <%= current_values.to_json %>,
+                          borderColor: 'rgb(54, 162, 235)',
+                          backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                          fill: true,
+                          tension: 0.3
+                        }]
+                      },
+                      options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                      }
+                    });
+                  }
+                });
+              </script>
+            </div>
+          </div>
+          <% end %>
+          
+          <!-- Круговая диаграмма для факторов влияния -->
           <div class="card mb-3">
             <div class="card-header bg-light">
               <h6 class="mb-0"><%= t('ai_analysis.performance_factors') %></h6>
             </div>
             <div class="card-body">
-              <% if @analysis_data && @analysis_data["feature_importance"] %>
-                <canvas id="feature-importance-chart" height="250" data-controller="feature-chart" 
-                        data-feature-chart-data-value="<%= @analysis_data["feature_importance"].to_json %>"></canvas>
+              <% if feature_importance.present? %>
+                <canvas id="feature-importance-chart" height="250"></canvas>
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    const ctx = document.getElementById('feature-importance-chart');
+                    if (ctx) {
+                      const data = <%= feature_importance.to_json.html_safe %>;
+                      const labels = Object.keys(data).map(k => {
+                        const translations = {
+                          'current_value': '<%= t("ai_analysis.factors.current_value") %>',
+                          'moving_average': '<%= t("ai_analysis.factors.moving_average") %>',
+                          'max_in_window': '<%= t("ai_analysis.factors.max_in_window") %>'
+                        };
+                        return translations[k] || k;
+                      });
+                      const values = Object.values(data).map(v => (v * 100).toFixed(1));
+                      
+                      new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                          labels: labels,
+                          datasets: [{
+                            data: values,
+                            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
+                          }]
+                        },
+                        options: {
+                          responsive: true,
+                          plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                              callbacks: {
+                                label: function(context) {
+                                  return context.label + ': ' + context.raw + '%';
+                                }
+                              }
+                            }
+                          }
+                        }
+                      });
+                    }
+                  });
+                </script>
               <% else %>
                 <div class="alert alert-warning"><%= t('ai_analysis.factors_unavailable') %></div>
-              <% end %>
-            </div>
-          </div>
-          
-          <!-- Добавляем график предсказанных значений -->
-          <div class="card">
-            <div class="card-header bg-light">
-              <h6 class="mb-0"><%= t('ai_analysis.predicted_values') %></h6>
-            </div>
-            <div class="card-body">
-              <% if @analysis_data && @analysis_data["predictions"] %>
-                <canvas id="predictions-chart" height="200" data-controller="predictions-chart" 
-                        data-predictions-chart-data-value="<%= @analysis_data["predictions"].to_json %>"></canvas>
-              <% else %>
-                <div class="alert alert-warning"><%= t('ai_analysis.predictions_unavailable') %></div>
               <% end %>
             </div>
           </div>

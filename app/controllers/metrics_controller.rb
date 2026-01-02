@@ -31,11 +31,7 @@ class MetricsController < ApplicationController
   def create
     @metric = Metric.new(metric_params)
 
-    # Добавляем пример данных для тестирования
     if @metric.save
-      # Временное создание демо-данных в Prometheus (в реальной системе этого не нужно)
-      create_demo_metrics(@metric.name, @metric.metric_type)
-      
       redirect_to @metric, notice: "Метрика успешно создана."
     else
       render :new
@@ -115,31 +111,21 @@ class MetricsController < ApplicationController
     params.require(:metric).permit(:name, :description, :metric_type)
   end
 
-  # Метод для получения данных метрики (реальных или демонстрационных)
+  # Метод для получения данных метрики из Prometheus
   def get_metric_data(metric_name, time_range)
-    # Пытаемся получить данные из Prometheus
+    # Получаем данные из Prometheus
     data = Metric.fetch_from_prometheus(metric_name, time_range)
     
-    # Проверяем, есть ли данные
     if data.blank? || !data.is_a?(Array) || data.empty? || (data.first && data.first[:values].blank?)
-      Rails.logger.warn("MetricsController#get_metric_data - Данные метрики отсутствуют или пусты, генерируем демо-данные для #{metric_name}")
-      # Генерируем демо-данные, если нет реальных
-      data = Demo::MetricsData.generate(metric_name, time_range)
-      Rails.logger.info("MetricsController#get_metric_data - Сгенерированы демо-данные: #{data.inspect.truncate(100)}")
-    else
-      Rails.logger.info("MetricsController#get_metric_data - Получены реальные данные от Prometheus")
+      Rails.logger.warn("MetricsController#get_metric_data - Данные метрики отсутствуют для #{metric_name}")
+      return []
     end
     
+    Rails.logger.info("MetricsController#get_metric_data - Получены данные от Prometheus")
     data
   end
 
-  # Метод для создания демонстрационных метрик
-  def create_demo_metrics(metric_name, metric_type)
-    # Эта функция в реальности бы добавляла данные в Prometheus
-    # Но так как мы просто демонстрируем интерфейс, мы "притворяемся", что метрики добавлены
-    Rails.logger.info "Демонстрационные метрики для #{metric_name} (#{metric_type}) добавлены в Prometheus"
-    # В реальной системе здесь был бы код для регистрации в Prometheus
-  end
+
 
   # Собираем метрики приложения для Prometheus
   def collect_application_metrics
@@ -164,17 +150,6 @@ class MetricsController < ApplicationController
         type: 'gauge',
         help: 'Number of active database connections',
         value: rand(1..10)
-      },
-      # Демо-метрики для примера
-      'demo_cpu_usage_percent' => {
-        type: 'gauge',
-        help: 'Demo CPU usage percentage',
-        value: rand(10..90)
-      },
-      'demo_api_requests_total' => {
-        type: 'counter',
-        help: 'Demo total API requests',
-        value: rand(100..2000)
       }
     }
   end

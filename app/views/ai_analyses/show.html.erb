@@ -37,7 +37,7 @@
               <%= link_to t('ai_analysis.try_again'), new_metric_ai_analysis_path(@metric, type: @ai_analysis.analysis_type), class: 'btn btn-primary' %>
             </div>
           <% else %>
-            <div class="text-center py-5" data-ai-analysis-target="refreshable">
+            <div class="text-center py-5" data-ai-analysis-target="refreshable" data-refresh-status="true">
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden"><%= t('common.loading') %></span>
               </div>
@@ -161,9 +161,11 @@
   <% end %>
 </div>
 
-<% content_for :head do %>
-  <script type="module">
-    import { initializeAiAnalysisPoller } from '/assets/ai_analysis_poller.js';
-    document.addEventListener('DOMContentLoaded', initializeAiAnalysisPoller);
+<% unless @ai_analysis.completed? || @ai_analysis.failed? %>
+  <script>
+    // Автоматическое обновление страницы пока анализ выполняется
+    setTimeout(function() {
+      window.location.reload();
+    }, 5000);
   </script>
 <% end %>
