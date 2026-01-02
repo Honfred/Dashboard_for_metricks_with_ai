@@ -127,18 +127,25 @@ export function updateAlerts(alerts) {
   alertsList.innerHTML = '';
   
   if (alerts.length === 0) {
-    alertsList.innerHTML = '<p>Нет активных оповещений</p>';
+    const t = window.dashboardTranslations?.alertsWidget || {};
+    alertsList.innerHTML = `<p>${t.noActiveAlerts || 'Нет активных оповещений'}</p>`;
     return;
   }
+  
+  const t = window.dashboardTranslations?.alertsWidget || {};
+  const metricLabel = t.metricLabel || 'Метрика';
+  const valueLabel = t.valueLabel || 'Значение';
+  const thresholdLabel = t.thresholdLabel || 'порог';
+  const timeLabel = t.timeLabel || 'Время';
   
   alerts.forEach(alert => {
     const alertEl = document.createElement('div');
     alertEl.className = `alert alert-${alert.severity}`;
     alertEl.innerHTML = `
       <h3>${alert.service}</h3>
-      <p>Метрика: ${alert.metric}</p>
-      <p>Значение: ${alert.value} (порог: ${alert.threshold})</p>
-      <p>Время: ${new Date(alert.timestamp).toLocaleString()}</p>
+      <p>${metricLabel}: ${alert.metric}</p>
+      <p>${valueLabel}: ${alert.value} (${thresholdLabel}: ${alert.threshold})</p>
+      <p>${timeLabel}: ${new Date(alert.timestamp).toLocaleString()}</p>
     `;
     alertsList.appendChild(alertEl);
   });

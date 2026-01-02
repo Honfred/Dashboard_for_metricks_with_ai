@@ -3,8 +3,11 @@ class AnalysisJob < ApplicationJob
   queue_as :ml
   retry_on StandardError, wait: 5.seconds, attempts: 3, queue: :ml
 
-  def perform(ai_analysis_id)
-    Rails.logger.info("AnalysisJob: Starting analysis for ID: #{ai_analysis_id}")
+  def perform(ai_analysis_id, locale = 'en')
+    # Устанавливаем локаль для переводов в job
+    I18n.locale = locale.to_sym
+    
+    Rails.logger.info("AnalysisJob: Starting analysis for ID: #{ai_analysis_id} with locale: #{locale}")
     
     ai_analysis = AiAnalysis.find_by(id: ai_analysis_id)
     unless ai_analysis
@@ -29,22 +32,35 @@ class AnalysisJob < ApplicationJob
       when 'anomaly_detection'
         fetch_metric_data(metric, 1.week.ago, Time.now)
       when 'trend_prediction'
-        fetch_metric_data(metric, 1.month.ago, Time.now)
+        # Для тренда получаем все серии
+        { all_series: fetch_all_metric_series(metric, 1.day.ago, Time.now, step: '5m') }
       when 'performance_insight'
-        fetch_performance_data(metric, 1.month.ago, Time.now)
+        fetch_performance_data(metric, 1.day.ago, Time.now, step: '5m')
     end
 
-    if data[:values].blank?
+    # Проверка данных
+    if ai_analysis.analysis_type == 'trend_prediction'
+      if data[:all_series].blank?
+        Rails.logger.error("AnalysisJob: No series found for metric #{metric.name}")
+        ai_analysis.update(
+          status: 'failed',
+          results: { "status" => "error", "message" => I18n.t('ai_analysis.report.errors.no_data') },
+          completed_at: Time.current
+        )
+        return
+      end
+      Rails.logger.info("AnalysisJob: Got #{data[:all_series].size} series for trend analysis")
+    elsif data[:values].blank?
       Rails.logger.error("AnalysisJob: No data found for metric #{metric.name}")
       ai_analysis.update(
         status: 'failed',
-        results: { "status" => "error", "message" => "Нет данных для анализа метрики" },
+        results: { "status" => "error", "message" => I18n.t('ai_analysis.report.errors.no_data') },
         completed_at: Time.current
       )
       return
+    else
+      Rails.logger.info("AnalysisJob: Got #{data[:values].size} data points for analysis")
     end
-    
-    Rails.logger.info("AnalysisJob: Got #{data[:values].size} data points for analysis")
 
     begin
       # Получаем результаты анализа используя соответствующую обученную модель
@@ -81,7 +97,7 @@ class AnalysisJob < ApplicationJob
       Rails.logger.error(e.backtrace.join("\n"))
       ai_analysis.update(
         status: 'failed',
-        results: { "status" => "error", "message" => "Ошибка в процессе анализа: #{e.message}" },
+        results: { "status" => "error", "message" => I18n.t('ai_analysis.report.errors.analysis_error') + ": #{e.message}" },
         completed_at: Time.current
       )
     end
@@ -93,83 +109,131 @@ class AnalysisJob < ApplicationJob
 
   # Обнаружение аномалий
   def detect_anomalies(metric_name, data)
-    MlService.detect_anomalies(metric_name, data[:values], data[:timestamps])
-  end
-
-  # Прогнозирование трендов
-  def predict_trend(metric_name, data)
-    result = MlService.predict_trend(metric_name, 24) # Прогноз на 24 часа вперед
+    result = MlService.detect_anomalies(metric_name, data[:values], data[:timestamps])
     
-    # Добавляем текущие данные для отображения графика
+    # Добавляем исходные данные для построения графика
     if result["status"] == "success"
-      result["current_data"] = {
-        timestamps: data[:timestamps],
-        values: data[:values]
-      }
+      result["timestamps"] = data[:timestamps]
+      result["values"] = data[:values]
     end
     
     result
   end
 
-  # Анализ производительности
-  def analyze_performance(metric_name, data)
-    # Собираем признаки в зависимости от типа метрики
-    features = case metric_name
-      when "cpu_usage"
-        # Признаки: память и количество запросов
-        prepare_cpu_features(data)
-      when "memory_usage_bytes"
-        # Признаки: активные пользователи и запросы
-        prepare_memory_features(data)
-      when "http_request_duration_seconds"
-        # Признаки: CPU, память и запросы
-        prepare_http_features(data)
-      else
-        []
+  # Прогнозирование трендов для всех серий
+  def predict_trend(metric_name, data)
+    all_series = data[:all_series]
+    
+    series_results = []
+    
+    all_series.each do |series|
+      next if series[:values].blank? || series[:values].size < 2
+      
+      # Получаем прогноз для каждой серии
+      result = MlService.predict_trend(
+        metric_name, 
+        24,  # Прогноз на 24 часа вперед
+        values: series[:values],
+        timestamps: series[:timestamps]
+      )
+      
+      if result["status"] == "success"
+        series_results << {
+          label: series[:label],
+          labels: series[:labels],
+          current_data: {
+            timestamps: series[:timestamps],
+            values: series[:values]
+          },
+          prediction: result["prediction"]
+        }
+      end
     end
     
-    return { "status" => "error", "message" => "Недостаточно данных для анализа" } if features.blank?
+    if series_results.empty?
+      return { "status" => "error", "message" => I18n.t('ai_analysis.report.errors.no_data') }
+    end
     
-    MlService.analyze_performance(metric_name, features)
+    {
+      "status" => "success",
+      "series" => series_results
+    }
   end
 
-  # Методы для подготовки признаков для разных метрик
-  def prepare_cpu_features(data)
-    # В реальном приложении здесь будет логика сбора данных о памяти и запросах
-    # Упрощенный пример:
-    memory_data = fetch_related_metric_data("memory_usage_bytes", data[:start_time], data[:end_time])
-    requests_data = fetch_related_metric_data("http_requests_total", data[:start_time], data[:end_time])
+  # Анализ производительности
+  def analyze_performance(metric_name, data)
+    # Для анализа производительности используем текущие данные метрики как признаки
+    # Это упрощённый подход - в реальном приложении можно собирать связанные метрики
     
-    # Формируем пары признаков: [память, запросы]
-    memory_data.zip(requests_data).map { |memory, requests| [memory, requests] }
+    return { "status" => "error", "message" => I18n.t('ai_analysis.report.errors.insufficient_data') } if data[:values].blank? || data[:values].size < 3
+    
+    # Формируем признаки из самих данных метрики
+    # Используем скользящее окно для создания признаков
+    values = data[:values]
+    features = []
+    
+    # Создаём признаки: [текущее значение, среднее за последние 3 точки, макс за последние 3 точки]
+    (2...values.size).each do |i|
+      window = values[(i-2)..i]
+      features << [
+        values[i],
+        window.sum / window.size.to_f,
+        window.max
+      ]
+    end
+    
+    return { "status" => "error", "message" => I18n.t('ai_analysis.report.errors.insufficient_data') } if features.blank?
+    
+    # Для ML-анализа нам нужна обученная модель, но пока сделаем простой статистический анализ
+    result = perform_simple_performance_analysis(metric_name, data)
+    result
   end
-
-  def prepare_memory_features(data)
-    # Упрощенный пример:
-    users_data = fetch_related_metric_data("active_users", data[:start_time], data[:end_time])
-    requests_data = fetch_related_metric_data("http_requests_total", data[:start_time], data[:end_time])
+  
+  # Простой статистический анализ производительности
+  def perform_simple_performance_analysis(metric_name, data)
+    values = data[:values]
+    timestamps = data[:timestamps]
     
-    # Формируем пары признаков: [пользователи, запросы]
-    users_data.zip(requests_data).map { |users, requests| [users, requests] }
-  end
-
-  def prepare_http_features(data)
-    # Упрощенный пример:
-    cpu_data = fetch_related_metric_data("cpu_usage", data[:start_time], data[:end_time])
-    memory_data = fetch_related_metric_data("memory_usage_bytes", data[:start_time], data[:end_time])
-    requests_data = fetch_related_metric_data("http_requests_total", data[:start_time], data[:end_time])
+    mean_val = values.sum / values.size.to_f
+    std_val = Math.sqrt(values.map { |v| (v - mean_val) ** 2 }.sum / values.size)
+    min_val = values.min
+    max_val = values.max
     
-    # Формируем тройки признаков: [cpu, память, запросы]
-    cpu_data.zip(memory_data, requests_data).map { |cpu, memory, requests| [cpu, memory, requests] }
-  end
-
-  # Вспомогательный метод для получения данных связанных метрик
-  def fetch_related_metric_data(metric_name, start_time, end_time)
-    related_metric = Metric.find_by(name: metric_name)
-    return [] unless related_metric
+    # Определяем тренд
+    first_half_avg = values[0...(values.size/2)].sum / (values.size/2).to_f
+    second_half_avg = values[(values.size/2)..].sum / (values.size - values.size/2).to_f
+    trend = second_half_avg > first_half_avg ? "increasing" : (second_half_avg < first_half_avg ? "decreasing" : "stable")
     
-    data = fetch_metric_data(related_metric, start_time, end_time)
-    data[:values] || []
+    # Находим выбросы (значения > 2 стандартных отклонения)
+    threshold = mean_val + 2 * std_val
+    outliers = []
+    values.each_with_index do |v, i|
+      if v > threshold
+        outliers << { timestamp: timestamps[i], value: v, deviation: ((v - mean_val) / std_val).round(2) }
+      end
+    end
+    
+    {
+      "status" => "success",
+      "statistics" => {
+        "mean" => mean_val.round(4),
+        "std" => std_val.round(4),
+        "min" => min_val.round(4),
+        "max" => max_val.round(4),
+        "trend" => trend
+      },
+      "outliers" => outliers.first(10), # Максимум 10 выбросов
+      "predictions" => [mean_val.round(4)], # Простой прогноз на основе среднего
+      "feature_importance" => {
+        "current_value" => 0.5,
+        "moving_average" => 0.3,
+        "max_in_window" => 0.2
+      },
+      "current_data" => {
+        "timestamps" => timestamps,
+        "values" => values
+      }
+    }
   end
 
   # Генерация отчета по анализу
@@ -177,7 +241,8 @@ class AnalysisJob < ApplicationJob
     report = {
       insights: [],
       statistics: {},
-      events: []
+      events: [],
+      chart_data: {}
     }
     
     case ai_analysis.analysis_type
@@ -201,9 +266,9 @@ class AnalysisJob < ApplicationJob
     
     # Статистика
     report[:statistics] = {
-      "Всего точек данных" => total_points,
-      "Обнаружено аномалий" => anomalies_count,
-      "Процент аномалий" => "#{anomaly_rate}%"
+      I18n.t('ai_analysis.report.statistics.total_data_points') => total_points,
+      I18n.t('ai_analysis.report.statistics.anomalies_detected') => anomalies_count,
+      I18n.t('ai_analysis.report.statistics.anomaly_percentage') => "#{anomaly_rate}%"
     }
     
     # Выводы ИИ
@@ -215,8 +280,8 @@ class AnalysisJob < ApplicationJob
       end
       
       report[:insights] << {
-        "title" => "Обнаружены аномалии в метрике #{metric.name}",
-        "description" => "Обнаружено #{anomalies_count} аномальных значений (#{anomaly_rate}% от всех данных)",
+        "title" => I18n.t('ai_analysis.report.insights.anomalies_found', metric: metric.name),
+        "description" => I18n.t('ai_analysis.report.insights.anomalies_description', count: anomalies_count, rate: anomaly_rate),
         "severity" => severity,
         "recommendation" => generate_recommendation_for_metric(metric, severity)
       }
@@ -226,17 +291,17 @@ class AnalysisJob < ApplicationJob
         time_patterns = detect_time_patterns(result["anomalies"])
         if time_patterns
           report[:insights] << {
-            "title" => "Обнаружен временной паттерн аномалий",
+            "title" => I18n.t('ai_analysis.report.insights.time_pattern'),
             "description" => "#{time_patterns}",
             "severity" => "medium",
-            "recommendation" => "Проверьте активность системы в указанные периоды времени"
+            "recommendation" => I18n.t('ai_analysis.report.insights.time_pattern_recommendation')
           }
         end
       end
     else
       report[:insights] << {
-        "title" => "Аномалий не обнаружено",
-        "description" => "Метрика #{metric.name} работает в нормальном режиме",
+        "title" => I18n.t('ai_analysis.report.insights.no_anomalies'),
+        "description" => I18n.t('ai_analysis.report.insights.metric_normal', metric: metric.name),
         "severity" => "low"
       }
     end
@@ -248,145 +313,197 @@ class AnalysisJob < ApplicationJob
         "type" => "anomaly",
         "value" => anomaly["value"].is_a?(Array) ? anomaly["value"].first : anomaly["value"],
         "deviation" => ((anomaly["score"].abs) * 100).round(2),
-        "description" => "Аномальное значение метрики #{metric.name}"
+        "description" => I18n.t('ai_analysis.report.events.anomaly_value', metric: metric.name)
       }
     end
+    
+    # Данные для графика
+    report[:chart_data] = {
+      "timestamps" => result["timestamps"] || [],
+      "values" => result["values"] || [],
+      "anomalies" => result["anomalies"].map { |a| 
+        { 
+          "timestamp" => a["timestamp"], 
+          "value" => a["value"].is_a?(Array) ? a["value"].first : a["value"] 
+        } 
+      }
+    }
   end
 
   # Генерация отчета для трендов
   def generate_trend_report(report, result, metric)
-    predictions = result["prediction"] || []
-    current_data = result["current_data"] || {}
-    current_values = current_data[:values] || []
+    series_data = result["series"] || []
     
-    # Статистика
-    last_value = current_values.last
-    predicted_values = predictions.map { |p| p["value"] }
-    average_prediction = predicted_values.sum / predicted_values.size rescue 0
-    trend_percentage = last_value && last_value != 0 ? ((average_prediction - last_value) / last_value * 100).round(2) : 0
+    # Если нет серий, используем старый формат (обратная совместимость)
+    if series_data.empty? && result["prediction"]
+      series_data = [{
+        label: metric.name,
+        current_data: result["current_data"] || {},
+        prediction: result["prediction"] || []
+      }]
+    end
     
+    # Подготавливаем данные для каждой серии
+    all_series_chart_data = []
+    total_trend_percentage = 0
+    
+    series_data.each do |series|
+      current_data = series[:current_data] || series["current_data"] || {}
+      predictions = series[:prediction] || series["prediction"] || []
+      current_values = current_data[:values] || current_data["values"] || []
+      current_timestamps = current_data[:timestamps] || current_data["timestamps"] || []
+      label = series[:label] || series["label"] || "unknown"
+      
+      next if current_values.empty? || predictions.empty?
+      
+      last_value = current_values.last
+      predicted_values = predictions.map { |p| p["value"] || p[:value] }
+      average_prediction = predicted_values.sum / predicted_values.size rescue 0
+      trend_percentage = last_value && last_value != 0 ? ((average_prediction - last_value) / last_value * 100).round(2) : 0
+      
+      total_trend_percentage += trend_percentage
+      
+      all_series_chart_data << {
+        "label" => label,
+        "current_timestamps" => current_timestamps,
+        "current_values" => current_values,
+        "prediction_timestamps" => predictions.map { |p| p["timestamp"] || p[:timestamp] },
+        "prediction_values" => predicted_values,
+        "trend_percentage" => trend_percentage
+      }
+    end
+    
+    avg_trend_percentage = all_series_chart_data.empty? ? 0 : (total_trend_percentage / all_series_chart_data.size).round(2)
+    
+    # Статистика (усреднённая по всем сериям)
     report[:statistics] = {
-      "Текущее значение" => last_value&.round(2) || "Н/Д",
-      "Среднее прогнозируемое значение" => average_prediction.round(2),
-      "Изменение" => "#{trend_percentage > 0 ? '+' : ''}#{trend_percentage}%"
+      I18n.t('ai_analysis.report.statistics.series_count') => all_series_chart_data.size,
+      I18n.t('ai_analysis.report.statistics.average_change') => "#{avg_trend_percentage > 0 ? '+' : ''}#{avg_trend_percentage}%"
     }
     
     # Выводы ИИ
     trend_direction = case
-      when trend_percentage >= 10 then "значительный рост"
-      when trend_percentage > 0 then "умеренный рост"
-      when trend_percentage == 0 then "стабильность"
-      when trend_percentage >= -10 then "умеренное снижение"
-      else "значительное снижение"
+      when avg_trend_percentage >= 10 then I18n.t('ai_analysis.report.trend_directions.significant_growth')
+      when avg_trend_percentage > 0 then I18n.t('ai_analysis.report.trend_directions.moderate_growth')
+      when avg_trend_percentage == 0 then I18n.t('ai_analysis.report.trend_directions.stable')
+      when avg_trend_percentage >= -10 then I18n.t('ai_analysis.report.trend_directions.moderate_decline')
+      else I18n.t('ai_analysis.report.trend_directions.significant_decline')
     end
     
     severity = case
-      when trend_percentage.abs >= 20 then "high"
-      when trend_percentage.abs >= 5 then "medium"
+      when avg_trend_percentage.abs >= 20 then "high"
+      when avg_trend_percentage.abs >= 5 then "medium"
       else "low"
     end
     
     report[:insights] << {
-      "title" => "Прогноз для метрики #{metric.name} показывает #{trend_direction}",
-      "description" => "Ожидается изменение на #{trend_percentage}% в течение следующих 24 часов",
+      "title" => I18n.t('ai_analysis.report.insights.trend_forecast', metric: metric.name, direction: trend_direction),
+      "description" => I18n.t('ai_analysis.report.insights.trend_description', percentage: avg_trend_percentage),
       "severity" => severity,
-      "recommendation" => trend_percentage >= 20 ? "Рекомендуется увеличить ресурсы системы для обеспечения стабильной работы" : nil
+      "recommendation" => avg_trend_percentage >= 20 ? I18n.t('ai_analysis.report.insights.increase_resources') : nil
     }
     
-    # Определяем волатильность тренда
-    volatility = calculate_volatility(predicted_values)
-    if volatility > 0.2
-      report[:insights] << {
-        "title" => "Высокая волатильность прогноза",
-        "description" => "Метрика #{metric.name} может демонстрировать нестабильное поведение в будущем",
-        "severity" => "medium",
-        "recommendation" => "Рекомендуется более частый мониторинг данной метрики"
-      }
-    end
+    # Данные для графика - все серии
+    report[:chart_data] = {
+      "series" => all_series_chart_data
+    }
     
-    # События (прогнозы)
-    predictions.each_with_index do |pred, i|
-      next if i % 4 != 0  # Берем каждую 4-ую точку для уменьшения количества событий
-      
-      deviation = last_value && last_value != 0 ? ((pred["value"] - last_value) / last_value * 100).round(2) : 0
-      
-      report[:events] << {
-        "timestamp" => pred["timestamp"],
-        "type" => "prediction",
-        "value" => pred["value"].round(2),
-        "deviation" => deviation,
-        "description" => "Прогноз метрики #{metric.name}"
-      }
+    # Для обратной совместимости добавляем первую серию в старом формате
+    if all_series_chart_data.any?
+      first_series = all_series_chart_data.first
+      report[:chart_data]["current_timestamps"] = first_series["current_timestamps"]
+      report[:chart_data]["current_values"] = first_series["current_values"]
+      report[:chart_data]["prediction_timestamps"] = first_series["prediction_timestamps"]
+      report[:chart_data]["prediction_values"] = first_series["prediction_values"]
     end
   end
 
   # Генерация отчета для производительности
   def generate_performance_report(report, result, metric)
-    predictions = result["predictions"] || []
+    statistics = result["statistics"] || {}
+    outliers = result["outliers"] || []
     feature_importance = result["feature_importance"] || {}
-    
-    # Находим минимальное и максимальное значения
-    min_value = predictions.min rescue 0
-    max_value = predictions.max rescue 0
-    avg_value = predictions.sum / predictions.size rescue 0
+    current_data = result["current_data"] || {}
     
     # Статистика
     report[:statistics] = {
-      "Минимальное значение" => min_value.round(2),
-      "Максимальное значение" => max_value.round(2),
-      "Среднее значение" => avg_value.round(2)
+      I18n.t('ai_analysis.report.statistics.mean_value') => statistics["mean"]&.round(4) || 0,
+      I18n.t('ai_analysis.report.statistics.std_deviation') => statistics["std"]&.round(4) || 0,
+      I18n.t('ai_analysis.report.statistics.min_value') => statistics["min"]&.round(4) || 0,
+      I18n.t('ai_analysis.report.statistics.max_value') => statistics["max"]&.round(4) || 0,
+      I18n.t('ai_analysis.report.statistics.trend') => statistics["trend"] || "unknown"
     }
     
-    # Выводы ИИ - определяем, какие факторы наиболее важны
-    important_factors = []
-    feature_importance.sort_by { |_, v| -v }.each do |factor, importance|
-      factor_index = factor.to_i
-      factor_name = case metric.name
-        when "cpu_usage" 
-          factor_index == 0 ? "Память" : "Количество запросов"
-        when "memory_usage_bytes"
-          factor_index == 0 ? "Активные пользователи" : "Количество запросов"
-        when "http_request_duration_seconds"
-          case factor_index
-          when 0 then "CPU"
-          when 1 then "Память"
-          when 2 then "Количество запросов"
-          end
-      end
-      
-      important_factors << "#{factor_name} (#{(importance * 100).round(2)}%)"
+    # Определяем уровень важности на основе тренда и выбросов
+    trend = statistics["trend"]
+    severity = if trend == "increasing" && outliers.size > 3
+      "high"
+    elsif trend == "increasing" || outliers.size > 0
+      "medium"
+    else
+      "low"
+    end
+    
+    # Основной вывод
+    trend_text = case trend
+      when "increasing" then I18n.t('ai_analysis.report.trends.increasing')
+      when "decreasing" then I18n.t('ai_analysis.report.trends.decreasing')
+      else I18n.t('ai_analysis.report.trends.stable')
     end
     
     report[:insights] << {
-      "title" => "Анализ производительности для #{metric.name}",
-      "description" => "Основные факторы, влияющие на метрику: #{important_factors.join(', ')}",
-      "severity" => "medium",
-      "recommendation" => generate_performance_recommendation(metric.name, feature_importance)
+      "title" => I18n.t('ai_analysis.report.insights.performance_title', metric: metric.name),
+      "description" => I18n.t('ai_analysis.report.insights.performance_trend_description', trend: trend_text, mean: statistics["mean"]&.round(4)),
+      "severity" => severity,
+      "recommendation" => generate_performance_recommendation_by_trend(trend, outliers.size)
     }
     
-    # При большом разбросе значений, добавляем дополнительное наблюдение
-    range = max_value - min_value
-    if range > (avg_value * 0.5)
+    # Если есть выбросы, добавляем информацию о них
+    if outliers.any?
       report[:insights] << {
-        "title" => "Обнаружен большой разброс значений",
-        "description" => "Разница между минимальным и максимальным значением составляет #{((range / avg_value) * 100).round(2)}% от среднего",
-        "severity" => "medium",
-        "recommendation" => "Рекомендуется оптимизировать систему для более стабильной производительности"
+        "title" => I18n.t('ai_analysis.report.insights.outliers_detected', count: outliers.size),
+        "description" => I18n.t('ai_analysis.report.insights.outliers_description', max_deviation: outliers.map { |o| o["deviation"] || 0 }.max.round(2)),
+        "severity" => outliers.size > 5 ? "high" : "medium",
+        "recommendation" => I18n.t('ai_analysis.report.insights.investigate_outliers')
       }
     end
     
-    # События - добавляем виртуальные события для критических значений производительности
-    if predictions.any?
-      threshold = avg_value * 1.5
-      high_values = predictions.select { |p| p > threshold }
-      if high_values.any?
-        report[:events] << {
-          "timestamp" => Time.now.to_i,
-          "type" => "insight",
-          "value" => high_values.max.round(2),
-          "deviation" => ((high_values.max / avg_value - 1) * 100).round(2),
-          "description" => "Обнаружены потенциально критические значения метрики #{metric.name}"
-        }
+    # События - добавляем выбросы как события
+    outliers.first(10).each do |outlier|
+      report[:events] << {
+        "timestamp" => outlier["timestamp"],
+        "type" => "outlier",
+        "value" => outlier["value"]&.round(4),
+        "deviation" => outlier["deviation"],
+        "description" => I18n.t('ai_analysis.report.events.outlier_detected', metric: metric.name)
+      }
+    end
+    
+    # Данные для графика
+    report[:chart_data] = {
+      "current_timestamps" => current_data["timestamps"] || [],
+      "current_values" => current_data["values"] || [],
+      "outlier_timestamps" => outliers.map { |o| o["timestamp"] },
+      "outlier_values" => outliers.map { |o| o["value"] },
+      "feature_importance" => feature_importance
+    }
+  end
+  
+  def generate_performance_recommendation_by_trend(trend, outliers_count)
+    case trend
+    when "increasing"
+      if outliers_count > 3
+        I18n.t('ai_analysis.report.recommendations.urgent_optimization')
+      else
+        I18n.t('ai_analysis.report.recommendations.monitor_growth')
+      end
+    when "decreasing"
+      I18n.t('ai_analysis.report.recommendations.good_performance')
+    else
+      if outliers_count > 0
+        I18n.t('ai_analysis.report.recommendations.investigate_spikes')
+      else
+        I18n.t('ai_analysis.report.recommendations.stable_performance')
       end
     end
   end
@@ -404,17 +521,17 @@ class AnalysisJob < ApplicationJob
     if max_hour_count >= anomalies.size * 0.5
       peak_hours = hour_counts.select { |_, count| count >= max_hour_count * 0.7 }
                             .keys.sort.map { |h| "#{h}:00" }
-      return "Большинство аномалий происходит в следующие часы: #{peak_hours.join(', ')}"
+      return I18n.t('ai_analysis.report.insights.peak_hours', hours: peak_hours.join(', '))
     end
     
     # Проверка на день недели
     day_counts = times.group_by { |t| t.wday }.transform_values(&:size)
     max_day_count = day_counts.values.max
     if max_day_count >= anomalies.size * 0.5
-      days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+      days = I18n.t('ai_analysis.report.days').split(',')
       peak_days = day_counts.select { |_, count| count >= max_day_count * 0.7 }
                           .keys.sort.map { |d| days[d] }
-      return "Большинство аномалий происходит в следующие дни: #{peak_days.join(', ')}"
+      return I18n.t('ai_analysis.report.insights.peak_days', days: peak_days.join(', '))
     end
     
     nil
@@ -432,32 +549,32 @@ class AnalysisJob < ApplicationJob
     when "cpu_usage"
       case severity
       when "high"
-        "Рекомендуется проверить процессы, потребляющие наибольшее количество CPU, и рассмотреть возможность масштабирования системы"
+        I18n.t('ai_analysis.report.recommendations.cpu_high')
       when "medium"
-        "Следите за тенденцией потребления CPU, возможно потребуется оптимизация процессов"
+        I18n.t('ai_analysis.report.recommendations.cpu_medium')
       else
-        "Продолжайте регулярный мониторинг CPU"
+        I18n.t('ai_analysis.report.recommendations.cpu_low')
       end
     when "memory_usage_bytes"
       case severity
       when "high"
-        "Проверьте процессы на наличие утечек памяти и рассмотрите возможность увеличения доступной памяти системы"
+        I18n.t('ai_analysis.report.recommendations.memory_high')
       when "medium"
-        "Следите за тенденцией потребления памяти, возможно потребуется оптимизация управления памятью"
+        I18n.t('ai_analysis.report.recommendations.memory_medium')
       else
-        "Продолжайте регулярный мониторинг использования памяти"
+        I18n.t('ai_analysis.report.recommendations.memory_low')
       end
     when "http_request_duration_seconds"
       case severity
       when "high"
-        "Рекомендуется проверить серверную нагрузку и оптимизировать обработку запросов или увеличить мощность серверов"
+        I18n.t('ai_analysis.report.recommendations.http_high')
       when "medium"
-        "Следите за временем ответа сервера и подготовьте план действий при его дальнейшем увеличении"
+        I18n.t('ai_analysis.report.recommendations.http_medium')
       else
-        "Продолжайте регулярный мониторинг времени ответа сервера"
+        I18n.t('ai_analysis.report.recommendations.http_low')
       end
     else
-      "Рекомендуется продолжить мониторинг данной метрики"
+      I18n.t('ai_analysis.report.recommendations.default')
     end
   end
 
@@ -468,29 +585,29 @@ class AnalysisJob < ApplicationJob
     case metric_name
     when "cpu_usage"
       feature_index == 0 ?
-        "Для оптимизации использования CPU рекомендуется управлять потреблением памяти" :
-        "Для оптимизации использования CPU рекомендуется оптимизировать обработку запросов"
+        I18n.t('ai_analysis.report.recommendations.cpu_perf_memory') :
+        I18n.t('ai_analysis.report.recommendations.cpu_perf_requests')
     when "memory_usage_bytes"
       feature_index == 0 ?
-        "Для оптимизации использования памяти рекомендуется контролировать количество активных пользователей" :
-        "Для оптимизации использования памяти рекомендуется оптимизировать обработку запросов"
+        I18n.t('ai_analysis.report.recommendations.memory_perf_users') :
+        I18n.t('ai_analysis.report.recommendations.memory_perf_requests')
     when "http_request_duration_seconds"
       case feature_index
       when 0
-        "Для оптимизации времени ответа рекомендуется уменьшить нагрузку на CPU"
+        I18n.t('ai_analysis.report.recommendations.http_perf_cpu')
       when 1
-        "Для оптимизации времени ответа рекомендуется оптимизировать использование памяти"
+        I18n.t('ai_analysis.report.recommendations.http_perf_memory')
       when 2
-        "Для оптимизации времени ответа рекомендуется более эффективно балансировать входящие запросы"
+        I18n.t('ai_analysis.report.recommendations.http_perf_balance')
       end
     else
-      "Рекомендуется регулярный мониторинг и анализ метрики"
+      I18n.t('ai_analysis.report.recommendations.default_perf')
     end
   end
 
   # Вспомогательный метод для получения данных для производительности
-  def fetch_performance_data(metric, start_time, end_time)
-    data = fetch_metric_data(metric, start_time, end_time)
+  def fetch_performance_data(metric, start_time, end_time, step: '1h')
+    data = fetch_metric_data(metric, start_time, end_time, step: step)
     
     # Добавляем меткы времени
     data[:start_time] = start_time

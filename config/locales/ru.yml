@@ -1,0 +1,649 @@
+# Русская локализация для Dashboard Metricks with AI
+# Russian localization
+
+ru:
+  # Общие элементы интерфейса
+  common:
+    brand_name: "Metricks Dashboard"
+    home: "Главная"
+    back: "Назад"
+    back_to_list: "Назад к списку"
+    save: "Сохранить"
+    save_changes: "Сохранить изменения"
+    cancel: "Отмена"
+    delete: "Удалить"
+    edit: "Редактировать"
+    view: "Просмотр"
+    create: "Создать"
+    update: "Обновить"
+    confirm: "Подтвердить"
+    actions: "Действия"
+    filter: "Фильтровать"
+    search: "Поиск"
+    loading: "Загрузка..."
+    yes: "Да"
+    no: "Нет"
+    all: "Все"
+    none: "Нет"
+    active: "Активен"
+    inactive: "Неактивен"
+    unknown: "Неизвестно"
+    na: "Н/Д"
+    details: "Детали"
+    more_details: "Подробнее"
+    refresh_data: "Обновить данные"
+    refresh_page: "Обновить страницу"
+    refresh_now: "Обновить сейчас"
+    try_again: "Попробовать снова"
+    export_json: "Экспорт данных (JSON)"
+    export_csv: "Экспорт данных (CSV)"
+    no_data: "Нет данных"
+    
+  # Навигация
+  navigation:
+    metrics: "Метрики"
+    ai_analysis: "ИИ-анализ"
+    analysis_list: "Список анализов"
+    ai_dashboard: "Панель управления ИИ"
+    data_sources_status: "Статус источников"
+    dashboard: "Дашборд"
+    alerts: "Оповещения"
+    
+  # Переключатель языка
+  locale:
+    switch: "Сменить язык"
+    ru: "Русский"
+    en: "English"
+
+  # Главная страница / Дашборд
+  dashboard:
+    title: "Мониторинг производительности"
+    time_range:
+      label: "Временной интервал:"
+      15m: "15 минут"
+      30m: "30 минут"
+      1h: "1 час"
+      3h: "3 часа"
+      6h: "6 часов"
+      12h: "12 часов"
+      24h: "24 часа"
+      7d: "7 дней"
+    auto_refresh:
+      label: "Автообновление:"
+      off: "Выключено"
+      10s: "10 секунд"
+      30s: "30 секунд"
+      1m: "1 минута"
+      5m: "5 минут"
+    edit_mode: "Режим редактирования"
+    show_all_panels: "Показать все панели"
+    panel_visibility: "Видимость панелей"
+    panels:
+      service_health: "Состояние сервисов"
+      response_time: "Время отклика"
+      throughput: "Пропускная способность"
+      error_rate: "Уровень ошибок"
+      resource_usage: "Использование ресурсов"
+    charts:
+      response_time: "Время отклика (мс)"
+      throughput: "Пропускная способность (запросов/сек)"
+      error_rate: "Уровень ошибок (%)"
+      resource_usage: "Общее использование ресурсов (%)"
+      cpu_usage: "Использование CPU (%)"
+      memory_usage: "Использование памяти (%)"
+    alerts_modal_title: "Оповещения"
+    fullscreen: "На весь экран"
+    save_settings: "Сохранить настройки"
+    edit_mode_start: "Режим редактирования"
+    edit_mode_finish: "Завершить редактирование"
+    service_health_table:
+      service: "Сервис"
+      status: "Статус"
+      uptime: "Время работы"
+      status_up: "Работает"
+      status_down: "Не работает"
+    time_axis: "Время"
+    service_label: "Сервис"
+    time_label: "Время"
+    alerts_widget:
+      no_active_alerts: "Нет активных оповещений"
+      metric_label: "Метрика"
+      value_label: "Значение"
+      threshold_label: "порог"
+      time_label: "Время"
+    messages:
+      settings_saved: "Настройки успешно сохранены"
+      settings_saved_locally: "Настройки сохранены локально, но не удалось сохранить на сервере"
+      chart_loading_error: "Ошибка загрузки библиотеки Chart.js. Пожалуйста, обновите страницу."
+      chart_creation_error: "Ошибка при создании графиков"
+      canvas_not_found: "Ошибка: не найден canvas для графика"
+      chart_error: "Ошибка при создании графика"
+      init_error: "Ошибка при инициализации дашборда"
+      refresh_page: "Обновить страницу"
+
+  # Страница оповещений
+  alerts:
+    title: "Оповещения"
+    details_title: "Детали оповещения"
+    back_to_list: "Назад к списку"
+    acknowledge: "Принять"
+    resolve: "Решить"
+    update_alert: "Обновить оповещение"
+    severity:
+      label: "Важность:"
+      info: "Информация"
+      warning: "Предупреждение"
+      critical: "Критическое"
+    severities:
+      info: "Информация"
+      warning: "Предупреждение"
+      critical: "Критическое"
+    statuses:
+      triggered: "Активно"
+      acknowledged: "Принято"
+      resolved: "Решено"
+    service_label: "Сервис:"
+    service_placeholder: "Имя сервиса"
+    filter_button: "Фильтровать"
+    active_alerts: "Активные"
+    all_alerts: "Все"
+    service: "Сервис"
+    metric: "Метрика"
+    severity_field: "Важность"
+    current_value: "Текущее значение"
+    threshold: "Пороговое значение"
+    deviation: "Отклонение"
+    triggered_at: "Время активации"
+    resolved_at: "Время решения"
+    duration: "Длительность"
+    message: "Сообщение"
+    show:
+      title: "Детали оповещения"
+    table:
+      service: "Сервис"
+      metric: "Метрика"
+      value: "Значение"
+      current_value: "Текущее значение"
+      threshold: "Порог"
+      threshold_value: "Пороговое значение"
+      deviation: "Отклонение"
+      severity: "Важность"
+      status: "Статус"
+      time: "Время"
+      triggered_at: "Время активации"
+      resolved_at: "Время решения"
+      duration: "Длительность"
+      message: "Сообщение"
+      actions: "Действия"
+    status:
+      triggered: "Активно"
+      acknowledged: "Принято"
+      resolved: "Решено"
+    actions:
+      details: "Детали"
+      acknowledge: "Принять"
+      resolve: "Решить"
+    no_alerts: "Оповещений не найдено."
+
+  # Метрики
+  metrics:
+    title: "Метрики мониторинга"
+    add_metric: "Добавить метрику"
+    new_metric: "Новая метрика"
+    edit_metric: "Редактирование"
+    adding_new_metric: "Добавление новой метрики"
+    editing_metric: "Редактирование метрики: %{name}"
+    available_metrics: "Доступные метрики"
+    metric_data: "Данные метрики"
+    metric_name: "Название метрики"
+    metric_name_placeholder: "api_response_time"
+    metric_name_hint: "Укажите название метрики в Prometheus, например: http_request_duration_seconds"
+    table:
+      name: "Название"
+      type: "Тип"
+      description: "Описание"
+      actions: "Действия"
+    no_metrics: "Нет доступных метрик."
+    add_first_metric: "Добавьте первую метрику"
+    data_sources:
+      title: "Источники данных (Prometheus)"
+      active: "Активен"
+      inactive: "Неактивен"
+      last_update: "Последнее обновление:"
+      no_sources: "Нет доступных источников данных. Проверьте подключение к Prometheus."
+    confirm_delete: "Вы уверены?"
+    time_range_label: "Временной диапазон"
+    statistics:
+      title: "Статистика"
+      average: "Среднее"
+      maximum: "Максимум"
+      minimum: "Минимум"
+      p95: "P95"
+    errors:
+      saving: "ошибка при сохранении метрики"
+      saving_plural: "ошибок при сохранении метрики"
+    select_type_prompt: "Выберите тип метрики"
+
+  # ИИ-анализ
+  ai_analysis:
+    title: "Панель управления ИИ-анализом"
+    overview_title: "Обзор моделей ИИ"
+    all_analyses: "Все ИИ-анализы"
+    analyses_title: "ИИ-анализы метрик"
+    all_analyses_in_system: "Все анализы в системе"
+    no_analyses: "В системе пока нет проведенных ИИ-анализов."
+    no_analyses_for_metric: "Для данной метрики еще не проводился ИИ-анализ."
+    completed_analyses: "Завершенных анализов"
+    view_all: "Просмотреть все"
+    new_analysis: "Новый анализ"
+    new_analysis_for_metric: "Новый ИИ-анализ для метрики: %{name}"
+    run_analysis: "Запустить анализ"
+    run_new_analysis: "Запустить новый ИИ-анализ"
+    create_new: "Создать новый анализ"
+    analysis_number: "Анализ #%{id}"
+    results_title: "Результаты ИИ-анализа: %{type}"
+    analysis_type_label: "Тип анализа"
+    select_metric: "Выберите метрику"
+    select_metric_prompt: "-- Выберите метрику --"
+    select_analysis_type: "Выберите тип анализа"
+    select_analysis_type_prompt: "-- Выберите тип анализа --"
+    parameters_label: "Параметры анализа (JSON)"
+    parameters_hint: "Укажите дополнительные параметры для анализа в формате JSON. Оставьте пустым для использования параметров по умолчанию."
+    parameters_placeholder: '{"window_size": 24, "sensitivity": 0.75}'
+    selected_type: "Выбран тип анализа: %{type}"
+    # Статусы
+    in_progress: "Анализ выполняется..."
+    may_take_time: "Это может занять некоторое время в зависимости от объема данных."
+    auto_check_status: "Автоматическая проверка статуса каждые 3 секунды..."
+    attention: "Внимание!"
+    taking_longer: "Анализ выполняется дольше обычного."
+    possible_reasons: "Возможные причины:"
+    refresh_page: "Обновить страницу"
+    refresh_now: "Обновить сейчас"
+    check_ml_status: "Проверить статус ML-сервиса"
+    try_again: "Попробовать снова"
+    reasons:
+      large_data: "Большой объем данных для обработки"
+      high_load: "Высокая нагрузка на сервер"
+      ml_connection: "Проблемы с подключением к ML-сервису"
+    # Типы анализа
+    types:
+      anomaly_detection: "Обнаружение аномалий"
+      trend_prediction: "Прогнозирование трендов"
+      performance_insight: "Анализ производительности"
+    # Статусы
+    status:
+      pending: "Ожидание"
+      in_progress: "Выполняется"
+      completed: "Завершён"
+      failed: "Ошибка"
+    # Сообщения
+    messages:
+      started: "Анализ успешно запущен."
+      completed: "Анализ успешно завершён."
+      failed: "Ошибка при выполнении анализа."
+    # Ошибки
+    error_title: "Ошибка анализа!"
+    error_message: "Во время проведения анализа произошла ошибка."
+    # Таблица
+    table:
+      id: "#"
+      metric: "Метрика"
+      analysis_type: "Тип анализа"
+      created_at: "Дата создания"
+      actions: "Действия"
+    # Модели
+    models:
+      anomaly_detection:
+        title: "Обнаружение аномалий"
+        description: "Используется модель LSTM для поиска аномалий в метриках"
+      trend_prediction:
+        title: "Прогнозирование трендов"
+        description: "Предсказание поведения метрик на основе временных рядов"
+      performance_insight:
+        title: "Анализ производительности"
+        description: "Выявление факторов, влияющих на производительность системы"
+    # Аномалии
+    recent_anomalies: "Последние обнаруженные аномалии"
+    key_anomalies: "Ключевые аномалии"
+    anomaly:
+      metric: "Метрика"
+      detection_time: "Время обнаружения"
+      deviation: "Отклонение"
+    # Тренды
+    trends_forecast: "Прогнозы трендов метрик"
+    forecast_change: "Прогноз изменения"
+    forecast_points: "Точки прогноза"
+    forecast_unavailable: "Данные о прогнозе недоступны"
+    no_forecast_data: "Нет данных о прогнозе"
+    trend:
+      metric: "Метрика"
+      forecast: "Прогноз"
+      change: "Изменение"
+    # События и инсайты
+    events_and_insights: "Важные события и инсайты"
+    events: "События"
+    no_events: "Нет данных о событиях"
+    event:
+      timestamp: "Временная метка"
+      type: "Тип события"
+      value: "Значение"
+      deviation: "Отклонение (%)"
+      description: "Описание"
+      date: "Дата"
+    # Инсайты
+    no_insights: "Нет доступных инсайтов для этого анализа. Инсайты появятся после завершения обработки данных моделью ИИ."
+    recommendation: "Рекомендация:"
+    # Статистика и выводы
+    statistics: "Статистика"
+    data_unavailable: "Данные недоступны"
+    ai_conclusions: "Выводы ИИ"
+    no_conclusions: "Нет доступных выводов"
+    showing_of: "Показаны %{shown} из %{total} аномалий"
+    # Производительность
+    performance_factors: "Факторы, влияющие на производительность"
+    factors_unavailable: "Данные о факторах производительности недоступны"
+    predicted_values: "Предсказанные значения"
+    predictions_unavailable: "Данные о предсказаниях недоступны"
+    current_metric_values: "Текущие значения метрики"
+    value: "Значение"
+    factors:
+      current_value: "Текущее значение"
+      moving_average: "Скользящее среднее"
+      max_in_window: "Максимум в окне"
+    # Экспорт
+    export_json: "Экспорт данных (JSON)"
+    export_csv: "Экспорт данных (CSV)"
+    # CSV экспорт
+    csv:
+      analysis_info: "Информация об анализе"
+      metric: "Метрика"
+      analysis_type: "Тип анализа"
+      status: "Статус"
+      created_at: "Создано"
+      completed_at: "Завершено"
+      statistics: "Статистика"
+      insights: "Выводы"
+      title: "Заголовок"
+      description: "Описание"
+      severity: "Серьёзность"
+      recommendation: "Рекомендация"
+      events: "События"
+      timestamp: "Время"
+      type: "Тип"
+      value: "Значение"
+      deviation: "Отклонение"
+      chart_data: "Данные графика"
+    # Графики
+    chart:
+      browser_not_supported: "Ваш браузер не поддерживает canvas. Пожалуйста, обновите браузер."
+      normal_values: "Нормальные значения"
+      anomalies: "Аномалии"
+      current_values: "Текущие значения"
+      forecast: "Прогноз"
+      anomaly_title: "График значений метрики с аномалиями"
+      trend_title: "График прогноза трендов метрики"
+    errors:
+      saving: "ошибка при сохранении анализа"
+      saving_plural: "ошибок при сохранении анализа"
+    # Отчёты (используются в AnalysisJob)
+    report:
+      statistics:
+        total_data_points: "Всего точек данных"
+        anomalies_detected: "Обнаружено аномалий"
+        anomaly_percentage: "Процент аномалий"
+        current_value: "Текущее значение"
+        average_predicted: "Среднее прогнозируемое значение"
+        change: "Изменение"
+        min_value: "Минимальное значение"
+        max_value: "Максимальное значение"
+        avg_value: "Среднее значение"
+        mean_value: "Среднее значение"
+        std_deviation: "Стандартное отклонение"
+        trend: "Тренд"
+        na: "Н/Д"
+        series_count: "Количество серий"
+        average_change: "Среднее изменение"
+      trends:
+        increasing: "рост"
+        decreasing: "снижение"
+        stable: "стабильно"
+      insights:
+        anomalies_found: "Обнаружены аномалии в метрике %{metric}"
+        anomalies_description: "Обнаружено %{count} аномальных значений (%{rate}% от всех данных)"
+        time_pattern: "Обнаружен временной паттерн аномалий"
+        time_pattern_recommendation: "Проверьте активность системы в указанные периоды времени"
+        no_anomalies: "Аномалий не обнаружено"
+        metric_normal: "Метрика %{metric} работает в нормальном режиме"
+        trend_forecast: "Прогноз для метрики %{metric} показывает %{direction}"
+        trend_description: "Ожидается изменение на %{percentage}% в течение следующих 24 часов"
+        increase_resources: "Рекомендуется увеличить ресурсы системы для обеспечения стабильной работы"
+        high_volatility: "Высокая волатильность прогноза"
+        unstable_behavior: "Метрика %{metric} может демонстрировать нестабильное поведение в будущем"
+        frequent_monitoring: "Рекомендуется более частый мониторинг данной метрики"
+        performance_title: "Анализ производительности для %{metric}"
+        performance_trend_description: "Тренд: %{trend}, среднее значение: %{mean}"
+        main_factors: "Основные факторы, влияющие на метрику: %{factors}"
+        high_variance: "Обнаружен большой разброс значений"
+        variance_description: "Разница между минимальным и максимальным значением составляет %{percentage}% от среднего"
+        optimize_system: "Рекомендуется оптимизировать систему для более стабильной производительности"
+        peak_hours: "Большинство аномалий происходит в следующие часы: %{hours}"
+        peak_days: "Большинство аномалий происходит в следующие дни: %{days}"
+        outliers_detected: "Обнаружено %{count} выбросов"
+        outliers_description: "Максимальное отклонение от нормы: %{max_deviation} стандартных отклонений"
+        investigate_outliers: "Рекомендуется исследовать причины выбросов"
+      days: "Вс,Пн,Вт,Ср,Чт,Пт,Сб"
+      trend_directions:
+        significant_growth: "значительный рост"
+        moderate_growth: "умеренный рост"
+        stable: "стабильность"
+        moderate_decline: "умеренное снижение"
+        significant_decline: "значительное снижение"
+      events:
+        anomaly_value: "Аномальное значение метрики %{metric}"
+        prediction: "Прогноз метрики %{metric}"
+        critical_values: "Обнаружены потенциально критические значения метрики %{metric}"
+        outlier_detected: "Выброс в метрике %{metric}"
+      factors:
+        memory: "Память"
+        requests: "Количество запросов"
+        active_users: "Активные пользователи"
+        cpu: "CPU"
+      recommendations:
+        cpu_high: "Рекомендуется проверить процессы, потребляющие наибольшее количество CPU, и рассмотреть возможность масштабирования системы"
+        cpu_medium: "Следите за тенденцией потребления CPU, возможно потребуется оптимизация процессов"
+        cpu_low: "Продолжайте регулярный мониторинг CPU"
+        memory_high: "Проверьте процессы на наличие утечек памяти и рассмотрите возможность увеличения доступной памяти системы"
+        memory_medium: "Следите за тенденцией потребления памяти, возможно потребуется оптимизация управления памятью"
+        memory_low: "Продолжайте регулярный мониторинг использования памяти"
+        http_high: "Рекомендуется проверить серверную нагрузку и оптимизировать обработку запросов или увеличить мощность серверов"
+        http_medium: "Следите за временем ответа сервера и подготовьте план действий при его дальнейшем увеличении"
+        http_low: "Продолжайте регулярный мониторинг времени ответа сервера"
+        default: "Рекомендуется продолжить мониторинг данной метрики"
+        cpu_perf_memory: "Для оптимизации использования CPU рекомендуется управлять потреблением памяти"
+        cpu_perf_requests: "Для оптимизации использования CPU рекомендуется оптимизировать обработку запросов"
+        memory_perf_users: "Для оптимизации использования памяти рекомендуется контролировать количество активных пользователей"
+        memory_perf_requests: "Для оптимизации использования памяти рекомендуется оптимизировать обработку запросов"
+        http_perf_cpu: "Для оптимизации времени ответа рекомендуется уменьшить нагрузку на CPU"
+        http_perf_memory: "Для оптимизации времени ответа рекомендуется оптимизировать использование памяти"
+        http_perf_balance: "Для оптимизации времени ответа рекомендуется более эффективно балансировать входящие запросы"
+        default_perf: "Рекомендуется регулярный мониторинг и анализ метрики"
+        urgent_optimization: "Требуется срочная оптимизация! Метрика показывает рост с множественными выбросами"
+        monitor_growth: "Наблюдается рост метрики. Рекомендуется подготовить план масштабирования"
+        good_performance: "Производительность улучшается. Продолжайте текущие практики"
+        investigate_spikes: "Метрика стабильна, но есть отдельные выбросы. Рекомендуется исследовать их причины"
+        stable_performance: "Производительность стабильна. Продолжайте регулярный мониторинг"
+      errors:
+        no_data: "Нет данных для анализа метрики"
+        analysis_error: "Ошибка в процессе анализа"
+        insufficient_data: "Недостаточно данных для анализа"
+
+  # Prometheus
+  prometheus:
+    status_title: "Статус источников данных Prometheus"
+    job: "Job:"
+    instance: "Instance:"
+    status: "Статус:"
+    last_update: "Последнее обновление:"
+    no_data: "Нет данных"
+    no_sources: "Нет доступных источников данных"
+
+  # Формы
+  forms:
+    required: "Обязательное поле"
+    submit: "Отправить"
+    cancel: "Отмена"
+
+  # Хлебные крошки
+  breadcrumbs:
+    home: "Главная"
+    metrics: "Метрики"
+    ai_analyses: "ИИ Анализы"
+    new_metric: "Новая метрика"
+    editing: "Редактирование"
+    new_analysis: "Новый анализ"
+
+  # Ошибки
+  errors:
+    not_found: "Страница не найдена"
+    server_error: "Внутренняя ошибка сервера"
+    forbidden: "Доступ запрещен"
+    unauthorized: "Необходима авторизация"
+
+  # ActiveRecord
+  activerecord:
+    models:
+      metric:
+        one: "Метрика"
+        few: "Метрики"
+        many: "Метрик"
+        other: "Метрики"
+      alert:
+        one: "Оповещение"
+        few: "Оповещения"
+        many: "Оповещений"
+        other: "Оповещения"
+      ai_analysis:
+        one: "ИИ-анализ"
+        few: "ИИ-анализа"
+        many: "ИИ-анализов"
+        other: "ИИ-анализы"
+    attributes:
+      metric:
+        name: "Название"
+        description: "Описание"
+        metric_type: "Тип метрики"
+        unit: "Единица измерения"
+        query: "Запрос"
+      alert:
+        service: "Сервис"
+        metric: "Метрика"
+        value: "Значение"
+        threshold: "Порог"
+        severity: "Важность"
+        status: "Статус"
+        triggered_at: "Время срабатывания"
+        message: "Сообщение"
+      ai_analysis:
+        analysis_type: "Тип анализа"
+        result: "Результат"
+        status: "Статус"
+        parameters: "Параметры"
+
+  # Временные форматы
+  time:
+    formats:
+      default: "%d.%m.%Y %H:%M"
+      short: "%d.%m %H:%M"
+      long: "%d %B %Y, %H:%M:%S"
+      date_only: "%d.%m.%Y"
+      time_only: "%H:%M:%S"
+
+  # Форматы дат
+  date:
+    formats:
+      default: "%d.%m.%Y"
+      short: "%d.%m"
+      long: "%d %B %Y"
+    day_names:
+      - Воскресенье
+      - Понедельник
+      - Вторник
+      - Среда
+      - Четверг
+      - Пятница
+      - Суббота
+    abbr_day_names:
+      - Вс
+      - Пн
+      - Вт
+      - Ср
+      - Чт
+      - Пт
+      - Сб
+    month_names:
+      - ~
+      - Январь
+      - Февраль
+      - Март
+      - Апрель
+      - Май
+      - Июнь
+      - Июль
+      - Август
+      - Сентябрь
+      - Октябрь
+      - Ноябрь
+      - Декабрь
+    abbr_month_names:
+      - ~
+      - янв
+      - фев
+      - мар
+      - апр
+      - май
+      - июн
+      - июл
+      - авг
+      - сен
+      - окт
+      - ноя
+      - дек
+
+  # Числовые форматы
+  number:
+    currency:
+      format:
+        unit: "₽"
+        format: "%n %u"
+        separator: ","
+        delimiter: " "
+        precision: 2
+    format:
+      separator: ","
+      delimiter: " "
+      precision: 2
+    percentage:
+      format:
+        delimiter: " "
+        format: "%n%"
+    precision:
+      format:
+        delimiter: " "
+    human:
+      format:
+        delimiter: " "
+        precision: 2
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Байт"
+            few: "Байта"
+            many: "Байт"
+            other: "Байт"
+          kb: "КБ"
+          mb: "МБ"
+          gb: "ГБ"
+          tb: "ТБ"
+          pb: "ПБ"

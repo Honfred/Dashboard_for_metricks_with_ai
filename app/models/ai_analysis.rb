@@ -4,19 +4,19 @@ class AiAnalysis < ApplicationRecord
   validates :analysis_type, presence: true
   
   # Enum для типов анализа
-  enum analysis_type: {
+  enum :analysis_type, {
     anomaly_detection: 0,
     trend_prediction: 1,
     performance_insight: 2
   }
   
   # Enum для статусов анализа
-  enum status: {
-    pending: 'pending',
-    processing: 'processing',
-    completed: 'completed',
-    failed: 'failed'
-  }, _default: 'pending'
+  enum :status, {
+    pending: "pending",
+    processing: "processing",
+    completed: "completed",
+    failed: "failed"
+  }, default: "pending"
 
   # Методы для работы с результатами анализа
   def completed?

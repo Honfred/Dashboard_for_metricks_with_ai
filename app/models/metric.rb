@@ -4,7 +4,7 @@ class Metric < ApplicationRecord
   validates :name, presence: true
   validates :metric_type, presence: true
 
-  enum metric_type: {
+  enum :metric_type, {
     counter: 0,
     gauge: 1,
     histogram: 2,

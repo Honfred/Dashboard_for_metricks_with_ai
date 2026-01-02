@@ -12,6 +12,7 @@ gem 'chartkick'
 gem 'groupdate'
 gem 'pg', '~> 1.5', '>= 1.5.6'
 gem 'httparty'
+gem 'kaminari'
 
 gem "puma", ">= 5.0"
 gem "importmap-rails"
@@ -39,7 +40,4 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
-
-  # Highlight the fine-grained location where an error occurred [https://github.com/ruby/error_highlight]
-  gem "error_highlight", ">= 0.4.0", platforms: [ :ruby ]
 end

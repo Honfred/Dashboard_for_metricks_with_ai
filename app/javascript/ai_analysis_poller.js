@@ -1,6 +1,6 @@
 // Скрипт для автоматического обновления страницы анализа и проверки статуса ML-сервиса
 
-document.addEventListener('DOMContentLoaded', function() {
+export function initializeAiAnalysisPoller() {
   // Автоматическое обновление страницы при выполнении анализа
   const refreshStatus = document.querySelector('[data-refresh-status="true"]');
   if (refreshStatus) {
@@ -29,4 +29,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
   }
-});
+}

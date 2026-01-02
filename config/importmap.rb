@@ -6,6 +6,7 @@ pin "@hotwired/stimulus", to: "stimulus.min.js"
 pin "@hotwired/stimulus-loading", to: "stimulus-loading.js"
 pin_all_from "app/javascript/controllers", under: "controllers"
 pin "dashboard", to: "dashboard.js"
+pin_all_from "app/javascript/dashboard", under: "dashboard"
 pin "ai_analysis_poller", to: "ai_analysis_poller.js"
 pin "stimulus", to: "@hotwired/stimulus"
 

@@ -4,37 +4,37 @@
 
 <div class="alert-details-container">
   <div class="alert-header">
-    <h1>Детали оповещения</h1>
+    <h1><%= t('alerts.show.title') %></h1>
     <div class="alert-actions">
-      <a href="<%= alerts_path %>" class="btn btn-outline-primary">Назад к списку</a>
+      <a href="<%= alerts_path %>" class="btn btn-outline-primary"><%= t('alerts.back_to_list') %></a>
       <% if @alert.active? %>
-        <%= button_to 'Принять', acknowledge_alert_path(@alert), method: :post, class: 'btn btn-outline-warning' %>
-        <%= button_to 'Решить', resolve_alert_path(@alert), method: :post, class: 'btn btn-outline-success' %>
+        <%= button_to t('alerts.acknowledge'), acknowledge_alert_path(@alert), method: :post, class: 'btn btn-outline-warning' %>
+        <%= button_to t('alerts.resolve'), resolve_alert_path(@alert), method: :post, class: 'btn btn-outline-success' %>
       <% end %>
     </div>
   </div>
   
   <div class="alert-card">
     <div class="alert-status-badge badge bg-<%= { 'triggered' => 'danger', 'acknowledged' => 'warning', 'resolved' => 'success' }[@alert.status] %>">
-      <%= { 'triggered' => 'Активно', 'acknowledged' => 'Принято', 'resolved' => 'Решено' }[@alert.status] %>
+      <%= t("alerts.statuses.#{@alert.status}") %>
     </div>
     
     <div class="alert-info-row">
       <div class="alert-info-item">
-        <h3>Сервис</h3>
-        <p><%= @alert.service %></p>
+        <h3><%= t('alerts.service') %></h3>
+        <p><%= display_service_name(@alert.service) %></p>
       </div>
       
       <div class="alert-info-item">
-        <h3>Метрика</h3>
+        <h3><%= t('alerts.metric') %></h3>
         <p><%= @alert.metric %></p>
       </div>
       
       <div class="alert-info-item">
-        <h3>Важность</h3>
+        <h3><%= t('alerts.severity') %></h3>
         <p>
           <span class="badge bg-<%= { 'info' => 'info', 'warning' => 'warning', 'critical' => 'danger' }[@alert.severity] %>">
-            <%= { 'info' => 'Информация', 'warning' => 'Предупреждение', 'critical' => 'Критическое' }[@alert.severity] %>
+            <%= t("alerts.severities.#{@alert.severity}") %>
           </span>
         </p>
       </div>
@@ -42,17 +42,17 @@
     
     <div class="alert-info-row">
       <div class="alert-info-item">
-        <h3>Текущее значение</h3>
+        <h3><%= t('alerts.current_value') %></h3>
         <p class="alert-value"><%= @alert.value %></p>
       </div>
       
       <div class="alert-info-item">
-        <h3>Пороговое значение</h3>
+        <h3><%= t('alerts.threshold') %></h3>
         <p class="alert-threshold"><%= @alert.threshold %></p>
       </div>
       
       <div class="alert-info-item">
-        <h3>Отклонение</h3>
+        <h3><%= t('alerts.deviation') %></h3>
         <p class="<%= @alert.value > @alert.threshold ? 'text-danger' : 'text-success' %>">
           <%= number_to_percentage((@alert.value - @alert.threshold) / @alert.threshold * 100, precision: 2) %>
         </p>
@@ -61,25 +61,25 @@
     
     <div class="alert-timeline">
       <div class="alert-info-item">
-        <h3>Время активации</h3>
-        <p><%= @alert.triggered_at&.strftime("%d.%m.%Y %H:%M:%S") || 'Неизвестно' %></p>
+        <h3><%= t('alerts.triggered_at') %></h3>
+        <p><%= @alert.triggered_at ? l(@alert.triggered_at, format: :default) : t('common.unknown') %></p>
       </div>
       
       <% if @alert.resolved? %>
         <div class="alert-info-item">
-          <h3>Время решения</h3>
-          <p><%= @alert.resolved_at&.strftime("%d.%m.%Y %H:%M:%S") || 'Неизвестно' %></p>
+          <h3><%= t('alerts.resolved_at') %></h3>
+          <p><%= @alert.resolved_at ? l(@alert.resolved_at, format: :default) : t('common.unknown') %></p>
         </div>
         
         <div class="alert-info-item">
-          <h3>Длительность</h3>
+          <h3><%= t('alerts.duration') %></h3>
           <p>
             <%= distance_of_time_in_words(@alert.triggered_at, @alert.resolved_at) if @alert.triggered_at && @alert.resolved_at %>
           </p>
         </div>
       <% else %>
         <div class="alert-info-item">
-          <h3>Длительность</h3>
+          <h3><%= t('alerts.duration') %></h3>
           <p>
             <%= distance_of_time_in_words(@alert.triggered_at, Time.current) if @alert.triggered_at %>
           </p>
@@ -88,26 +88,26 @@
     </div>
     
     <div class="alert-message">
-      <h3>Сообщение</h3>
+      <h3><%= t('alerts.message') %></h3>
       <p><%= @alert.message %></p>
     </div>
     
     <% if @alert.active? %>
       <div class="alert-form">
-        <h3>Обновить оповещение</h3>
+        <h3><%= t('alerts.update_alert') %></h3>
         <%= form_with(model: @alert, local: true) do |form| %>
           <div class="form-group">
-            <%= form.label :message, 'Сообщение' %>
+            <%= form.label :message, t('alerts.message') %>
             <%= form.text_area :message, class: 'form-control' %>
           </div>
           
           <div class="form-group">
-            <%= form.label :severity, 'Важность' %>
-            <%= form.select :severity, options_for_select([['Информация', 'info'], ['Предупреждение', 'warning'], ['Критическое', 'critical']], @alert.severity), {}, { class: 'form-select' } %>
+            <%= form.label :severity, t('alerts.severity') %>
+            <%= form.select :severity, options_for_select([[t('alerts.severities.info'), 'info'], [t('alerts.severities.warning'), 'warning'], [t('alerts.severities.critical'), 'critical']], @alert.severity), {}, { class: 'form-select' } %>
           </div>
           
           <div class="form-actions">
-            <%= form.submit 'Обновить', class: 'btn btn-primary' %>
+            <%= form.submit t('common.update'), class: 'btn btn-primary' %>
           </div>
         <% end %>
       </div>

@@ -9,16 +9,57 @@ class PrometheusService
   end
 
   def fetch_metrics(service_name, time_range = "1h")
-    # Попытка получить данные из Prometheus
-    query = generate_metric_query(service_name, time_range)
-    response = query_prometheus(query)
+    # Определяем временные параметры для range query
+    end_time = Time.now
     
-    # Если получили данные - отлично, возвращаем их
-    parsed_data = parse_response(response)
-    return parsed_data if parsed_data.present?
+    case time_range
+    when "1h"
+      start_time = 1.hour.ago
+      step = "60"  # 1 минута
+    when "6h"
+      start_time = 6.hours.ago
+      step = "300"  # 5 минут
+    when "24h"
+      start_time = 24.hours.ago
+      step = "600"  # 10 минут
+    when "7d"
+      start_time = 7.days.ago
+      step = "3600"  # 1 час
+    else
+      start_time = 1.hour.ago
+      step = "60"
+    end
     
-    # Если данных нет, генерируем демо-данные для примера
-    generate_demo_metrics(service_name, time_range)
+    # Используем range query для получения временного ряда
+    metric = Metric.find_by(name: service_name)
+    
+    # Для counter используем rate, для остальных - просто имя метрики
+    query = if metric&.metric_type == "counter"
+      "rate(#{service_name}[5m])"
+    else
+      service_name
+    end
+    
+    response = query_prometheus_range(query, start_time: start_time, end_time: end_time, step: step)
+    
+    # Возвращаем данные
+    parse_range_response(response) || []
+  end
+
+  # Получение метрик за период (range query)
+  def fetch_metrics_range(metric_name, start_time:, end_time:, step: '1h')
+    # Формируем запрос в зависимости от типа метрики
+    metric = Metric.find_by(name: metric_name)
+    
+    query = if metric&.metric_type == "counter"
+      "rate(#{metric_name}[5m])"
+    else
+      metric_name
+    end
+    
+    response = query_prometheus_range(query, start_time: start_time, end_time: end_time, step: step)
+    
+    parse_range_response(response)
   end
 
   def available_metrics
@@ -27,8 +68,7 @@ class PrometheusService
     
     # Проверяем ответ от Prometheus
     if targets_response["status"] != "success" || !targets_response.dig("data", "activeTargets")
-      # Если не удалось получить реальные данные, создаем демонстрационные
-      return generate_demo_targets
+      return []
     end
     
     # Получаем метрики up для статуса активности
@@ -48,9 +88,6 @@ class PrometheusService
     # Логируем результат
     Rails.logger.info "Merged targets: #{merged_targets.inspect}"
     
-    # Если список пуст, добавляем демо-источники
-    return generate_demo_targets if merged_targets.empty?
-    
     merged_targets
   end
 
@@ -69,6 +106,28 @@ class PrometheusService
       { "status" => "error", "error" => response.message }
     rescue => e
       Rails.logger.error "Error connecting to Prometheus: #{e.message}"
+      { "status" => "error", "error" => e.message }
+    end
+  end
+
+  def query_prometheus_range(query, start_time:, end_time:, step:)
+    uri = URI("#{@base_url}/api/v1/query_range")
+    uri.query = URI.encode_www_form(
+      query: query,
+      start: start_time.to_i,
+      end: end_time.to_i,
+      step: step
+    )
+    
+    begin
+      response = Net::HTTP.get_response(uri)
+      
+      return JSON.parse(response.body) if response.is_a?(Net::HTTPSuccess)
+      
+      Rails.logger.error "Prometheus range query error: #{response.message}"
+      { "status" => "error", "error" => response.message }
+    rescue => e
+      Rails.logger.error "Error connecting to Prometheus (range): #{e.message}"
       { "status" => "error", "error" => e.message }
     end
   end
@@ -182,153 +241,16 @@ class PrometheusService
     end
   end
   
-  # Генерирует демонстрационные данные для примера
-  def generate_demo_metrics(metric_name, time_range)
-    # Находим метрику в базе данных
-    metric = Metric.find_by(name: metric_name)
-    return [] unless metric
-    
-    # Определяем временные параметры
-    end_time = Time.now.to_i
-    
-    case time_range
-    when "1h"
-      start_time = end_time - 3600
-      step = 60
-    when "6h"
-      start_time = end_time - 21600
-      step = 300
-    when "24h"
-      start_time = end_time - 86400
-      step = 1200
-    when "7d"
-      start_time = end_time - 604800
-      step = 3600
-    else
-      start_time = end_time - 3600
-      step = 60
-    end
-    
-    # Генерируем демо-данные в зависимости от типа метрики
-    values = []
-    current_time = start_time
-    
-    # Параметры для создания реалистичных данных
-    base_value = rand(10..100).to_f
-    trend = rand(-0.5..0.5)
-    variation = rand(1..10)
-    
-    # Генерируем временной ряд с данными
-    while current_time <= end_time
-      case metric.metric_type
-      when "counter"
-        # Для счетчиков создаем растущую линию с небольшими колебаниями
-        value = base_value + ((current_time - start_time) * 0.01) + rand(-variation..variation)
-      when "gauge"
-        # Для датчиков создаем линию с более выраженными колебаниями
-        value = base_value + ((current_time - start_time) * trend * 0.001) + rand(-variation*2..variation*2)
-      when "histogram", "summary"
-        # Для распределений и сводок создаем линию с периодическими колебаниями
-        cycle = Math.sin((current_time - start_time) / 1800.0) * variation
-        value = base_value + cycle + rand(-variation/2..variation/2)
-      else
-        value = base_value + rand(-variation..variation)
-      end
-      
-      # Убеждаемся, что значение не отрицательное
-      value = value.abs
-      
-      # Форматируем значение для красивого вывода
-      formatted_value = "%.2f" % value
-      
-      # Добавляем точку в временной ряд
-      values << [current_time, formatted_value]
-      
-      # Переходим к следующей временной точке
-      current_time += step
-    end
-    
-    # Возвращаем данные в формате, аналогичном Prometheus
-    [{
-      metric: {
-        "__name__" => metric_name,
-        "instance" => "demo:9090",
-        "job" => "demo-metrics"
-      },
-      values: values
-    }]
-  end
+def parse_range_response(response)
+    return [] unless response["status"] == "success"
+    return [] if response.dig("data", "result").blank?
 
-  # Создает демонстрационные источники данных для Prometheus
-  def generate_demo_targets
-    demo_targets = [
+    response["data"]["result"].map do |result|
       {
-        instance: "prometheus:9090",
-        job: "prometheus",
-        health: "up",
-        active: true,
-        last_scrape: Time.now.utc.iso8601,
-        scrape_url: "http://prometheus:9090/metrics",
-        labels: { "env" => "production", "region" => "eu-west" }
-      },
-      {
-        instance: "node-exporter:9100",
-        job: "node",
-        health: "up",
-        active: true,
-        last_scrape: Time.now.utc.iso8601,
-        scrape_url: "http://node-exporter:9100/metrics",
-        labels: { "env" => "production", "region" => "eu-west" }
-      },
-      {
-        instance: "web:9091",
-        job: "rails-app",
-        health: "up",
-        active: true,
-        last_scrape: Time.now.utc.iso8601,
-        scrape_url: "http://web:9091/metrics",
-        labels: { "env" => "production", "region" => "eu-west" }
-      },
-      {
-        instance: "db-exporter:9187",
-        job: "postgresql",
-        health: "up",
-        active: true,
-        last_scrape: Time.now.utc.iso8601,
-        scrape_url: "http://db-exporter:9187/metrics",
-        labels: { "env" => "production", "region" => "eu-west" }
-      },
-      {
-        instance: "redis-exporter:9121",
-        job: "redis",
-        health: "up",
-        active: true,
-        last_scrape: Time.now.utc.iso8601,
-        scrape_url: "http://redis-exporter:9121/metrics",
-        labels: { "env" => "production", "region" => "eu-west" }
-      },
-      {
-        instance: "worker:9092",
-        job: "sidekiq",
-        health: "up",
-        active: true,
-        last_scrape: Time.now.utc.iso8601,
-        scrape_url: "http://worker:9092/metrics",
-        labels: { "env" => "production", "region" => "eu-west" }
+        metric: result["metric"],
+        values: result["values"] || []
       }
-    ]
-    
-    # Для разнообразия добавляем один неактивный источник
-    demo_targets << {
-      instance: "staging-app:9091",
-      job: "rails-app",
-      health: "down",
-      active: false,
-      last_scrape: (Time.now - 2.hours).utc.iso8601,
-      scrape_url: "http://staging-app:9091/metrics",
-      labels: { "env" => "staging", "region" => "eu-west" }
-    }
-    
-    demo_targets
+    end
   end
 end
+

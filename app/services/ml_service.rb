@@ -32,11 +32,13 @@ class MlService
   end
 
   # Предсказание тренда
-  def self.predict_trend(metric_name, periods = 24)
+  def self.predict_trend(metric_name, periods = 24, values: [], timestamps: [])
     Rails.logger.info("ML Service: Calling predict_trend for metric #{metric_name} with #{periods} periods")
     post_request('/predict_trend', {
       metric_name: metric_name,
-      periods: periods
+      periods: periods,
+      values: values,
+      timestamps: timestamps
     })
   end
 

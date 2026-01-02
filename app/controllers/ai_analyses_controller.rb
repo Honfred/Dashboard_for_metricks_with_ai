@@ -41,6 +41,7 @@ class AiAnalysesController < ApplicationController
     respond_to do |format|
       format.html
       format.json { render json: { analysis: @ai_analysis, data: @analysis_data } }
+      format.csv { send_data generate_csv, filename: "analysis_#{@ai_analysis.id}_#{Date.current}.csv", type: 'text/csv; charset=utf-8' }
     end
   end
 
@@ -96,11 +97,11 @@ class AiAnalysesController < ApplicationController
           completed_at: Time.current
         )
       else
-        # Запускаем реальный анализ асинхронно
-        AnalysisJob.perform_later(@ai_analysis.id)
+        # Запускаем реальный анализ асинхронно, передаём локаль
+        AnalysisJob.perform_later(@ai_analysis.id, I18n.locale.to_s)
       end
       
-      redirect_to [@metric, @ai_analysis], notice: "Анализ успешно запущен."
+      redirect_to [@metric, @ai_analysis], notice: t('ai_analysis.messages.started')
     else
       @available_analysis_types = AiService.new.available_analysis_types
       @ml_service_available = MlService.check_connection
@@ -109,6 +110,81 @@ class AiAnalysesController < ApplicationController
   end
 
   private
+
+  def generate_csv
+    require 'csv'
+    
+    CSV.generate(headers: true, col_sep: ',') do |csv|
+      # Заголовок с информацией об анализе
+      csv << [t('ai_analysis.csv.analysis_info')]
+      csv << [t('ai_analysis.csv.metric'), @metric.name]
+      csv << [t('ai_analysis.csv.analysis_type'), t("ai_analysis.types.#{@ai_analysis.analysis_type}")]
+      csv << [t('ai_analysis.csv.status'), t("ai_analysis.status.#{@ai_analysis.status}")]
+      csv << [t('ai_analysis.csv.created_at'), @ai_analysis.created_at&.strftime('%Y-%m-%d %H:%M:%S')]
+      csv << [t('ai_analysis.csv.completed_at'), @ai_analysis.completed_at&.strftime('%Y-%m-%d %H:%M:%S')]
+      csv << []
+      
+      # Статистика
+      if @analysis_data.present?
+        stats = @analysis_data[:statistics] || @analysis_data["statistics"]
+        if stats.present?
+          csv << [t('ai_analysis.csv.statistics')]
+          stats.each do |key, value|
+            csv << [key, value]
+          end
+          csv << []
+        end
+        
+        # Выводы (Insights)
+        insights = @analysis_data[:insights] || @analysis_data["insights"]
+        if insights.present? && insights.any?
+          csv << [t('ai_analysis.csv.insights')]
+          csv << [t('ai_analysis.csv.title'), t('ai_analysis.csv.description'), t('ai_analysis.csv.severity'), t('ai_analysis.csv.recommendation')]
+          insights.each do |insight|
+            csv << [
+              insight["title"] || insight[:title],
+              insight["description"] || insight[:description],
+              insight["severity"] || insight[:severity],
+              insight["recommendation"] || insight[:recommendation]
+            ]
+          end
+          csv << []
+        end
+        
+        # События
+        events = @analysis_data[:events] || @analysis_data["events"]
+        if events.present? && events.any?
+          csv << [t('ai_analysis.csv.events')]
+          csv << [t('ai_analysis.csv.timestamp'), t('ai_analysis.csv.type'), t('ai_analysis.csv.value'), t('ai_analysis.csv.deviation'), t('ai_analysis.csv.description')]
+          events.each do |event|
+            timestamp = event["timestamp"] || event[:timestamp]
+            formatted_time = timestamp.is_a?(Integer) ? Time.at(timestamp).strftime('%Y-%m-%d %H:%M:%S') : timestamp
+            csv << [
+              formatted_time,
+              event["type"] || event[:type],
+              event["value"] || event[:value],
+              event["deviation"] || event[:deviation],
+              event["description"] || event[:description]
+            ]
+          end
+          csv << []
+        end
+        
+        # Данные графика
+        chart_data = @analysis_data[:chart_data] || @analysis_data["chart_data"]
+        if chart_data.present?
+          csv << [t('ai_analysis.csv.chart_data')]
+          csv << [t('ai_analysis.csv.timestamp'), t('ai_analysis.csv.value')]
+          chart_data.each do |point|
+            timestamp = point["timestamp"] || point[:timestamp] || point[0]
+            value = point["value"] || point[:value] || point[1]
+            formatted_time = timestamp.is_a?(Integer) ? Time.at(timestamp).strftime('%Y-%m-%d %H:%M:%S') : timestamp
+            csv << [formatted_time, value]
+          end
+        end
+      end
+    end
+  end
 
   def set_metric
     if params[:metric_id].present?

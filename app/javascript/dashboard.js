@@ -1,9 +1,9 @@
 // Основной файл дашборда
-import * as Charts from './dashboard/charts';
-import * as Layout from './dashboard/layout';
-import * as Settings from './dashboard/settings';
-import * as Alerts from './dashboard/alerts';
-import * as Data from './dashboard/data';
+import * as Charts from 'dashboard/charts';
+import * as Layout from 'dashboard/layout';
+import * as Settings from 'dashboard/settings';
+import * as Alerts from 'dashboard/alerts';
+import * as Data from 'dashboard/data';
 
 // Глобальные переменные
 let refreshController = null;
@@ -117,7 +117,8 @@ function initDashboard() {
     });
   } catch (e) {
     console.error('Ошибка при инициализации дашборда:', e);
-    Charts.showChartError('Ошибка при инициализации дашборда: ' + e.message);
+    const initErrorMsg = window.dashboardTranslations?.messages?.initError || 'Ошибка при инициализации дашборда';
+    Charts.showChartError(initErrorMsg + ': ' + e.message);
     
     // Попытка восстановления при ошибке - создаем данные заново
     try {
@@ -216,11 +217,13 @@ function updateSelectedServiceIndicators(services) {
     const indicator = document.createElement('div');
     indicator.className = 'selected-service-indicator';
     
+    const serviceLabel = window.dashboardTranslations?.serviceLabel || 'Сервис';
+    
     // Формируем текст индикатора в зависимости от количества выбранных сервисов
     if (services.length === 1) {
-      indicator.textContent = `Сервис: ${services[0]}`;
+      indicator.textContent = `${serviceLabel}: ${services[0]}`;
     } else {
-      indicator.textContent = `Выбрано сервисов: ${services.length}`;
+      indicator.textContent = `${serviceLabel}: ${services.length}`;
     }
     
     panel.appendChild(indicator);
@@ -442,10 +445,12 @@ function saveCurrentSettings() {
   // Отправляем на сервер
   Settings.saveSettingsToServer(settings)
     .then(data => {
-      alert('Настройки успешно сохранены');
+      const msg = window.dashboardTranslations?.messages?.settingsSaved || 'Настройки успешно сохранены';
+      alert(msg);
     })
     .catch(error => {
       console.error('Ошибка при сохранении настроек:', error);
-      alert('Настройки сохранены локально, но не удалось сохранить на сервере: ' + error.message);
+      const msg = window.dashboardTranslations?.messages?.settingsSavedLocally || 'Настройки сохранены локально, но не удалось сохранить на сервере';
+      alert(msg + ': ' + error.message);
     });
 }

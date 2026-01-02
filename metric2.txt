@@ -1,3 +1,0 @@
-# HELP http_requests_errors_total Total number of HTTP request errors
-# TYPE http_requests_errors_total counter
-http_requests_errors_total{method="GET",path="/api/data",status="500"} 78 
