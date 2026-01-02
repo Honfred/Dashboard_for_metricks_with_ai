@@ -60,6 +60,20 @@
               <li class="nav-item">
                 <a class="nav-link <%= current_page?(dashboard_index_path) ? 'active' : '' %>" href="/dashboard"><%= t('navigation.dashboard') %></a>
               </li>
+              <li class="nav-item">
+                <a class="nav-link <%= controller_name == 'alerts' ? 'active' : '' %>" href="/alerts"><%= t('navigation.alerts') %></a>
+              </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle <%= %w[uploads reports ml_models].include?(controller_name) ? 'active' : '' %>" href="#" id="storageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i class="bi bi-cloud"></i> <%= t('navigation.uploads') %>
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="storageDropdown">
+                  <li><a class="dropdown-item <%= controller_name == 'uploads' ? 'active' : '' %>" href="/uploads"><%= t('navigation.uploads') %></a></li>
+                  <li><a class="dropdown-item <%= controller_name == 'reports' ? 'active' : '' %>" href="/reports"><%= t('navigation.reports') %></a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item <%= controller_name == 'ml_models' ? 'active' : '' %>" href="/ml_models"><%= t('navigation.ml_models') %></a></li>
+                </ul>
+              </li>
             </ul>
             
             <!-- Переключатель языков -->

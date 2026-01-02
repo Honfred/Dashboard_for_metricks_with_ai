@@ -1,0 +1,97 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to t('reports.title'), reports_path %></li>
+      <li class="breadcrumb-item active"><%= t('reports.new') %></li>
+    </ol>
+  </nav>
+
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><%= t('reports.new') %></h5>
+        </div>
+        <div class="card-body">
+          <%= form_with model: @report, local: true do |f| %>
+            <% if @report.errors.any? %>
+              <div class="alert alert-danger">
+                <ul class="mb-0">
+                  <% @report.errors.full_messages.each do |msg| %>
+                    <li><%= msg %></li>
+                  <% end %>
+                </ul>
+              </div>
+            <% end %>
+
+            <div class="mb-3">
+              <%= f.label :name, t('reports.name'), class: 'form-label' %>
+              <%= f.text_field :name, class: 'form-control', required: true %>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <%= f.label :report_type, t('reports.type'), class: 'form-label' %>
+                <%= f.select :report_type, [
+                  [t('reports.types.metrics'), 'metrics'],
+                  [t('reports.types.alerts'), 'alerts'],
+                  [t('reports.types.ai_analysis'), 'ai_analysis'],
+                  [t('reports.types.dashboard'), 'dashboard'],
+                  [t('reports.types.combined'), 'combined']
+                ], {}, class: 'form-select' %>
+              </div>
+
+              <div class="col-md-6 mb-3">
+                <%= f.label :format, t('reports.format'), class: 'form-label' %>
+                <%= f.select :format, [
+                  ['PDF', 'pdf'],
+                  ['CSV', 'csv'],
+                  ['JSON', 'json']
+                ], {}, class: 'form-select' %>
+              </div>
+            </div>
+
+            <div class="card mb-3">
+              <div class="card-header">
+                <h6 class="mb-0"><%= t('reports.parameters') %></h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <%= label_tag 'parameters_start_date', t('reports.start_date'), class: 'form-label' %>
+                    <%= date_field_tag 'report[parameters][start_date]', nil, class: 'form-control' %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= label_tag 'parameters_end_date', t('reports.end_date'), class: 'form-label' %>
+                    <%= date_field_tag 'report[parameters][end_date]', nil, class: 'form-control' %>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <%= label_tag 'parameters_service', t('reports.service'), class: 'form-label' %>
+                    <%= text_field_tag 'report[parameters][service]', nil, class: 'form-control', placeholder: t('reports.service_placeholder') %>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <%= label_tag 'parameters_limit', t('reports.limit'), class: 'form-label' %>
+                    <%= number_field_tag 'report[parameters][limit]', 1000, class: 'form-control', min: 1, max: 10000 %>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <%= f.label :expires_at, t('reports.expires_at'), class: 'form-label' %>
+              <%= f.datetime_local_field :expires_at, class: 'form-control', value: 7.days.from_now %>
+              <div class="form-text"><%= t('reports.expires_hint') %></div>
+            </div>
+
+            <div class="d-flex gap-2">
+              <%= f.submit t('reports.generate'), class: 'btn btn-primary' %>
+              <%= link_to t('common.cancel'), reports_path, class: 'btn btn-outline-secondary' %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

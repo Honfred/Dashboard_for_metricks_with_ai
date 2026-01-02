@@ -1,0 +1,83 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to t('uploads.title'), uploads_path %></li>
+      <li class="breadcrumb-item active"><%= @uploaded_file.name %></li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><%= @uploaded_file.name %></h5>
+          <div class="btn-group btn-group-sm">
+            <%= link_to download_upload_path(@uploaded_file), class: 'btn btn-primary' do %>
+              <i class="bi bi-download me-1"></i> <%= t('uploads.download') %>
+            <% end %>
+            <%= link_to @uploaded_file, method: :delete,
+                data: { confirm: t('common.confirm_delete') },
+                class: 'btn btn-danger' do %>
+              <i class="bi bi-trash me-1"></i> <%= t('common.delete') %>
+            <% end %>
+          </div>
+        </div>
+        <div class="card-body">
+          <% if @uploaded_file.image? && @uploaded_file.file.attached? %>
+            <div class="text-center mb-4">
+              <%= image_tag @uploaded_file.file, class: 'img-fluid rounded', style: 'max-height: 400px' %>
+            </div>
+          <% elsif @uploaded_file.text? && @uploaded_file.file.attached? %>
+            <div class="mb-4">
+              <pre class="bg-light p-3 rounded" style="max-height: 400px; overflow: auto;"><%= @uploaded_file.file.download.force_encoding('UTF-8').truncate(10000) %></pre>
+            </div>
+          <% end %>
+
+          <dl class="row">
+            <dt class="col-sm-3"><%= t('uploads.type') %></dt>
+            <dd class="col-sm-9"><span class="badge bg-secondary"><%= @uploaded_file.file_type %></span></dd>
+
+            <dt class="col-sm-3"><%= t('uploads.category') %></dt>
+            <dd class="col-sm-9"><%= @uploaded_file.category || '-' %></dd>
+
+            <dt class="col-sm-3"><%= t('uploads.content_type') %></dt>
+            <dd class="col-sm-9"><code><%= @uploaded_file.content_type %></code></dd>
+
+            <dt class="col-sm-3"><%= t('uploads.size') %></dt>
+            <dd class="col-sm-9"><%= @uploaded_file.file_size_human %></dd>
+
+            <dt class="col-sm-3"><%= t('uploads.uploaded_at') %></dt>
+            <dd class="col-sm-9"><%= l(@uploaded_file.created_at, format: :long) %></dd>
+
+            <% if @uploaded_file.description.present? %>
+              <dt class="col-sm-3"><%= t('uploads.description') %></dt>
+              <dd class="col-sm-9"><%= @uploaded_file.description %></dd>
+            <% end %>
+
+            <% if @uploaded_file.uploadable.present? %>
+              <dt class="col-sm-3"><%= t('uploads.attached_to') %></dt>
+              <dd class="col-sm-9">
+                <%= @uploaded_file.uploadable_type %> #<%= @uploaded_file.uploadable_id %>
+              </dd>
+            <% end %>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0"><%= t('uploads.metadata') %></h6>
+        </div>
+        <div class="card-body">
+          <% if @uploaded_file.metadata.present? %>
+            <pre class="mb-0"><%= JSON.pretty_generate(@uploaded_file.metadata) %></pre>
+          <% else %>
+            <p class="text-muted mb-0"><%= t('uploads.no_metadata') %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

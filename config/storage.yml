@@ -6,29 +6,44 @@ local:
   service: Disk
   root: <%= Rails.root.join("storage") %>
 
-# Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
-# amazon:
-#   service: S3
-#   access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
-#   secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
-#   region: us-east-1
-#   bucket: your_own_bucket-<%= Rails.env %>
+# MinIO для локальной разработки (S3-совместимое хранилище)
+minio:
+  service: S3
+  access_key_id: <%= ENV.fetch('MINIO_ACCESS_KEY', 'minioadmin') %>
+  secret_access_key: <%= ENV.fetch('MINIO_SECRET_KEY', 'minioadmin') %>
+  region: us-east-1
+  bucket: <%= ENV.fetch('MINIO_BUCKET', 'dashboard-storage') %>
+  endpoint: <%= ENV.fetch('MINIO_ENDPOINT', 'http://minio:9000') %>
+  force_path_style: true
 
-# Remember not to checkin your GCS keyfile to a repository
-# google:
-#   service: GCS
-#   project: your_project
-#   credentials: <%= Rails.root.join("path/to/gcs.keyfile") %>
-#   bucket: your_own_bucket-<%= Rails.env %>
+# Production S3 (AWS или совместимый)
+amazon:
+  service: S3
+  access_key_id: <%= ENV.fetch('AWS_ACCESS_KEY_ID', '') %>
+  secret_access_key: <%= ENV.fetch('AWS_SECRET_ACCESS_KEY', '') %>
+  region: <%= ENV.fetch('AWS_REGION', 'us-east-1') %>
+  bucket: <%= ENV.fetch('AWS_BUCKET', 'dashboard-storage-prod') %>
+  <% if ENV['AWS_ENDPOINT'].present? %>
+  endpoint: <%= ENV['AWS_ENDPOINT'] %>
+  force_path_style: true
+  <% end %>
 
-# Use bin/rails credentials:edit to set the Azure Storage secret (as azure_storage:storage_access_key)
-# microsoft:
-#   service: AzureStorage
-#   storage_account_name: your_account_name
-#   storage_access_key: <%= Rails.application.credentials.dig(:azure_storage, :storage_access_key) %>
-#   container: your_container_name-<%= Rails.env %>
+# Для хранения ML моделей (отдельный bucket)
+ml_models:
+  service: S3
+  access_key_id: <%= ENV.fetch('MINIO_ACCESS_KEY', ENV.fetch('AWS_ACCESS_KEY_ID', 'minioadmin')) %>
+  secret_access_key: <%= ENV.fetch('MINIO_SECRET_KEY', ENV.fetch('AWS_SECRET_ACCESS_KEY', 'minioadmin')) %>
+  region: us-east-1
+  bucket: <%= ENV.fetch('ML_MODELS_BUCKET', 'ml-models') %>
+  endpoint: <%= ENV.fetch('MINIO_ENDPOINT', ENV.fetch('AWS_ENDPOINT', 'http://minio:9000')) %>
+  force_path_style: true
 
-# mirror:
-#   service: Mirror
-#   primary: local
-#   mirrors: [ amazon, google, microsoft ]
+# Для отчётов (отдельный bucket)
+reports:
+  service: S3
+  access_key_id: <%= ENV.fetch('MINIO_ACCESS_KEY', ENV.fetch('AWS_ACCESS_KEY_ID', 'minioadmin')) %>
+  secret_access_key: <%= ENV.fetch('MINIO_SECRET_KEY', ENV.fetch('AWS_SECRET_ACCESS_KEY', 'minioadmin')) %>
+  region: us-east-1
+  bucket: <%= ENV.fetch('REPORTS_BUCKET', 'reports') %>
+  endpoint: <%= ENV.fetch('MINIO_ENDPOINT', ENV.fetch('AWS_ENDPOINT', 'http://minio:9000')) %>
+  force_path_style: true

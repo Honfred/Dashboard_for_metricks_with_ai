@@ -1,0 +1,133 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><%= t('reports.title') %></h1>
+    <%= link_to t('reports.new'), new_report_path, class: 'btn btn-primary' %>
+  </div>
+
+  <!-- Быстрый экспорт -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0"><%= t('reports.quick_export') %></h5>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <%= form_tag quick_export_reports_path, method: :post, class: 'd-flex gap-2' do %>
+            <%= hidden_field_tag :report_type, 'metrics' %>
+            <%= select_tag :format_type, options_for_select([['CSV', 'csv'], ['JSON', 'json'], ['PDF', 'pdf']]), class: 'form-select' %>
+            <%= submit_tag t('reports.export_metrics'), class: 'btn btn-outline-primary' %>
+          <% end %>
+        </div>
+        <div class="col-md-4">
+          <%= form_tag quick_export_reports_path, method: :post, class: 'd-flex gap-2' do %>
+            <%= hidden_field_tag :report_type, 'alerts' %>
+            <%= select_tag :format_type, options_for_select([['CSV', 'csv'], ['JSON', 'json'], ['PDF', 'pdf']]), class: 'form-select' %>
+            <%= submit_tag t('reports.export_alerts'), class: 'btn btn-outline-warning' %>
+          <% end %>
+        </div>
+        <div class="col-md-4">
+          <%= form_tag quick_export_reports_path, method: :post, class: 'd-flex gap-2' do %>
+            <%= hidden_field_tag :report_type, 'combined' %>
+            <%= select_tag :format_type, options_for_select([['JSON', 'json'], ['PDF', 'pdf']]), class: 'form-select' %>
+            <%= submit_tag t('reports.export_combined'), class: 'btn btn-outline-success' %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Фильтры -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <%= form_tag reports_path, method: :get, class: 'd-flex gap-3' do %>
+        <div class="flex-grow-1">
+          <%= select_tag :report_type, 
+              options_for_select([
+                [t('reports.all_types'), ''],
+                [t('reports.types.metrics'), 'metrics'],
+                [t('reports.types.alerts'), 'alerts'],
+                [t('reports.types.ai_analysis'), 'ai_analysis'],
+                [t('reports.types.dashboard'), 'dashboard'],
+                [t('reports.types.combined'), 'combined']
+              ], params[:report_type]),
+              class: 'form-select' %>
+        </div>
+        <%= submit_tag t('common.filter'), class: 'btn btn-outline-secondary' %>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Таблица отчётов -->
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th><%= t('reports.name') %></th>
+            <th><%= t('reports.type') %></th>
+            <th><%= t('reports.format') %></th>
+            <th><%= t('reports.status') %></th>
+            <th><%= t('reports.size') %></th>
+            <th><%= t('reports.generated_at') %></th>
+            <th><%= t('common.actions') %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @reports.each do |report| %>
+            <tr>
+              <td><%= link_to report.name, report %></td>
+              <td><span class="badge bg-info"><%= report.report_type %></span></td>
+              <td><span class="badge bg-secondary"><%= report.format.upcase %></span></td>
+              <td>
+                <% case report.status %>
+                <% when 'pending' %>
+                  <span class="badge bg-warning"><i class="bi bi-hourglass-split me-1"></i><%= t('reports.statuses.pending') %></span>
+                <% when 'processing' %>
+                  <span class="badge bg-info"><i class="bi bi-arrow-repeat me-1 spin"></i><%= t('reports.statuses.processing') %></span>
+                <% when 'completed' %>
+                  <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i><%= t('reports.statuses.completed') %></span>
+                <% when 'failed' %>
+                  <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i><%= t('reports.statuses.failed') %></span>
+                <% end %>
+              </td>
+              <td><%= report.file_size_human || '-' %></td>
+              <td><%= report.generated_at ? l(report.generated_at, format: :short) : '-' %></td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <% if report.completed? && report.file.attached? %>
+                    <%= link_to download_report_path(report), class: 'btn btn-outline-primary' do %>
+                      <i class="bi bi-download"></i>
+                    <% end %>
+                  <% end %>
+                  <%= link_to regenerate_report_path(report), method: :post, class: 'btn btn-outline-secondary' do %>
+                    <i class="bi bi-arrow-clockwise"></i>
+                  <% end %>
+                  <%= link_to report, method: :delete, 
+                      data: { confirm: t('common.confirm_delete') },
+                      class: 'btn btn-outline-danger' do %>
+                    <i class="bi bi-trash"></i>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Пагинация -->
+  <div class="d-flex justify-content-center mt-4">
+    <%= paginate @reports %>
+  </div>
+</div>
+
+<style>
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+</style>

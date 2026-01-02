@@ -1,0 +1,146 @@
+<div class="container mt-4">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><%= link_to t('ml_models.title'), ml_models_path %></li>
+      <li class="breadcrumb-item active"><%= @model_version.model_type %> v<%= @model_version.version %></li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <%= @model_version.model_type.titleize %> 
+            <span class="badge bg-secondary">v<%= @model_version.version %></span>
+            <% if @model_version.is_active? %>
+              <span class="badge bg-success"><%= t('ml_models.active') %></span>
+            <% end %>
+          </h5>
+          <div class="btn-group btn-group-sm">
+            <% if @model_version.completed? && !@model_version.is_active? %>
+              <%= link_to deploy_ml_model_path(@model_version), method: :post, class: 'btn btn-success', data: { confirm: t('ml_models.confirm_deploy') } do %>
+                <i class="bi bi-rocket me-1"></i> <%= t('ml_models.deploy') %>
+              <% end %>
+            <% end %>
+            <% if @model_version.model_file.attached? %>
+              <%= link_to download_ml_model_path(@model_version), class: 'btn btn-primary' do %>
+                <i class="bi bi-download me-1"></i> <%= t('ml_models.download') %>
+              <% end %>
+            <% end %>
+            <% unless @model_version.is_active? %>
+              <%= link_to @model_version, method: :delete, data: { confirm: t('common.confirm_delete') }, class: 'btn btn-danger' do %>
+                <i class="bi bi-trash me-1"></i> <%= t('common.delete') %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h6><%= t('ml_models.status') %></h6>
+              <% case @model_version.status %>
+              <% when 'training' %>
+                <span class="badge bg-info fs-6"><i class="bi bi-arrow-repeat me-1"></i><%= t('ml_models.statuses.training') %></span>
+              <% when 'completed' %>
+                <span class="badge bg-success fs-6"><%= t('ml_models.statuses.completed') %></span>
+              <% when 'deployed' %>
+                <span class="badge bg-primary fs-6"><%= t('ml_models.statuses.deployed') %></span>
+              <% when 'failed' %>
+                <span class="badge bg-danger fs-6"><%= t('ml_models.statuses.failed') %></span>
+              <% when 'deprecated' %>
+                <span class="badge bg-secondary fs-6"><%= t('ml_models.statuses.deprecated') %></span>
+              <% end %>
+            </div>
+            <div class="col-md-6">
+              <h6><%= t('ml_models.type') %></h6>
+              <span class="badge bg-<%= @model_version.model_type == 'anomaly' ? 'primary' : @model_version.model_type == 'performance' ? 'success' : 'warning' %> fs-6">
+                <%= @model_version.model_type %>
+              </span>
+            </div>
+          </div>
+
+          <dl class="row">
+            <dt class="col-sm-4"><%= t('ml_models.version') %></dt>
+            <dd class="col-sm-8"><%= @model_version.version %></dd>
+
+            <dt class="col-sm-4"><%= t('ml_models.created_at') %></dt>
+            <dd class="col-sm-8"><%= l(@model_version.created_at, format: :long) %></dd>
+
+            <% if @model_version.trained_at %>
+              <dt class="col-sm-4"><%= t('ml_models.trained_at') %></dt>
+              <dd class="col-sm-8"><%= l(@model_version.trained_at, format: :long) %></dd>
+            <% end %>
+
+            <% if @model_version.deployed_at %>
+              <dt class="col-sm-4"><%= t('ml_models.deployed_at') %></dt>
+              <dd class="col-sm-8"><%= l(@model_version.deployed_at, format: :long) %></dd>
+            <% end %>
+          </dl>
+
+          <% if @model_version.failed? && @model_version.metadata['error'].present? %>
+            <div class="alert alert-danger">
+              <strong><%= t('ml_models.error') %>:</strong>
+              <%= @model_version.metadata['error'] %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card mb-4">
+        <div class="card-header">
+          <h6 class="mb-0"><%= t('ml_models.metrics') %></h6>
+        </div>
+        <div class="card-body">
+          <% if @model_version.metrics.present? %>
+            <dl class="mb-0">
+              <% if @model_version.accuracy %>
+                <dt><%= t('ml_models.accuracy') %></dt>
+                <dd>
+                  <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-success" style="width: <%= (@model_version.accuracy * 100).round %>%;">
+                      <%= (@model_version.accuracy * 100).round(1) %>%
+                    </div>
+                  </div>
+                </dd>
+              <% end %>
+              
+              <% if @model_version.f1_score %>
+                <dt><%= t('ml_models.f1_score') %></dt>
+                <dd>
+                  <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-info" style="width: <%= (@model_version.f1_score * 100).round %>%;">
+                      <%= (@model_version.f1_score * 100).round(1) %>%
+                    </div>
+                  </div>
+                </dd>
+              <% end %>
+
+              <% @model_version.metrics.except('accuracy', 'f1_score').each do |key, value| %>
+                <dt><%= key.humanize %></dt>
+                <dd><%= value %></dd>
+              <% end %>
+            </dl>
+          <% else %>
+            <p class="text-muted mb-0"><%= t('ml_models.no_metrics') %></p>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0"><%= t('ml_models.metadata') %></h6>
+        </div>
+        <div class="card-body">
+          <% if @model_version.metadata.present? %>
+            <pre class="mb-0"><%= JSON.pretty_generate(@model_version.metadata) %></pre>
+          <% else %>
+            <p class="text-muted mb-0"><%= t('ml_models.no_metadata') %></p>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
