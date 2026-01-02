@@ -12,6 +12,7 @@ gem 'chartkick'
 gem 'groupdate'
 gem 'pg', '~> 1.5', '>= 1.5.6'
 gem 'httparty'
+gem 'kaminari'
 
 gem "puma", ">= 5.0"
 gem "importmap-rails"

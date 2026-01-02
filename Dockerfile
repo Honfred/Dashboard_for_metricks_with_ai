@@ -19,14 +19,17 @@ RUN apk add --no-cache \
     libcurl \
     uchardet \
     libarchive \
-    freetds-dev
+    freetds-dev \
+    yaml-dev \
+    libc6-compat \
+    gcompat
 
 WORKDIR /app
 
 COPY Gemfile* ./
 
-RUN gem update bundler && \
-    bundle config set force_ruby_platform true && \
+# Используем системные библиотеки для nokogiri
+RUN bundle config build.nokogiri --use-system-libraries && \
     bundle install --jobs $(nproc) --retry 3
 
 COPY . .
