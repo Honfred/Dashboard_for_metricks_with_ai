@@ -1,8 +1,8 @@
 <div class="container mt-4">
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><%= link_to 'Метрики', metrics_path %></li>
-      <li class="breadcrumb-item active" aria-current="page">Новая метрика</li>
+      <li class="breadcrumb-item"><%= link_to t('breadcrumbs.metrics'), metrics_path %></li>
+      <li class="breadcrumb-item active" aria-current="page"><%= t('metrics.new_metric') %></li>
     </ol>
   </nav>
 
@@ -10,13 +10,13 @@
     <div class="col-md-8">
       <div class="card">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Добавление новой метрики</h5>
+          <h5 class="mb-0"><%= t('metrics.adding_new_metric') %></h5>
         </div>
         <div class="card-body">
           <%= form_with(model: @metric, local: true) do |form| %>
             <% if @metric.errors.any? %>
               <div class="alert alert-danger">
-                <h4><%= pluralize(@metric.errors.count, "ошибка") %> при сохранении метрики:</h4>
+                <h4><%= t('metrics.errors.saving', count: @metric.errors.count) %></h4>
                 <ul>
                   <% @metric.errors.full_messages.each do |message| %>
                     <li><%= message %></li>
@@ -26,29 +26,29 @@
             <% end %>
 
             <div class="mb-3">
-              <%= form.label :name, 'Название метрики', class: 'form-label' %>
-              <%= form.text_field :name, class: 'form-control', placeholder: 'api_response_time' %>
+              <%= form.label :name, t('metrics.metric_name'), class: 'form-label' %>
+              <%= form.text_field :name, class: 'form-control', placeholder: t('metrics.metric_name_placeholder') %>
               <div class="form-text">
-                Укажите название метрики в Prometheus, например: http_request_duration_seconds
+                <%= t('metrics.metric_name_hint') %>
               </div>
             </div>
 
             <div class="mb-3">
-              <%= form.label :description, 'Описание', class: 'form-label' %>
-              <%= form.text_area :description, rows: 3, class: 'form-control', placeholder: 'Время ответа API-эндпоинта' %>
+              <%= form.label :description, t('activerecord.attributes.metric.description'), class: 'form-label' %>
+              <%= form.text_area :description, rows: 3, class: 'form-control', placeholder: t('activerecord.attributes.metric.description') %>
             </div>
 
             <div class="mb-3">
-              <%= form.label :metric_type, 'Тип метрики', class: 'form-label' %>
+              <%= form.label :metric_type, t('activerecord.attributes.metric.metric_type'), class: 'form-label' %>
               <%= form.select :metric_type, 
                   Metric.metric_types.keys.map { |key| [key.humanize, key] }, 
-                  { prompt: "Выберите тип метрики" }, 
+                  { prompt: t('metrics.select_type_prompt') }, 
                   class: 'form-select' %>
             </div>
 
             <div class="d-flex justify-content-between">
-              <%= link_to 'Отмена', metrics_path, class: 'btn btn-secondary' %>
-              <%= form.submit 'Сохранить', class: 'btn btn-success' %>
+              <%= link_to t('common.cancel'), metrics_path, class: 'btn btn-secondary' %>
+              <%= form.submit t('common.save'), class: 'btn btn-success' %>
             </div>
           <% end %>
         </div>

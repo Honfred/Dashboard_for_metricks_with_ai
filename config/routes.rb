@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # Маршрут для смены локали
+  get 'set_locale/:locale', to: 'application#set_locale_action', as: :set_locale
+  
   get "alerts/index"
   get "alerts/show"
   get "alerts/update"

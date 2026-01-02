@@ -1,7 +1,7 @@
 <div class="container mt-4">
   <div class="card">
     <div class="card-header">
-      <h2>Статус источников данных Prometheus</h2>
+      <h2><%= t('prometheus.status_title') %></h2>
     </div>
     <div class="card-body">
       <% if @targets.present? %>
@@ -9,22 +9,22 @@
           <% @targets.each do |target| %>
             <div class="data-source-item <%= target[:active] ? 'active' : 'inactive' %>">
               <div>
-                <strong>Job:</strong> <%= target[:job] %><br>
-                <strong>Instance:</strong> <%= target[:instance] %><br>
-                <strong>Статус:</strong> <span class="<%= target[:active] ? 'text-success' : 'text-danger' %>">
-                  <%= target[:active] ? 'Активен' : 'Неактивен' %>
+                <strong><%= t('prometheus.job') %></strong> <%= target[:job] %><br>
+                <strong><%= t('prometheus.instance') %></strong> <%= target[:instance] %><br>
+                <strong><%= t('prometheus.status') %></strong> <span class="<%= target[:active] ? 'text-success' : 'text-danger' %>">
+                  <%= target[:active] ? t('common.active') : t('common.inactive') %>
                 </span>
               </div>
               <div>
-                <strong>Последнее обновление:</strong><br>
-                <%= target[:last_update] ? target[:last_update].strftime("%d.%m.%Y %H:%M:%S") : 'Нет данных' %>
+                <strong><%= t('prometheus.last_update') %></strong><br>
+                <%= target[:last_update] ? l(target[:last_update], format: :default) : t('prometheus.no_data') %>
               </div>
             </div>
           <% end %>
         </div>
       <% else %>
         <div class="no-data-message">
-          <p>Нет доступных источников данных</p>
+          <p><%= t('prometheus.no_sources') %></p>
         </div>
       <% end %>
     </div>

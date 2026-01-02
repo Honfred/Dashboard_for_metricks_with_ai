@@ -1,9 +1,9 @@
 <div class="container mt-4">
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><%= link_to 'Метрики', metrics_path %></li>
+      <li class="breadcrumb-item"><%= link_to t('breadcrumbs.metrics'), metrics_path %></li>
       <li class="breadcrumb-item"><%= link_to @metric.name, metric_path(@metric) %></li>
-      <li class="breadcrumb-item active" aria-current="page">Новый анализ</li>
+      <li class="breadcrumb-item active" aria-current="page"><%= t('breadcrumbs.new_analysis') %></li>
     </ol>
   </nav>
 
@@ -11,13 +11,13 @@
     <div class="col-md-8">
       <div class="card">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Новый ИИ-анализ для метрики: <%= @metric.name %></h5>
+          <h5 class="mb-0"><%= t('ai_analysis.new_analysis_for_metric', name: @metric.name) %></h5>
         </div>
         <div class="card-body">
           <%= form_with(model: [@metric, @ai_analysis], local: true) do |form| %>
             <% if @ai_analysis.errors.any? %>
               <div class="alert alert-danger">
-                <h4><%= pluralize(@ai_analysis.errors.count, "ошибка") %> при сохранении анализа:</h4>
+                <h4><%= t('ai_analysis.errors.saving', count: @ai_analysis.errors.count) %></h4>
                 <ul>
                   <% @ai_analysis.errors.full_messages.each do |message| %>
                     <li><%= message %></li>
@@ -27,33 +27,33 @@
             <% end %>
 
             <div class="mb-3">
-              <%= form.label :analysis_type, 'Тип анализа', class: 'form-label' %>
+              <%= form.label :analysis_type, t('ai_analysis.analysis_type_label'), class: 'form-label' %>
               <%= form.select :analysis_type, 
                   [
-                    ['Обнаружение аномалий', 'anomaly_detection'],
-                    ['Прогнозирование трендов', 'trend_prediction'],
-                    ['Анализ производительности', 'performance_insight']
+                    [t('ai_analysis.models.anomaly_detection.title'), 'anomaly_detection'],
+                    [t('ai_analysis.models.trend_prediction.title'), 'trend_prediction'],
+                    [t('ai_analysis.models.performance_insight.title'), 'performance_insight']
                   ], 
                   { selected: @ai_analysis.analysis_type }, 
                   class: 'form-select' %>
               <% if @ai_analysis.analysis_type.present? %>
                 <div class="form-text text-success">
-                  Выбран тип анализа: <%= @ai_analysis.analysis_type.humanize %>
+                  <%= t('ai_analysis.selected_type', type: @ai_analysis.analysis_type.humanize) %>
                 </div>
               <% end %>
             </div>
 
             <div class="mb-3">
-              <%= form.label :parameters, 'Параметры анализа (JSON)', class: 'form-label' %>
-              <%= form.text_area :parameters, rows: 5, class: 'form-control', placeholder: '{"window_size": 24, "sensitivity": 0.75}' %>
+              <%= form.label :parameters, t('ai_analysis.parameters_label'), class: 'form-label' %>
+              <%= form.text_area :parameters, rows: 5, class: 'form-control', placeholder: t('ai_analysis.parameters_placeholder') %>
               <div class="form-text">
-                Укажите дополнительные параметры для анализа в формате JSON. Оставьте пустым для использования параметров по умолчанию.
+                <%= t('ai_analysis.parameters_hint') %>
               </div>
             </div>
 
             <div class="d-flex justify-content-between">
-              <%= link_to 'Отмена', metric_path(@metric), class: 'btn btn-secondary' %>
-              <%= form.submit 'Запустить анализ', class: 'btn btn-success' %>
+              <%= link_to t('common.cancel'), metric_path(@metric), class: 'btn btn-secondary' %>
+              <%= form.submit t('ai_analysis.run_analysis'), class: 'btn btn-success' %>
             </div>
           <% end %>
         </div>

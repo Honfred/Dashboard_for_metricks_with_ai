@@ -3,31 +3,31 @@
 <% end %>
 
 <div class="alerts-container">
-  <h1>Оповещения</h1>
+  <h1><%= t('alerts.title') %></h1>
   
   <div class="alerts-filters">
     <form action="<%= request.path %>" method="get" class="form-inline">
       <div class="filter-group">
-        <label for="severity">Важность:</label>
+        <label for="severity"><%= t('alerts.severity.label') %></label>
         <select name="severity" id="severity" class="form-select form-select-sm">
-          <option value="">Все</option>
-          <option value="info" <%= params[:severity] == 'info' ? 'selected' : '' %>>Информация</option>
-          <option value="warning" <%= params[:severity] == 'warning' ? 'selected' : '' %>>Предупреждение</option>
-          <option value="critical" <%= params[:severity] == 'critical' ? 'selected' : '' %>>Критическое</option>
+          <option value=""><%= t('common.all') %></option>
+          <option value="info" <%= params[:severity] == 'info' ? 'selected' : '' %>><%= t('alerts.severity.info') %></option>
+          <option value="warning" <%= params[:severity] == 'warning' ? 'selected' : '' %>><%= t('alerts.severity.warning') %></option>
+          <option value="critical" <%= params[:severity] == 'critical' ? 'selected' : '' %>><%= t('alerts.severity.critical') %></option>
         </select>
       </div>
       
       <div class="filter-group">
-        <label for="service">Сервис:</label>
-        <input type="text" name="service" id="service" value="<%= params[:service] %>" class="form-control form-control-sm" placeholder="Имя сервиса">
+        <label for="service"><%= t('alerts.service_label') %></label>
+        <input type="text" name="service" id="service" value="<%= params[:service] %>" class="form-control form-control-sm" placeholder="<%= t('alerts.service_placeholder') %>">
       </div>
       
-      <button type="submit" class="btn btn-primary btn-sm">Фильтровать</button>
+      <button type="submit" class="btn btn-primary btn-sm"><%= t('alerts.filter_button') %></button>
     </form>
     
     <div class="alerts-actions">
-      <a href="<%= active_alerts_path %>" class="btn btn-outline-primary <%= current_page?(active_alerts_path) ? 'active' : '' %>">Активные</a>
-      <a href="<%= alerts_path %>" class="btn btn-outline-primary <%= current_page?(alerts_path) && !current_page?(active_alerts_path) ? 'active' : '' %>">Все</a>
+      <a href="<%= active_alerts_path %>" class="btn btn-outline-primary <%= current_page?(active_alerts_path) ? 'active' : '' %>"><%= t('alerts.active_alerts') %></a>
+      <a href="<%= alerts_path %>" class="btn btn-outline-primary <%= current_page?(alerts_path) && !current_page?(active_alerts_path) ? 'active' : '' %>"><%= t('alerts.all_alerts') %></a>
     </div>
   </div>
   
@@ -36,14 +36,14 @@
       <table class="table table-striped">
         <thead>
           <tr>
-            <th>Сервис</th>
-            <th>Метрика</th>
-            <th>Значение</th>
-            <th>Порог</th>
-            <th>Важность</th>
-            <th>Статус</th>
-            <th>Время</th>
-            <th>Действия</th>
+            <th><%= t('alerts.table.service') %></th>
+            <th><%= t('alerts.table.metric') %></th>
+            <th><%= t('alerts.table.value') %></th>
+            <th><%= t('alerts.table.threshold') %></th>
+            <th><%= t('alerts.table.severity') %></th>
+            <th><%= t('alerts.table.status') %></th>
+            <th><%= t('alerts.table.time') %></th>
+            <th><%= t('alerts.table.actions') %></th>
           </tr>
         </thead>
         <tbody>
@@ -55,21 +55,21 @@
               <td><%= alert.threshold %></td>
               <td>
                 <span class="badge bg-<%= { 'info' => 'info', 'warning' => 'warning', 'critical' => 'danger' }[alert.severity] %>">
-                  <%= { 'info' => 'Информация', 'warning' => 'Предупреждение', 'critical' => 'Критическое' }[alert.severity] %>
+                  <%= t("alerts.severity.#{alert.severity}") %>
                 </span>
               </td>
               <td>
                 <span class="badge bg-<%= { 'triggered' => 'danger', 'acknowledged' => 'warning', 'resolved' => 'success' }[alert.status] %>">
-                  <%= { 'triggered' => 'Активно', 'acknowledged' => 'Принято', 'resolved' => 'Решено' }[alert.status] %>
+                  <%= t("alerts.status.#{alert.status}") %>
                 </span>
               </td>
-              <td><%= alert.triggered_at.strftime("%d.%m.%Y %H:%M:%S") %></td>
+              <td><%= l(alert.triggered_at, format: :default) %></td>
               <td>
                 <div class="btn-group">
-                  <a href="<%= alert_path(alert) %>" class="btn btn-sm btn-outline-primary">Детали</a>
+                  <a href="<%= alert_path(alert) %>" class="btn btn-sm btn-outline-primary"><%= t('alerts.actions.details') %></a>
                   <% if alert.active? %>
-                    <%= button_to 'Принять', acknowledge_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-warning' %>
-                    <%= button_to 'Решить', resolve_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-success' %>
+                    <%= button_to t('alerts.actions.acknowledge'), acknowledge_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-warning' %>
+                    <%= button_to t('alerts.actions.resolve'), resolve_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-success' %>
                   <% end %>
                 </div>
               </td>
@@ -83,7 +83,7 @@
       </div>
     <% else %>
       <div class="alert alert-info">
-        Оповещений не найдено.
+        <%= t('alerts.no_alerts') %>
       </div>
     <% end %>
   </div>

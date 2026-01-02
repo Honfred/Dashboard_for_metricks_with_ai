@@ -5,7 +5,7 @@
 <div class="container mt-4" data-controller="metrics-chart">
   <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-      <li class="breadcrumb-item"><%= link_to 'Метрики', metrics_path %></li>
+      <li class="breadcrumb-item"><%= link_to t('breadcrumbs.metrics'), metrics_path %></li>
       <li class="breadcrumb-item active" aria-current="page"><%= @metric.name %></li>
     </ol>
   </nav>
@@ -13,18 +13,18 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1><%= @metric.name %></h1>
     <div class="btn-group">
-      <button class="btn btn-outline-primary" data-action="metrics-chart#refreshData">Обновить данные</button>
+      <button class="btn btn-outline-primary" data-action="metrics-chart#refreshData"><%= t('common.refresh_data') %></button>
       <div class="btn-group" role="group">
         <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-          Временной диапазон
+          <%= t('metrics.time_range_label') %>
         </button>
         <ul class="dropdown-menu">
-          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '30m') %>">30 минут</a></li>
-          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '1h') %>">1 час</a></li>
-          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '3h') %>">3 часа</a></li>
-          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '12h') %>">12 часов</a></li>
-          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '24h') %>">24 часа</a></li>
-          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '7d') %>">7 дней</a></li>
+          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '30m') %>"><%= t('dashboard.time_range.30m') %></a></li>
+          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '1h') %>"><%= t('dashboard.time_range.1h') %></a></li>
+          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '3h') %>"><%= t('dashboard.time_range.3h') %></a></li>
+          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '12h') %>"><%= t('dashboard.time_range.12h') %></a></li>
+          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '24h') %>"><%= t('dashboard.time_range.24h') %></a></li>
+          <li><a class="dropdown-item" href="<%= metric_path(@metric, time_range: '7d') %>"><%= t('dashboard.time_range.7d') %></a></li>
         </ul>
       </div>
     </div>
@@ -34,8 +34,8 @@
     <div class="col-md-8">
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h5 class="mb-0">Данные метрики</h5>
-          <span class="badge bg-secondary">Тип: <%= @metric.metric_type %></span>
+          <h5 class="mb-0"><%= t('metrics.metric_data') %></h5>
+          <span class="badge bg-secondary"><%= t('metrics.table.type') %>: <%= @metric.metric_type %></span>
         </div>
         <div class="card-body">
           <canvas id="metrics-chart" data-metrics-chart-target="chart" data-metric-name="<%= @metric.name %>" data-metric-id="<%= @metric.id %>" data-time-range="<%= params[:time_range] || '1h' %>"></canvas>
@@ -46,7 +46,7 @@
     <div class="col-md-4">
       <div class="card shadow-sm" data-controller="anomaly-detection">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">ИИ Анализ</h5>
+          <h5 class="mb-0"><%= t('navigation.ai_analysis') %></h5>
         </div>
         <div class="card-body">
           <% if @ai_analyses.any? %>
@@ -55,52 +55,52 @@
                 <li class="list-group-item">
                   <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-1"><%= analysis.analysis_type.humanize %></h6>
-                    <small><%= analysis.created_at.strftime("%d.%m.%Y %H:%M") %></small>
+                    <small><%= l(analysis.created_at, format: :default) %></small>
                   </div>
-                  <%= link_to 'Подробнее', metric_ai_analysis_path(@metric, analysis), class: 'btn btn-sm btn-outline-primary mt-2' %>
+                  <%= link_to t('common.more_details'), metric_ai_analysis_path(@metric, analysis), class: 'btn btn-sm btn-outline-primary mt-2' %>
                 </li>
               <% end %>
             </ul>
           <% else %>
             <div class="alert alert-info">
-              Для данной метрики еще не проводился ИИ-анализ.
+              <%= t('ai_analysis.no_analyses_for_metric') %>
             </div>
           <% end %>
           
           <div class="mt-3">
-            <%= link_to 'Запустить новый анализ', new_metric_ai_analysis_path(@metric), class: 'btn btn-success w-100' %>
+            <%= link_to t('ai_analysis.run_new_analysis'), new_metric_ai_analysis_path(@metric), class: 'btn btn-success w-100' %>
           </div>
         </div>
       </div>
       
       <div class="card shadow-sm mt-3">
         <div class="card-header bg-info text-white">
-          <h5 class="mb-0">Статистика</h5>
+          <h5 class="mb-0"><%= t('metrics.statistics.title') %></h5>
         </div>
         <div class="card-body">
           <div class="row">
             <div class="col-6 mb-3">
               <div class="bg-light rounded p-2 text-center">
-                <div class="small text-muted">Среднее</div>
-                <div class="fw-bold" id="metric-average">Загрузка...</div>
+                <div class="small text-muted"><%= t('metrics.statistics.average') %></div>
+                <div class="fw-bold" id="metric-average"><%= t('common.loading') %></div>
               </div>
             </div>
             <div class="col-6 mb-3">
               <div class="bg-light rounded p-2 text-center">
-                <div class="small text-muted">Максимум</div>
-                <div class="fw-bold" id="metric-maximum">Загрузка...</div>
+                <div class="small text-muted"><%= t('metrics.statistics.maximum') %></div>
+                <div class="fw-bold" id="metric-maximum"><%= t('common.loading') %></div>
               </div>
             </div>
             <div class="col-6 mb-3">
               <div class="bg-light rounded p-2 text-center">
-                <div class="small text-muted">Минимум</div>
-                <div class="fw-bold" id="metric-minimum">Загрузка...</div>
+                <div class="small text-muted"><%= t('metrics.statistics.minimum') %></div>
+                <div class="fw-bold" id="metric-minimum"><%= t('common.loading') %></div>
               </div>
             </div>
             <div class="col-6 mb-3">
               <div class="bg-light rounded p-2 text-center">
-                <div class="small text-muted">P95</div>
-                <div class="fw-bold" id="metric-p95">Загрузка...</div>
+                <div class="small text-muted"><%= t('metrics.statistics.p95') %></div>
+                <div class="fw-bold" id="metric-p95"><%= t('common.loading') %></div>
               </div>
             </div>
           </div>

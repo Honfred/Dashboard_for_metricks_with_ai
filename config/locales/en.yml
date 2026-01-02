@@ -1,31 +1,475 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
+# English localization for Dashboard Metricks with AI
+# Английская локализация
 
 en:
-  hello: "Hello world"
+  # Common interface elements
+  common:
+    brand_name: "Metricks Dashboard"
+    home: "Home"
+    back: "Back"
+    back_to_list: "Back to list"
+    save: "Save"
+    save_changes: "Save changes"
+    cancel: "Cancel"
+    delete: "Delete"
+    edit: "Edit"
+    view: "View"
+    create: "Create"
+    update: "Update"
+    confirm: "Confirm"
+    actions: "Actions"
+    filter: "Filter"
+    search: "Search"
+    loading: "Loading..."
+    yes: "Yes"
+    no: "No"
+    all: "All"
+    none: "None"
+    active: "Active"
+    inactive: "Inactive"
+    unknown: "Unknown"
+    na: "N/A"
+    details: "Details"
+    more_details: "More details"
+    refresh_data: "Refresh data"
+    refresh_page: "Refresh page"
+    refresh_now: "Refresh now"
+    try_again: "Try again"
+    export_json: "Export data (JSON)"
+    export_csv: "Export data (CSV)"
+    no_data: "No data"
+    
+  # Navigation
+  navigation:
+    metrics: "Metrics"
+    ai_analysis: "AI Analysis"
+    analysis_list: "Analysis List"
+    ai_dashboard: "AI Dashboard"
+    data_sources_status: "Sources Status"
+    dashboard: "Dashboard"
+    alerts: "Alerts"
+    
+  # Language switcher
+  locale:
+    switch: "Switch language"
+    ru: "Русский"
+    en: "English"
+
+  # Main page / Dashboard
+  dashboard:
+    title: "Performance Monitoring"
+    time_range:
+      label: "Time range:"
+      15m: "15 minutes"
+      30m: "30 minutes"
+      1h: "1 hour"
+      3h: "3 hours"
+      6h: "6 hours"
+      12h: "12 hours"
+      24h: "24 hours"
+      7d: "7 days"
+    auto_refresh:
+      label: "Auto refresh:"
+      off: "Off"
+      10s: "10 seconds"
+      30s: "30 seconds"
+      1m: "1 minute"
+      5m: "5 minutes"
+    edit_mode: "Edit mode"
+    show_all_panels: "Show all panels"
+    panel_visibility: "Panel visibility"
+    panels:
+      service_health: "Service Health"
+      response_time: "Response Time"
+      throughput: "Throughput"
+      error_rate: "Error Rate"
+      resource_usage: "Resource Usage"
+    alerts_modal_title: "Alerts"
+    fullscreen: "Fullscreen"
+
+  # Alerts page
+  alerts:
+    title: "Alerts"
+    details_title: "Alert Details"
+    back_to_list: "Back to list"
+    acknowledge: "Acknowledge"
+    resolve: "Resolve"
+    update_alert: "Update alert"
+    severity:
+      label: "Severity:"
+      info: "Info"
+      warning: "Warning"
+      critical: "Critical"
+    severities:
+      info: "Info"
+      warning: "Warning"
+      critical: "Critical"
+    statuses:
+      triggered: "Active"
+      acknowledged: "Acknowledged"
+      resolved: "Resolved"
+    service_label: "Service:"
+    service_placeholder: "Service name"
+    filter_button: "Filter"
+    active_alerts: "Active"
+    all_alerts: "All"
+    service: "Service"
+    metric: "Metric"
+    severity_field: "Severity"
+    current_value: "Current value"
+    threshold: "Threshold value"
+    deviation: "Deviation"
+    triggered_at: "Triggered at"
+    resolved_at: "Resolved at"
+    duration: "Duration"
+    message: "Message"
+    show:
+      title: "Alert Details"
+    table:
+      service: "Service"
+      metric: "Metric"
+      value: "Value"
+      current_value: "Current value"
+      threshold: "Threshold"
+      threshold_value: "Threshold value"
+      deviation: "Deviation"
+      severity: "Severity"
+      status: "Status"
+      time: "Time"
+      triggered_at: "Triggered at"
+      resolved_at: "Resolved at"
+      duration: "Duration"
+      message: "Message"
+      actions: "Actions"
+    status:
+      triggered: "Active"
+      acknowledged: "Acknowledged"
+      resolved: "Resolved"
+    actions:
+      details: "Details"
+      acknowledge: "Acknowledge"
+      resolve: "Resolve"
+    no_alerts: "No alerts found."
+
+  # Metrics
+  metrics:
+    title: "Monitoring Metrics"
+    add_metric: "Add Metric"
+    new_metric: "New Metric"
+    edit_metric: "Edit"
+    adding_new_metric: "Adding new metric"
+    editing_metric: "Editing metric: %{name}"
+    available_metrics: "Available Metrics"
+    metric_data: "Metric Data"
+    metric_name: "Metric name"
+    metric_name_placeholder: "api_response_time"
+    metric_name_hint: "Specify the metric name in Prometheus, e.g.: http_request_duration_seconds"
+    table:
+      name: "Name"
+      type: "Type"
+      description: "Description"
+      actions: "Actions"
+    no_metrics: "No metrics available."
+    add_first_metric: "Add your first metric"
+    data_sources:
+      title: "Data Sources (Prometheus)"
+      active: "Active"
+      inactive: "Inactive"
+      last_update: "Last update:"
+      no_sources: "No data sources available. Check Prometheus connection."
+    confirm_delete: "Are you sure?"
+    time_range_label: "Time range"
+    statistics:
+      title: "Statistics"
+      average: "Average"
+      maximum: "Maximum"
+      minimum: "Minimum"
+      p95: "P95"
+    errors:
+      saving: "error saving metric"
+      saving_plural: "errors saving metric"
+    select_type_prompt: "Select metric type"
+
+  # AI Analysis
+  ai_analysis:
+    title: "AI Analysis Dashboard"
+    overview_title: "AI Models Overview"
+    all_analyses: "All AI Analyses"
+    analyses_title: "AI Metrics Analyses"
+    all_analyses_in_system: "All analyses in system"
+    no_analyses: "No AI analyses have been performed yet."
+    no_analyses_for_metric: "No AI analysis has been performed for this metric yet."
+    completed_analyses: "Completed analyses"
+    view_all: "View all"
+    new_analysis: "New Analysis"
+    new_analysis_for_metric: "New AI analysis for metric: %{name}"
+    run_analysis: "Run analysis"
+    run_new_analysis: "Run new AI analysis"
+    create_new: "Create new analysis"
+    analysis_number: "Analysis #%{id}"
+    results_title: "AI Analysis Results: %{type}"
+    analysis_type_label: "Analysis type"
+    select_metric: "Select metric"
+    select_metric_prompt: "-- Select metric --"
+    select_analysis_type: "Select analysis type"
+    select_analysis_type_prompt: "-- Select analysis type --"
+    parameters_label: "Analysis parameters (JSON)"
+    parameters_hint: "Specify additional analysis parameters in JSON format. Leave empty to use default parameters."
+    parameters_placeholder: '{"window_size": 24, "sensitivity": 0.75}'
+    selected_type: "Selected analysis type: %{type}"
+    # Statuses
+    in_progress: "Analysis in progress..."
+    may_take_time: "This may take some time depending on the data volume."
+    auto_check_status: "Automatic status check every 3 seconds..."
+    attention: "Attention!"
+    taking_longer: "Analysis is taking longer than usual."
+    possible_reasons: "Possible reasons:"
+    refresh_page: "Refresh page"
+    refresh_now: "Refresh now"
+    check_ml_status: "Check ML service status"
+    try_again: "Try again"
+    reasons:
+      large_data: "Large amount of data to process"
+      high_load: "High server load"
+      ml_connection: "ML service connection issues"
+    # Errors
+    error_title: "Analysis Error!"
+    error_message: "An error occurred during the analysis."
+    # Table
+    table:
+      id: "#"
+      metric: "Metric"
+      analysis_type: "Analysis Type"
+      created_at: "Created At"
+      actions: "Actions"
+    # Models
+    models:
+      anomaly_detection:
+        title: "Anomaly Detection"
+        description: "LSTM model for detecting anomalies in metrics"
+      trend_prediction:
+        title: "Trend Prediction"
+        description: "Metric behavior prediction based on time series"
+      performance_insight:
+        title: "Performance Analysis"
+        description: "Identifying factors affecting system performance"
+    # Anomalies
+    recent_anomalies: "Recent Detected Anomalies"
+    key_anomalies: "Key Anomalies"
+    anomaly:
+      metric: "Metric"
+      detection_time: "Detection Time"
+      deviation: "Deviation"
+    # Trends
+    trends_forecast: "Metric Trend Forecasts"
+    forecast_change: "Forecast Change"
+    forecast_points: "Forecast Points"
+    forecast_unavailable: "Forecast data unavailable"
+    no_forecast_data: "No forecast data"
+    trend:
+      metric: "Metric"
+      forecast: "Forecast"
+      change: "Change"
+    # Events and insights
+    events_and_insights: "Important Events and Insights"
+    events: "Events"
+    no_events: "No event data available"
+    event:
+      timestamp: "Timestamp"
+      type: "Event Type"
+      value: "Value"
+      deviation: "Deviation (%)"
+      description: "Description"
+      date: "Date"
+    # Insights
+    no_insights: "No insights available for this analysis. Insights will appear after the AI model finishes processing the data."
+    recommendation: "Recommendation:"
+    # Statistics and conclusions
+    statistics: "Statistics"
+    data_unavailable: "Data unavailable"
+    ai_conclusions: "AI Conclusions"
+    no_conclusions: "No conclusions available"
+    showing_of: "Showing %{shown} of %{total} anomalies"
+    # Performance
+    performance_factors: "Factors Affecting Performance"
+    factors_unavailable: "Performance factors data unavailable"
+    predicted_values: "Predicted Values"
+    predictions_unavailable: "Predictions data unavailable"
+    # Export
+    export_json: "Export data (JSON)"
+    export_csv: "Export data (CSV)"
+    # Charts
+    chart:
+      browser_not_supported: "Your browser does not support canvas. Please update your browser."
+      normal_values: "Normal values"
+      anomalies: "Anomalies"
+      current_values: "Current values"
+      forecast: "Forecast"
+      anomaly_title: "Metric Values with Anomalies Chart"
+      trend_title: "Metric Trend Forecast Chart"
+    errors:
+      saving: "error saving analysis"
+      saving_plural: "errors saving analysis"
+
+  # Prometheus
+  prometheus:
+    status_title: "Prometheus Data Sources Status"
+    job: "Job:"
+    instance: "Instance:"
+    status: "Status:"
+    last_update: "Last update:"
+    no_data: "No data"
+    no_sources: "No data sources available"
+
+  # Forms
+  forms:
+    required: "Required field"
+    submit: "Submit"
+    cancel: "Cancel"
+
+  # Breadcrumbs
+  breadcrumbs:
+    home: "Home"
+    metrics: "Metrics"
+    ai_analyses: "AI Analyses"
+    new_metric: "New Metric"
+    editing: "Edit"
+    new_analysis: "New Analysis"
+
+  # Errors
+  errors:
+    not_found: "Page not found"
+    server_error: "Internal server error"
+    forbidden: "Access denied"
+    unauthorized: "Authorization required"
+
+  # ActiveRecord
+  activerecord:
+    models:
+      metric:
+        one: "Metric"
+        other: "Metrics"
+      alert:
+        one: "Alert"
+        other: "Alerts"
+      ai_analysis:
+        one: "AI Analysis"
+        other: "AI Analyses"
+    attributes:
+      metric:
+        name: "Name"
+        description: "Description"
+        metric_type: "Metric type"
+        unit: "Unit"
+        query: "Query"
+      alert:
+        service: "Service"
+        metric: "Metric"
+        value: "Value"
+        threshold: "Threshold"
+        severity: "Severity"
+        status: "Status"
+        triggered_at: "Triggered at"
+        message: "Message"
+      ai_analysis:
+        analysis_type: "Analysis type"
+        result: "Result"
+        status: "Status"
+        parameters: "Parameters"
+
+  # Time formats
+  time:
+    formats:
+      default: "%Y-%m-%d %H:%M"
+      short: "%d/%m %H:%M"
+      long: "%B %d, %Y, %H:%M:%S"
+      date_only: "%Y-%m-%d"
+      time_only: "%H:%M:%S"
+
+  # Date formats
+  date:
+    formats:
+      default: "%Y-%m-%d"
+      short: "%m/%d"
+      long: "%B %d, %Y"
+    day_names:
+      - Sunday
+      - Monday
+      - Tuesday
+      - Wednesday
+      - Thursday
+      - Friday
+      - Saturday
+    abbr_day_names:
+      - Sun
+      - Mon
+      - Tue
+      - Wed
+      - Thu
+      - Fri
+      - Sat
+    month_names:
+      - ~
+      - January
+      - February
+      - March
+      - April
+      - May
+      - June
+      - July
+      - August
+      - September
+      - October
+      - November
+      - December
+    abbr_month_names:
+      - ~
+      - Jan
+      - Feb
+      - Mar
+      - Apr
+      - May
+      - Jun
+      - Jul
+      - Aug
+      - Sep
+      - Oct
+      - Nov
+      - Dec
+
+  # Number formats
+  number:
+    currency:
+      format:
+        unit: "$"
+        format: "%u%n"
+        separator: "."
+        delimiter: ","
+        precision: 2
+    format:
+      separator: "."
+      delimiter: ","
+      precision: 2
+    percentage:
+      format:
+        delimiter: ","
+        format: "%n%"
+    precision:
+      format:
+        delimiter: ","
+    human:
+      format:
+        delimiter: ","
+        precision: 2
+      storage_units:
+        format: "%n %u"
+        units:
+          byte:
+            one: "Byte"
+            other: "Bytes"
+          kb: "KB"
+          mb: "MB"
+          gb: "GB"
+          tb: "TB"
+          pb: "PB"
+
