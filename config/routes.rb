@@ -9,6 +9,7 @@ Rails.application.routes.draw do
   resources :uploads do
     member do
       get 'download'
+      get 'preview'
     end
     collection do
       post 'bulk', action: :bulk_upload

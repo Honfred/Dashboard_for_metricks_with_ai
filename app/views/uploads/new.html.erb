@@ -13,7 +13,7 @@
           <h5 class="mb-0"><%= t('uploads.new') %></h5>
         </div>
         <div class="card-body">
-          <%= form_with model: @uploaded_file, local: true do |f| %>
+          <%= form_with model: @uploaded_file, url: uploads_path, local: true do |f| %>
             <% if @uploaded_file.errors.any? %>
               <div class="alert alert-danger">
                 <ul class="mb-0">

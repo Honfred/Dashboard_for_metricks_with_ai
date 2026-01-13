@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UploadsController < ApplicationController
-  before_action :set_uploaded_file, only: [:show, :destroy, :download]
+  before_action :set_uploaded_file, only: [:show, :destroy, :download, :preview]
 
   # GET /uploads
   def index
@@ -32,7 +32,7 @@ class UploadsController < ApplicationController
 
     respond_to do |format|
       if @uploaded_file.save
-        format.html { redirect_to @uploaded_file, notice: t('uploads.created') }
+        format.html { redirect_to upload_path(@uploaded_file), notice: t('uploads.created') }
         format.json { render json: upload_json(@uploaded_file), status: :created }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -61,6 +61,18 @@ class UploadsController < ApplicationController
                 disposition: 'attachment'
     else
       redirect_to uploads_path, alert: t('uploads.file_not_found')
+    end
+  end
+
+  # GET /uploads/:id/preview
+  def preview
+    if @uploaded_file.file.attached?
+      send_data @uploaded_file.file.download,
+                filename: @uploaded_file.file.filename.to_s,
+                type: @uploaded_file.file.content_type,
+                disposition: 'inline'
+    else
+      head :not_found
     end
   end
 

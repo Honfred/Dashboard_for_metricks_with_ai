@@ -24,7 +24,7 @@
         <div class="card-body">
           <% if @uploaded_file.image? && @uploaded_file.file.attached? %>
             <div class="text-center mb-4">
-              <%= image_tag @uploaded_file.file, class: 'img-fluid rounded', style: 'max-height: 400px' %>
+              <%= image_tag preview_upload_path(@uploaded_file), class: 'img-fluid rounded', style: 'max-height: 400px' %>
             </div>
           <% elsif @uploaded_file.text? && @uploaded_file.file.attached? %>
             <div class="mb-4">

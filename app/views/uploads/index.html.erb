@@ -55,7 +55,7 @@
                 <% else %>
                   <i class="bi bi-file-earmark me-2"></i>
                 <% end %>
-                <%= link_to file.name, file %>
+                <%= link_to file.name, upload_path(file) %>
               </td>
               <td><span class="badge bg-secondary"><%= file.file_type %></span></td>
               <td><%= file.category || '-' %></td>
