@@ -72,17 +72,6 @@ scrape_configs:
         labels:
           service: 'app'
 
-  # Имитация пользовательской метрики через textfile_collector
-  # Эти данные будут собираться непосредственно из веб-приложения
-  - job_name: 'custom-metrics'
-    scrape_interval: 30s
-    metrics_path: '/custom-metrics'
-    static_configs:
-      - targets: ['web:3000']
-        labels:
-          service: 'custom'
-          application: 'test'
-
 # Используем файл с правилами оповещений
 rule_files:
   - 'alerts.yml'
