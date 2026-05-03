@@ -9,6 +9,11 @@ class AiService
   end
 
   def fetch_analysis(metric_id, analysis_type = "anomaly_detection")
+    cache_key = "ai_analysis:#{metric_id}:#{analysis_type}"
+
+    cached = Rails.cache.read(cache_key)
+    return cached if cached
+
     begin
       uri = URI("#{@base_url}/api/#{analysis_type}")
 
@@ -19,7 +24,11 @@ class AiService
         http.request(request)
       end
 
-      return JSON.parse(response.body) if response.is_a?(Net::HTTPSuccess)
+      if response.is_a?(Net::HTTPSuccess)
+        result = JSON.parse(response.body)
+        Rails.cache.write(cache_key, result, expires_in: 10.minutes)
+        return result
+      end
 
       Rails.logger.error "AI Service error: #{response.message}"
       { "status" => "error", "error" => response.message, "message" => "Сервис AI временно недоступен" }

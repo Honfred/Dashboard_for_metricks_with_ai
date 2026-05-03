@@ -1,5 +1,6 @@
 class MetricsController < ApplicationController
   before_action :set_metric, only: [ :show, :edit, :update, :destroy ]
+  skip_before_action :verify_authenticity_token, only: :custom_metrics
 
   def index
     @metrics = Metric.all
@@ -73,27 +74,26 @@ class MetricsController < ApplicationController
 
   def analyze
     @metric = Metric.find(params[:id])
-    
-    # Получаем данные метрики
-    end_time = Time.now
-    start_time = end_time - 24.hours # За последние 24 часа
-    
-    data = MetricsService.fetch_data(
-      metric_name: @metric.name,
-      start_time: start_time.to_i,
-      end_time: end_time.to_i,
-      step: '5m' # Шаг 5 минут для анализа
-    )
-    
-    # Выполняем анализ данных
-    anomalies = detect_anomalies(@metric.name, data)
-    trend = predict_trend(@metric.name)
-    
-    render json: {
-      metric: @metric,
-      anomalies: anomalies,
-      trend: trend
-    }
+
+    result = Rails.cache.fetch("metric_analyze:#{@metric.id}", expires_in: 10.minutes) do
+      end_time = Time.now
+      start_time = end_time - 24.hours
+
+      data = MetricsService.fetch_data(
+        metric_name: @metric.name,
+        start_time: start_time.to_i,
+        end_time: end_time.to_i,
+        step: '5m'
+      )
+
+      {
+        metric: @metric.as_json,
+        anomalies: detect_anomalies(@metric.name, data),
+        trend: predict_trend(@metric.name)
+      }
+    end
+
+    render json: result
   end
 
   def check_ml_service
@@ -113,16 +113,19 @@ class MetricsController < ApplicationController
 
   # Метод для получения данных метрики из Prometheus
   def get_metric_data(metric_name, time_range)
-    # Получаем данные из Prometheus
-    data = Metric.fetch_from_prometheus(metric_name, time_range)
-    
-    if data.blank? || !data.is_a?(Array) || data.empty? || (data.first && data.first[:values].blank?)
-      Rails.logger.warn("MetricsController#get_metric_data - Данные метрики отсутствуют для #{metric_name}")
-      return []
+    cache_key = "metric_data:#{metric_name}:#{time_range}"
+
+    Rails.cache.fetch(cache_key, expires_in: 5.minutes) do
+      data = Metric.fetch_from_prometheus(metric_name, time_range)
+
+      if data.blank? || !data.is_a?(Array) || data.empty? || (data.first && data.first[:values].blank?)
+        Rails.logger.warn("MetricsController#get_metric_data - Данные метрики отсутствуют для #{metric_name}")
+        []
+      else
+        Rails.logger.info("MetricsController#get_metric_data - Получены данные от Prometheus")
+        data
+      end
     end
-    
-    Rails.logger.info("MetricsController#get_metric_data - Получены данные от Prometheus")
-    data
   end
 
 
