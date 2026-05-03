@@ -43,6 +43,7 @@ services:
     image: dashboard:latest
     container_name: dashboard_sidekiq
     command: bundle exec sidekiq -q ml -q default
+    working_dir: /app
     environment:
       RAILS_ENV: development
       PG_HOST: postgres
@@ -56,6 +57,8 @@ services:
       ML_MODELS_BUCKET: ml-models
       REPORTS_BUCKET: reports
       STORAGE_SERVICE: minio
+    volumes:
+      - .:/app
     depends_on:
       - postgres
       - redis
