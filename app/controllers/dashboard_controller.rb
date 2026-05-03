@@ -12,26 +12,14 @@ class DashboardController < ApplicationController
   end
 
   def ai_overview
-    # Получаем статистику по всем типам ИИ-анализа
-    @anomaly_analyses_count = AiAnalysis.where(analysis_type: 'anomaly_detection', status: 'completed').count
-    @trend_analyses_count = AiAnalysis.where(analysis_type: 'trend_prediction', status: 'completed').count
-    @performance_analyses_count = AiAnalysis.where(analysis_type: 'performance_insight', status: 'completed').count
-    
-    # Получаем последние завершенные анализы каждого типа для графиков
-    @recent_anomalies = AiAnalysis.where(analysis_type: 'anomaly_detection', status: 'completed')
-                                 .includes(:metric)
-                                 .order(created_at: :desc)
-                                 .limit(5)
-    
-    @recent_trends = AiAnalysis.where(analysis_type: 'trend_prediction', status: 'completed')
-                              .includes(:metric)
-                              .order(created_at: :desc)
-                              .limit(5)
-                              
-    @recent_performances = AiAnalysis.where(analysis_type: 'performance_insight', status: 'completed')
-                                    .includes(:metric)
-                                    .order(created_at: :desc)
-                                    .limit(5)
+    counts = AiAnalysis.completed.group(:analysis_type).count
+    @anomaly_analyses_count     = counts[AiAnalysis.analysis_types['anomaly_detection']]    || 0
+    @trend_analyses_count       = counts[AiAnalysis.analysis_types['trend_prediction']]     || 0
+    @performance_analyses_count = counts[AiAnalysis.analysis_types['performance_insight']]  || 0
+
+    @recent_anomalies    = AiAnalysis.anomaly_completed.includes(:metric).recent.limit(5)
+    @recent_trends       = AiAnalysis.trend_completed.includes(:metric).recent.limit(5)
+    @recent_performances = AiAnalysis.performance_completed.includes(:metric).recent.limit(5)
                                     
     # Подготовка данных для графиков
     @anomaly_chart_data = prepare_anomaly_chart_data(@recent_anomalies)

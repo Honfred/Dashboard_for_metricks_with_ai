@@ -17,6 +17,7 @@ class Alert < ApplicationRecord
   scope :by_severity, ->(severity) { where(severity: severity) if severity.present? }
   scope :by_service, ->(service) { where(service: service) if service.present? }
   scope :recent, -> { order(triggered_at: :desc) }
+  scope :triggered_for, ->(service, metric) { active.where(service: service, metric: metric) }
   
   # Методы
   def active?
@@ -47,7 +48,7 @@ class Alert < ApplicationRecord
   # Фабричный метод для создания оповещения
   def self.trigger_for(service, metric, value, threshold, severity = 'warning', message = nil)
     # Проверяем, не существует ли уже активное оповещение для этого сервиса и метрики
-    alert = Alert.find_by(service: service, metric: metric, status: 'triggered')
+    alert = Alert.triggered_for(service, metric).first
     
     if alert
       # Обновляем существующее оповещение

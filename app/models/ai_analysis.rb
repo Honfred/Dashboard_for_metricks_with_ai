@@ -9,7 +9,13 @@ class AiAnalysis < ApplicationRecord
   has_many :uploaded_files, as: :uploadable, dependent: :destroy
 
   validates :analysis_type, presence: true
-  
+
+  scope :completed,            -> { where(status: 'completed') }
+  scope :recent,               -> { order(created_at: :desc) }
+  scope :anomaly_completed,    -> { anomaly_detection.completed }
+  scope :trend_completed,      -> { trend_prediction.completed }
+  scope :performance_completed, -> { performance_insight.completed }
+
   # Enum для типов анализа
   enum :analysis_type, {
     anomaly_detection: 0,
