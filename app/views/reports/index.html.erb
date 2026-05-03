@@ -39,7 +39,8 @@
   <!-- Фильтры -->
   <div class="card mb-4">
     <div class="card-body">
-      <%= form_tag reports_path, method: :get, class: 'd-flex gap-3' do %>
+      <%= form_tag reports_path, method: :get, class: 'd-flex gap-3',
+            data: { turbo_frame: "reports-list", turbo_action: "advance" } do %>
         <div class="flex-grow-1">
           <%= select_tag :report_type, 
               options_for_select([
@@ -57,68 +58,70 @@
     </div>
   </div>
 
-  <!-- Таблица отчётов -->
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead>
-          <tr>
-            <th><%= t('reports.name') %></th>
-            <th><%= t('reports.type') %></th>
-            <th><%= t('reports.format') %></th>
-            <th><%= t('reports.status') %></th>
-            <th><%= t('reports.size') %></th>
-            <th><%= t('reports.generated_at') %></th>
-            <th><%= t('common.actions') %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @reports.each do |report| %>
+  <%= turbo_frame_tag "reports-list", data: { turbo_action: "advance" } do %>
+    <!-- Таблица отчётов -->
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
             <tr>
-              <td><%= link_to report.name, report %></td>
-              <td><span class="badge bg-info"><%= report.report_type %></span></td>
-              <td><span class="badge bg-secondary"><%= report.format.upcase %></span></td>
-              <td>
-                <% case report.status %>
-                <% when 'pending' %>
-                  <span class="badge bg-warning"><i class="bi bi-hourglass-split me-1"></i><%= t('reports.statuses.pending') %></span>
-                <% when 'processing' %>
-                  <span class="badge bg-info"><i class="bi bi-arrow-repeat me-1 spin"></i><%= t('reports.statuses.processing') %></span>
-                <% when 'completed' %>
-                  <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i><%= t('reports.statuses.completed') %></span>
-                <% when 'failed' %>
-                  <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i><%= t('reports.statuses.failed') %></span>
-                <% end %>
-              </td>
-              <td><%= report.file_size_human || '-' %></td>
-              <td><%= report.generated_at ? l(report.generated_at, format: :short) : '-' %></td>
-              <td>
-                <div class="btn-group btn-group-sm">
-                  <% if report.completed? && report.file.attached? %>
-                    <%= link_to download_report_path(report), class: 'btn btn-outline-primary', title: t('reports.download') do %>
-                      <i class="bi bi-download"></i>
-                    <% end %>
-                  <% end %>
-                  <%= link_to regenerate_report_path(report), data: { turbo_method: :post }, class: 'btn btn-outline-secondary', title: t('reports.regenerate') do %>
-                    <i class="bi bi-arrow-clockwise"></i>
-                  <% end %>
-                  <%= link_to report_path(report), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
-                      class: 'btn btn-outline-danger', title: t('common.delete') do %>
-                    <i class="bi bi-trash"></i>
-                  <% end %>
-                </div>
-              </td>
+              <th><%= t('reports.name') %></th>
+              <th><%= t('reports.type') %></th>
+              <th><%= t('reports.format') %></th>
+              <th><%= t('reports.status') %></th>
+              <th><%= t('reports.size') %></th>
+              <th><%= t('reports.generated_at') %></th>
+              <th><%= t('common.actions') %></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% @reports.each do |report| %>
+              <tr>
+                <td><%= link_to report.name, report %></td>
+                <td><span class="badge bg-info"><%= report.report_type %></span></td>
+                <td><span class="badge bg-secondary"><%= report.format.upcase %></span></td>
+                <td>
+                  <% case report.status %>
+                  <% when 'pending' %>
+                    <span class="badge bg-warning"><i class="bi bi-hourglass-split me-1"></i><%= t('reports.statuses.pending') %></span>
+                  <% when 'processing' %>
+                    <span class="badge bg-info"><i class="bi bi-arrow-repeat me-1 spin"></i><%= t('reports.statuses.processing') %></span>
+                  <% when 'completed' %>
+                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i><%= t('reports.statuses.completed') %></span>
+                  <% when 'failed' %>
+                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i><%= t('reports.statuses.failed') %></span>
+                  <% end %>
+                </td>
+                <td><%= report.file_size_human || '-' %></td>
+                <td><%= report.generated_at ? l(report.generated_at, format: :short) : '-' %></td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <% if report.completed? && report.file.attached? %>
+                      <%= link_to download_report_path(report), class: 'btn btn-outline-primary', title: t('reports.download') do %>
+                        <i class="bi bi-download"></i>
+                      <% end %>
+                    <% end %>
+                    <%= link_to regenerate_report_path(report), data: { turbo_method: :post }, class: 'btn btn-outline-secondary', title: t('reports.regenerate') do %>
+                      <i class="bi bi-arrow-clockwise"></i>
+                    <% end %>
+                    <%= link_to report_path(report), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
+                        class: 'btn btn-outline-danger', title: t('common.delete') do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <!-- Пагинация -->
-  <div class="d-flex justify-content-center mt-4">
-    <%= paginate @reports %>
-  </div>
+    <!-- Пагинация -->
+    <div class="d-flex justify-content-center mt-4">
+      <%= paginate @reports %>
+    </div>
+  <% end %>
 </div>
 
 <style>

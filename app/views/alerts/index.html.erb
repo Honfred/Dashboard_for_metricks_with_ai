@@ -6,7 +6,8 @@
   <h1><%= t('alerts.title') %></h1>
   
   <div class="alerts-filters">
-    <form action="<%= request.path %>" method="get" class="form-inline">
+    <form action="<%= request.path %>" method="get" class="form-inline"
+          data-turbo-frame="alerts-list" data-turbo-action="advance">
       <div class="filter-group">
         <label for="severity"><%= t('alerts.severity.label') %></label>
         <select name="severity" id="severity" class="form-select form-select-sm">
@@ -31,60 +32,62 @@
     </div>
   </div>
   
-  <div class="alerts-list">
-    <% if @alerts.any? %>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th><%= t('alerts.table.service') %></th>
-            <th><%= t('alerts.table.metric') %></th>
-            <th><%= t('alerts.table.value') %></th>
-            <th><%= t('alerts.table.threshold') %></th>
-            <th><%= t('alerts.table.severity') %></th>
-            <th><%= t('alerts.table.status') %></th>
-            <th><%= t('alerts.table.time') %></th>
-            <th><%= t('alerts.table.actions') %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @alerts.each do |alert| %>
-            <tr class="alert-row <%= alert.severity %>">
-              <td><%= alert.service %></td>
-              <td><%= alert.metric %></td>
-              <td><%= alert.value %></td>
-              <td><%= alert.threshold %></td>
-              <td>
-                <span class="badge bg-<%= { 'info' => 'info', 'warning' => 'warning', 'critical' => 'danger' }[alert.severity] %>">
-                  <%= t("alerts.severity.#{alert.severity}") %>
-                </span>
-              </td>
-              <td>
-                <span class="badge bg-<%= { 'triggered' => 'danger', 'acknowledged' => 'warning', 'resolved' => 'success' }[alert.status] %>">
-                  <%= t("alerts.status.#{alert.status}") %>
-                </span>
-              </td>
-              <td><%= l(alert.triggered_at, format: :default) %></td>
-              <td>
-                <div class="btn-group">
-                  <a href="<%= alert_path(alert) %>" class="btn btn-sm btn-outline-primary"><%= t('alerts.actions.details') %></a>
-                  <% if alert.active? %>
-                    <%= button_to t('alerts.actions.acknowledge'), acknowledge_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-warning' %>
-                    <%= button_to t('alerts.actions.resolve'), resolve_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-success' %>
-                  <% end %>
-                </div>
-              </td>
+  <%= turbo_frame_tag "alerts-list", data: { turbo_action: "advance" } do %>
+    <div class="alerts-list">
+      <% if @alerts.any? %>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th><%= t('alerts.table.service') %></th>
+              <th><%= t('alerts.table.metric') %></th>
+              <th><%= t('alerts.table.value') %></th>
+              <th><%= t('alerts.table.threshold') %></th>
+              <th><%= t('alerts.table.severity') %></th>
+              <th><%= t('alerts.table.status') %></th>
+              <th><%= t('alerts.table.time') %></th>
+              <th><%= t('alerts.table.actions') %></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
-      
-      <div class="pagination">
-        <%= paginate @alerts if defined?(paginate) %>
-      </div>
-    <% else %>
-      <div class="alert alert-info">
-        <%= t('alerts.no_alerts') %>
-      </div>
-    <% end %>
-  </div>
+          </thead>
+          <tbody>
+            <% @alerts.each do |alert| %>
+              <tr class="alert-row <%= alert.severity %>">
+                <td><%= alert.service %></td>
+                <td><%= alert.metric %></td>
+                <td><%= alert.value %></td>
+                <td><%= alert.threshold %></td>
+                <td>
+                  <span class="badge bg-<%= { 'info' => 'info', 'warning' => 'warning', 'critical' => 'danger' }[alert.severity] %>">
+                    <%= t("alerts.severity.#{alert.severity}") %>
+                  </span>
+                </td>
+                <td>
+                  <span class="badge bg-<%= { 'triggered' => 'danger', 'acknowledged' => 'warning', 'resolved' => 'success' }[alert.status] %>">
+                    <%= t("alerts.status.#{alert.status}") %>
+                  </span>
+                </td>
+                <td><%= l(alert.triggered_at, format: :default) %></td>
+                <td>
+                  <div class="btn-group">
+                    <a href="<%= alert_path(alert) %>" class="btn btn-sm btn-outline-primary"><%= t('alerts.actions.details') %></a>
+                    <% if alert.active? %>
+                      <%= button_to t('alerts.actions.acknowledge'), acknowledge_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-warning' %>
+                      <%= button_to t('alerts.actions.resolve'), resolve_alert_path(alert), method: :post, class: 'btn btn-sm btn-outline-success' %>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+
+        <div class="pagination">
+          <%= paginate @alerts %>
+        </div>
+      <% else %>
+        <div class="alert alert-info">
+          <%= t('alerts.no_alerts') %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 </div>

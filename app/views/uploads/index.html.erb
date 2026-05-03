@@ -7,7 +7,8 @@
   <!-- Фильтры -->
   <div class="card mb-4">
     <div class="card-body">
-      <%= form_tag uploads_path, method: :get, class: 'd-flex gap-3' do %>
+      <%= form_tag uploads_path, method: :get, class: 'd-flex gap-3',
+            data: { turbo_frame: "uploads-list", turbo_action: "advance" } do %>
         <div class="flex-grow-1">
           <%= select_tag :file_type, 
               options_for_select([
@@ -30,57 +31,59 @@
     </div>
   </div>
 
-  <!-- Таблица файлов -->
-  <div class="card">
-    <div class="table-responsive">
-      <table class="table table-hover mb-0">
-        <thead>
-          <tr>
-            <th><%= t('uploads.filename') %></th>
-            <th><%= t('uploads.type') %></th>
-            <th><%= t('uploads.category') %></th>
-            <th><%= t('uploads.size') %></th>
-            <th><%= t('uploads.uploaded_at') %></th>
-            <th><%= t('common.actions') %></th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @uploaded_files.each do |file| %>
+  <%= turbo_frame_tag "uploads-list", data: { turbo_action: "advance" } do %>
+    <!-- Таблица файлов -->
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead>
             <tr>
-              <td>
-                <% if file.image? %>
-                  <i class="bi bi-image text-success me-2"></i>
-                <% elsif file.text? %>
-                  <i class="bi bi-file-text text-info me-2"></i>
-                <% else %>
-                  <i class="bi bi-file-earmark me-2"></i>
-                <% end %>
-                <%= link_to file.name, upload_path(file) %>
-              </td>
-              <td><span class="badge bg-secondary"><%= file.file_type %></span></td>
-              <td><%= file.category || '-' %></td>
-              <td><%= file.file_size_human %></td>
-              <td><%= l(file.created_at, format: :short) %></td>
-              <td>
-                <div class="btn-group btn-group-sm">
-                  <%= link_to download_upload_path(file), class: 'btn btn-outline-primary', title: t('uploads.download') do %>
-                    <i class="bi bi-download"></i>
-                  <% end %>
-                  <%= link_to upload_path(file), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
-                      class: 'btn btn-outline-danger', title: t('common.delete') do %>
-                    <i class="bi bi-trash"></i>
-                  <% end %>
-                </div>
-              </td>
+              <th><%= t('uploads.filename') %></th>
+              <th><%= t('uploads.type') %></th>
+              <th><%= t('uploads.category') %></th>
+              <th><%= t('uploads.size') %></th>
+              <th><%= t('uploads.uploaded_at') %></th>
+              <th><%= t('common.actions') %></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% @uploaded_files.each do |file| %>
+              <tr>
+                <td>
+                  <% if file.image? %>
+                    <i class="bi bi-image text-success me-2"></i>
+                  <% elsif file.text? %>
+                    <i class="bi bi-file-text text-info me-2"></i>
+                  <% else %>
+                    <i class="bi bi-file-earmark me-2"></i>
+                  <% end %>
+                  <%= link_to file.name, upload_path(file) %>
+                </td>
+                <td><span class="badge bg-secondary"><%= file.file_type %></span></td>
+                <td><%= file.category || '-' %></td>
+                <td><%= file.file_size_human %></td>
+                <td><%= l(file.created_at, format: :short) %></td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <%= link_to download_upload_path(file), class: 'btn btn-outline-primary', title: t('uploads.download') do %>
+                      <i class="bi bi-download"></i>
+                    <% end %>
+                    <%= link_to upload_path(file), data: { turbo_method: :delete, turbo_confirm: t('common.confirm_delete') },
+                        class: 'btn btn-outline-danger', title: t('common.delete') do %>
+                      <i class="bi bi-trash"></i>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
-  <!-- Пагинация -->
-  <div class="d-flex justify-content-center mt-4">
-    <%= paginate @uploaded_files %>
-  </div>
+    <!-- Пагинация -->
+    <div class="d-flex justify-content-center mt-4">
+      <%= paginate @uploaded_files %>
+    </div>
+  <% end %>
 </div>

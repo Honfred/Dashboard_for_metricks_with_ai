@@ -6,33 +6,42 @@ export default class extends Controller {
   
   connect() {
     console.log("🔍 Metrics Chart Controller connected", this.element);
-    
-    // Получаем данные о метрике из data-атрибутов
+
     const chartElement = this.chartTarget;
     this.metricId = chartElement.dataset.metricId;
     this.metricName = chartElement.dataset.metricName;
     this.timeRange = chartElement.dataset.timeRange;
-    
+
     console.log(`📊 Инициализация метрики: ID=${this.metricId}, Имя=${this.metricName}, Диапазон=${this.timeRange}`);
-    
+
     this.chart = null;
+    this.dataLoaded = false;
     this.initChart();
-    this.loadData();
-    
-    // Автоматическое обновление каждые 30 секунд
-    this.refreshInterval = setInterval(() => {
-      this.refreshData();
-    }, 30000);
+    this.#observeVisibility();
   }
-  
+
   disconnect() {
+    this.visibilityObserver?.disconnect();
+
     if (this.refreshInterval) {
       clearInterval(this.refreshInterval);
     }
-    
+
     if (this.chart) {
       this.chart.destroy();
     }
+  }
+
+  #observeVisibility() {
+    this.visibilityObserver = new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting || this.dataLoaded) return;
+      this.dataLoaded = true;
+      this.visibilityObserver.disconnect();
+      this.loadData();
+      this.refreshInterval = setInterval(() => this.refreshData(), 30000);
+    }, { threshold: 0.1 });
+
+    this.visibilityObserver.observe(this.element);
   }
   
   initChart() {
