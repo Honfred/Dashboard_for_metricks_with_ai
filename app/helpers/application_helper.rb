@@ -1,6 +1,15 @@
 module ApplicationHelper
+  SERVICE_DISPLAY_NAMES = {
+    'web:3000'               => 'Rails Dashboard',
+    'postgres-exporter:9187' => 'PostgreSQL',
+    'redis-exporter:9121'    => 'Redis',
+    'node-exporter:9100'     => 'Node Exporter',
+    'pushgateway:9091'       => 'Pushgateway',
+    'localhost:9090'         => 'Prometheus'
+  }.freeze
+
   def display_service_name(service_name)
-    ServiceNameMapper.display_name(service_name)
+    SERVICE_DISPLAY_NAMES.fetch(service_name.to_s, service_name.to_s)
   end
 
   # Хелпер для переключения языков

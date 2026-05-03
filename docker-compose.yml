@@ -13,6 +13,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: 123456
       REDIS_URL: redis://redis:6379/0
+      REDIS_CACHE_URL: redis://redis:6379/1
       PROMETHEUS_URL: http://prometheus:9090
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: minioadmin
@@ -210,26 +211,9 @@ services:
       - "5000:5000"
     volumes:
       - ./modules/AI_api:/app
-    # depends_on:
-    #   - ollama
     networks:
       - dashboard_net
-    environment:
-      - LLAMA_HOST=ollama
-      - LLAMA_PORT=11434
     restart: unless-stopped
-
-  # ollama:
-  #   image: ollama/ollama
-  #   container_name: ai-service
-  #   volumes:
-  #     - ollama-data:/root/.ollama
-  #   ports:
-  #     - "11434:11434"
-  #   networks:
-  #     - dashboard_net
-  #   command: ["serve"]
-  #   restart: unless-stopped
 
 networks:
   dashboard_net:

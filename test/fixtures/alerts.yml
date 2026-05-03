@@ -1,23 +1,23 @@
 # Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
 
 one:
-  service: MyString
-  metric: MyString
+  service: web:3000
+  metric: http_request_duration_seconds
   value: 1.5
-  threshold: 1.5
-  status: MyString
-  severity: MyString
-  message: MyText
+  threshold: 1.0
+  status: triggered
+  severity: warning
+  message: Response time exceeded threshold
   triggered_at: 2025-03-24 21:02:44
   resolved_at: 2025-03-24 21:02:44
 
 two:
-  service: MyString
-  metric: MyString
-  value: 1.5
-  threshold: 1.5
-  status: MyString
-  severity: MyString
-  message: MyText
+  service: postgres-exporter:9187
+  metric: pg_up
+  value: 0.0
+  threshold: 1.0
+  status: triggered
+  severity: critical
+  message: Database is unreachable
   triggered_at: 2025-03-24 21:02:44
   resolved_at: 2025-03-24 21:02:44

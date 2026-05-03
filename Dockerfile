@@ -32,8 +32,6 @@ COPY Gemfile* ./
 RUN bundle config build.nokogiri --use-system-libraries && \
     bundle install --jobs $(nproc) --retry 3
 
-COPY . .
-
 ENV RAILS_ENV=development
 
 EXPOSE 3000

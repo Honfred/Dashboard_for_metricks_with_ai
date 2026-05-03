@@ -1,3 +1,4 @@
 [submodule "modules/AI_api"]
 	path = modules/AI_api
-	url = git@github.com:notqpe/PRIMAL_comment_server.git
+	url = git@github.com:Honfred/Python_api_server_for_ai.git
+	branch = ai_for_dashboard
