@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2026_01_02_160202) do
+ActiveRecord::Schema[7.2].define(version: 2026_01_03_000004) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,7 +52,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_02_160202) do
     t.string "status"
     t.json "report"
     t.datetime "completed_at"
+    t.index ["analysis_type", "status", "created_at"], name: "index_ai_analyses_on_type_status_created_at"
     t.index ["metric_id"], name: "index_ai_analyses_on_metric_id"
+    t.index ["status", "created_at"], name: "index_ai_analyses_on_status_and_created_at"
   end
 
   create_table "alerts", force: :cascade do |t|
@@ -67,6 +69,9 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_02_160202) do
     t.datetime "resolved_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.index ["service", "metric", "status"], name: "index_alerts_on_service_metric_status"
+    t.index ["severity", "status"], name: "index_alerts_on_severity_and_status"
+    t.index ["status", "triggered_at"], name: "index_alerts_on_status_and_triggered_at"
   end
 
   create_table "dashboard_settings", force: :cascade do |t|
@@ -85,6 +90,7 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_02_160202) do
     t.datetime "updated_at", null: false
     t.string "display_name"
     t.string "unit"
+    t.index ["name"], name: "index_metrics_on_name"
   end
 
   create_table "ml_model_versions", force: :cascade do |t|
@@ -116,6 +122,8 @@ ActiveRecord::Schema[7.2].define(version: 2026_01_02_160202) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["created_at"], name: "index_reports_on_created_at"
+    t.index ["expires_at", "status"], name: "index_reports_on_expires_at_and_status"
+    t.index ["report_type", "status"], name: "index_reports_on_report_type_and_status"
     t.index ["report_type"], name: "index_reports_on_report_type"
     t.index ["status"], name: "index_reports_on_status"
   end
