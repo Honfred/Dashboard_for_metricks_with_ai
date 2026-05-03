@@ -17,6 +17,6 @@ class AlertsControllerTest < ActionDispatch::IntegrationTest
 
   test "should update alert" do
     patch alert_url(@alert), params: { alert: { status: "resolved" } }
-    assert_redirected_to alert_url(@alert)
+    assert_redirected_to alert_url(@alert, locale: I18n.default_locale)
   end
 end
