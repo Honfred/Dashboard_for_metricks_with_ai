@@ -101,8 +101,7 @@
 </div>
 
 <% content_for :scripts do %>
-  <!-- Подключаем библиотеки Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <!-- Адаптер дат для оси времени (сам Chart.js подключается в layout) -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   
   <!-- Переводы для графиков и сообщений -->

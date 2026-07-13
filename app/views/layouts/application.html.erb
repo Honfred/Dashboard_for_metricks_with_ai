@@ -26,12 +26,9 @@
     
     <%= javascript_importmap_tags %>
     
-    <!-- Добавление Chart.js для визуализации метрик -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- SortableJS для поддержки перетаскивания панелей -->
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    
+    <!-- Chart.js (глобальный, единая версия для всех страниц с inline-графиками) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
     <%= yield :styles %>
   </head>
 

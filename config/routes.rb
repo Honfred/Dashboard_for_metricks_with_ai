@@ -46,11 +46,6 @@ Rails.application.routes.draw do
     resources :ai_analyses, only: [:index, :new, :create, :show]
   end
   
-  # Переименовываем ресурс метрик для панели управления
-  scope '/dashboard' do
-    resources :metrics, as: 'dashboard_metrics', path: 'metrics'
-  end
-  
   # Добавляем маршрут для проверки статуса источников данных Prometheus
   get 'prometheus/status', to: 'prometheus#status'
   

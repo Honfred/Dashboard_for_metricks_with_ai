@@ -391,23 +391,89 @@ export function generateServiceHealthData() {
 }
 
 // Функция для запроса реальных данных с сервера (если доступны)
+// Возвращает данные в формате, понятном renderCharts; при ошибке или
+// отсутствии данных в Prometheus возвращает демо-данные
 export function fetchDataFromServer(timeRange) {
-  return fetch(`/dashboard/metrics?time_range=${timeRange}&service=${selectedServices.join(',')}`)
+  return fetch(`/dashboard/metrics?time_range=${encodeURIComponent(timeRange)}`)
     .then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       return response.json();
     })
-    .then(data => {
-      console.log('Получены данные с сервера:', data);
-      return data;
+    .then(serverData => {
+      const transformed = transformServerData(serverData);
+      if (transformed) {
+        console.log('Используем данные Prometheus с сервера:', transformed);
+        return transformed;
+      }
+      console.warn('Сервер не вернул данных метрик, используем демо-данные');
+      return createDemoData();
     })
     .catch(error => {
       console.error('Ошибка при загрузке данных с сервера:', error);
       // В случае ошибки генерируем демо-данные
       return createDemoData();
     });
+}
+
+// Преобразует ответ /dashboard/metrics (серии Prometheus) в формат датасетов
+// для renderCharts. Возвращает null, если данных нет.
+export function transformServerData(serverData) {
+  if (!serverData || typeof serverData !== 'object' || serverData.error) {
+    return null;
+  }
+
+  // Одна серия Prometheus -> датасет Chart.js
+  function seriesToDataset(series, index, labelSuffix = '', dashed = false) {
+    const name = (series.metric && (series.metric.instance || series.metric.job)) || `series-${index + 1}`;
+    return {
+      label: labelSuffix ? `${name} - ${labelSuffix}` : name,
+      data: (series.values || []).map(point => ({ x: point[0], y: point[1] })),
+      borderColor: getColorForIndex(index),
+      backgroundColor: 'transparent',
+      tension: 0.3,
+      borderDash: dashed ? [5, 5] : [],
+      service: name
+    };
+  }
+
+  function toDatasets(seriesList, labelSuffix = '', dashed = false) {
+    if (!Array.isArray(seriesList)) return [];
+    return seriesList.map((series, index) => seriesToDataset(series, index, labelSuffix, dashed));
+  }
+
+  const responseTime = toDatasets(serverData.response_time);
+  const throughput = toDatasets(serverData.throughput);
+  const errorRate = toDatasets(serverData.error_rate);
+  const cpu = toDatasets(serverData.resource_usage && serverData.resource_usage.cpu, 'CPU');
+  const memory = toDatasets(serverData.resource_usage && serverData.resource_usage.memory, 'Память', true);
+
+  const hasData = [responseTime, throughput, errorRate, cpu, memory]
+    .some(datasets => datasets.some(d => d.data.length > 0));
+  if (!hasData) {
+    return null;
+  }
+
+  // Статус сервисов: сервер отдаёт boolean, таблица ожидает 'up'/'down'
+  const serviceHealth = (serverData.services_status || []).map(item => ({
+    name: item.name,
+    status: item.status ? 'up' : 'down',
+    uptime: item.uptime || '—'
+  }));
+
+  return {
+    response_time: responseTime,
+    throughput: throughput,
+    error_rate: errorRate,
+    service_health: serviceHealth,
+    resource_usage: {
+      overview: cpu.concat(memory),
+      cpu: cpu,
+      memory: memory
+    },
+    services: serviceHealth.map(s => s.name)
+  };
 }
 
 // Функция для обработки данных временных рядов из Prometheus
