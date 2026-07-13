@@ -138,22 +138,14 @@ function initDashboard() {
       })
       .catch(error => {
         console.error('Ошибка при инициализации дашборда:', error);
-        // В случае ошибки показываем демо-данные, чтобы дашборд не оставался пустым
-        currentData = Data.createDemoData();
+        // Демо-данные — только по env-флагу, иначе показываем пустые графики
+        currentData = Data.isDemoDataEnabled() ? Data.createDemoData() : Data.emptyDashboardData();
         Charts.renderCharts(currentData);
       });
   } catch (e) {
     console.error('Ошибка при инициализации дашборда:', e);
     const initErrorMsg = window.dashboardTranslations?.messages?.initError || 'Ошибка при инициализации дашборда';
     Charts.showChartError(initErrorMsg + ': ' + e.message);
-
-    // Попытка восстановления при ошибке - создаем данные заново
-    try {
-      currentData = Data.createDemoData();
-      Charts.renderCharts(currentData);
-    } catch (recoveryError) {
-      console.error('Не удалось восстановиться после ошибки:', recoveryError);
-    }
   }
 }
 
@@ -442,8 +434,7 @@ function handleChartResize(panelType) {
     // Для таблицы сервисов не нужно пересоздавать график
     const container = document.querySelector(`.grid-panel[data-panel="${panelType}"] .chart-container`);
     if (container && !container.querySelector('.status-table')) {
-      const health = currentData?.service_health || Data.generateServiceHealthData();
-      Charts.renderServiceHealthTable(container.id, health);
+      Charts.renderServiceHealthTable(container.id, currentData?.service_health || []);
     }
   } else {
     // Обновляем соответствующий график по текущим данным

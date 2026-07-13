@@ -63,9 +63,9 @@ export function renderCharts(data) {
     responseTime: 'Время отклика (мс)',
     throughput: 'Пропускная способность (запросов/сек)',
     errorRate: 'Уровень ошибок (%)',
-    resourceUsage: 'Общее использование ресурсов (%)',
+    resourceUsage: 'Ресурсы: CPU (%) и память (МБ)',
     cpuUsage: 'Использование CPU (%)',
-    memoryUsage: 'Использование памяти (%)'
+    memoryUsage: 'Использование памяти (МБ)'
   };
   
   try {

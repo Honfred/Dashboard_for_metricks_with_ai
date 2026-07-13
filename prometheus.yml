@@ -62,16 +62,6 @@ scrape_configs:
         labels:
           service: 'pushgateway'
 
-  # Специальный job для метрик приложения из Pushgateway
-  - job_name: 'app_metrics'
-    scrape_interval: 15s
-    honor_labels: true
-    metrics_path: '/metrics'
-    static_configs:
-      - targets: ['pushgateway:9091']
-        labels:
-          service: 'app'
-
 # Используем файл с правилами оповещений
 rule_files:
   - 'alerts.yml'

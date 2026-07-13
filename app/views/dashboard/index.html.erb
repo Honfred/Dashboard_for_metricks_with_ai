@@ -114,6 +114,8 @@
 
   <!-- Переводы для графиков и сообщений -->
   <script>
+    // Демо-данные разрешены только при DASHBOARD_DEMO_DATA=true
+    window.dashboardDemoDataEnabled = <%= ENV['DASHBOARD_DEMO_DATA'] == 'true' %>;
     window.dashboardTranslations = {
       charts: {
         responseTime: "<%= j t('dashboard.charts.response_time') %>",

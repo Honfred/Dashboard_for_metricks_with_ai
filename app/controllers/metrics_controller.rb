@@ -55,16 +55,12 @@ class MetricsController < ApplicationController
     redirect_to metrics_url, notice: "Метрика успешно удалена."
   end
 
-  # Метод для возврата метрик в формате, понятном для Prometheus
+  # Метод для возврата метрик в формате, понятном для Prometheus.
+  # Отдаёт реальные метрики приложения из реестра prometheus-client
+  # (запросы считает Prometheus::Middleware::Collector)
   def custom_metrics
     begin
-      # Получаем данные статистики приложения
-      metrics_data = collect_application_metrics
-      
-      # Формируем ответ в формате Prometheus
-      response_body = generate_prometheus_format(metrics_data)
-      
-      # Отправляем ответ с правильным content-type
+      response_body = Prometheus::Client::Formats::Text.marshal(Prometheus::Client.registry)
       render plain: response_body, content_type: 'text/plain; version=0.0.4'
     rescue => e
       Rails.logger.error("Error generating custom metrics: #{e.message}")
@@ -129,51 +125,6 @@ class MetricsController < ApplicationController
   end
 
 
-
-  # Собираем метрики приложения для Prometheus
-  def collect_application_metrics
-    {
-      # Основные метрики Rails-приложения
-      'rails_requests_total' => {
-        type: 'counter',
-        help: 'Total number of requests processed by the Rails application',
-        value: rand(1000..5000)
-      },
-      'rails_request_duration_seconds' => {
-        type: 'histogram',
-        help: 'Request duration histogram in seconds',
-        value: rand(0.1..2.0).round(3)
-      },
-      'rails_memory_usage_bytes' => {
-        type: 'gauge',
-        help: 'Memory usage of the Rails application in bytes',
-        value: rand(100_000_000..500_000_000)
-      },
-      'rails_active_record_connections' => {
-        type: 'gauge',
-        help: 'Number of active database connections',
-        value: rand(1..10)
-      }
-    }
-  end
-
-  # Генерируем текстовый формат для Prometheus
-  def generate_prometheus_format(metrics_data)
-    output = []
-    
-    metrics_data.each do |metric_name, metric_info|
-      # Добавляем HELP комментарий (описание метрики)
-      output << "# HELP #{metric_name} #{metric_info[:help]}"
-      # Добавляем TYPE комментарий (тип метрики)
-      output << "# TYPE #{metric_name} #{metric_info[:type]}"
-      # Добавляем значение метрики
-      output << "#{metric_name} #{metric_info[:value]}"
-      # Добавляем пустую строку для лучшей читаемости
-      output << ""
-    end
-    
-    output.join("\n")
-  end
 
   def detect_anomalies(metric_name, data)
     return { error: "No data available" } if data[:values].empty?

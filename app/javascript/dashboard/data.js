@@ -390,9 +390,36 @@ export function generateServiceHealthData() {
   return services;
 }
 
+// Демо-данные разрешены только при DASHBOARD_DEMO_DATA=true (флаг задаёт сервер)
+export function isDemoDataEnabled() {
+  return window.dashboardDemoDataEnabled === true;
+}
+
+// Пустая структура данных: показывается, когда данных нет,
+// а демо-данные не разрешены
+export function emptyDashboardData() {
+  return {
+    response_time: [],
+    throughput: [],
+    error_rate: [],
+    service_health: [],
+    resource_usage: { overview: [], cpu: [], memory: [] },
+    services: []
+  };
+}
+
+// Фолбэк при ошибке или отсутствии данных: демо-данные только по env-флагу
+function fallbackData(reason) {
+  if (isDemoDataEnabled()) {
+    console.warn(`${reason} — используем демо-данные (DASHBOARD_DEMO_DATA=true)`);
+    return createDemoData();
+  }
+  console.warn(`${reason} — показываем пустые графики`);
+  return emptyDashboardData();
+}
+
 // Функция для запроса реальных данных с сервера (если доступны)
-// Возвращает данные в формате, понятном renderCharts; при ошибке или
-// отсутствии данных в Prometheus возвращает демо-данные
+// Возвращает данные в формате, понятном renderCharts
 export function fetchDataFromServer(timeRange) {
   return fetch(`/dashboard/metrics?time_range=${encodeURIComponent(timeRange)}`)
     .then(response => {
@@ -407,13 +434,11 @@ export function fetchDataFromServer(timeRange) {
         console.log('Используем данные Prometheus с сервера:', transformed);
         return transformed;
       }
-      console.warn('Сервер не вернул данных метрик, используем демо-данные');
-      return createDemoData();
+      return fallbackData('Сервер не вернул данных метрик');
     })
     .catch(error => {
       console.error('Ошибка при загрузке данных с сервера:', error);
-      // В случае ошибки генерируем демо-данные
-      return createDemoData();
+      return fallbackData('Ошибка загрузки данных с сервера');
     });
 }
 
