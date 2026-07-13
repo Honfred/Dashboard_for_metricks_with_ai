@@ -35,7 +35,7 @@ class MetricsController < ApplicationController
     if @metric.save
       redirect_to @metric, notice: "Метрика успешно создана."
     else
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 
@@ -46,7 +46,7 @@ class MetricsController < ApplicationController
     if @metric.update(metric_params)
       redirect_to @metric, notice: "Метрика успешно обновлена."
     else
-      render :edit
+      render :edit, status: :unprocessable_entity
     end
   end
 

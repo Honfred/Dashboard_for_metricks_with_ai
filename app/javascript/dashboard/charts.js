@@ -263,7 +263,7 @@ export function createLineChart(elementId, title, datasets) {
 }
 
 function getTimeUnitForChart() {
-  const timeRange = document.getElementById('time-range').value;
+  const timeRange = document.getElementById('time-range')?.value || '1h';
   switch(timeRange) {
     case '15m':
     case '1h': return 'minute';

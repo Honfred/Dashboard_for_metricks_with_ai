@@ -78,7 +78,12 @@ class UploadsController < ApplicationController
 
   # POST /uploads/bulk
   def bulk_upload
-    files = params[:files]
+    files = Array(params[:files]).reject(&:blank?)
+    if files.empty?
+      render json: { error: t('uploads.no_files', default: 'Файлы не переданы') }, status: :bad_request
+      return
+    end
+
     results = { success: [], errors: [] }
 
     files.each do |file|

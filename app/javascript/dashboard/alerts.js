@@ -145,7 +145,7 @@ export function updateAlerts(alerts) {
       <h3>${alert.service}</h3>
       <p>${metricLabel}: ${alert.metric}</p>
       <p>${valueLabel}: ${alert.value} (${thresholdLabel}: ${alert.threshold})</p>
-      <p>${timeLabel}: ${new Date(alert.timestamp).toLocaleString()}</p>
+      <p>${timeLabel}: ${new Date(alert.triggered_at).toLocaleString()}</p>
     `;
     alertsList.appendChild(alertEl);
   });

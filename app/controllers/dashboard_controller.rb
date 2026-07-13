@@ -74,11 +74,7 @@ class DashboardController < ApplicationController
   private
 
   def default_settings
-    {
-      time_range: "1h",
-      refresh_interval: 60,
-      displayed_panels: ["services_status", "response_time", "throughput", "error_rate", "resource_usage"]
-    }
+    DashboardSetting.default_settings
   end
 
   def user_dashboard_settings
@@ -250,7 +246,7 @@ class DashboardController < ApplicationController
       events = analysis.report["events"].take(10)
       {
         metric_name: analysis.metric.name,
-        timestamps: events.map { |e| Time.at(e["timestamp"]).strftime("%d.%м %H:%M") },
+        timestamps: events.map { |e| Time.at(e["timestamp"]).strftime("%d.%m %H:%M") },
         values: events.map { |e| e["value"] }
       }
     end.compact
