@@ -74,11 +74,7 @@ class DashboardController < ApplicationController
   private
 
   def default_settings
-    {
-      time_range: "1h",
-      refresh_interval: 60,
-      displayed_panels: ["services_status", "response_time", "throughput", "error_rate", "resource_usage"]
-    }
+    DashboardSetting.default_settings
   end
 
   def user_dashboard_settings
@@ -144,33 +140,44 @@ class DashboardController < ApplicationController
     []
   end
 
+  # Среднее время отклика в миллисекундах
   def fetch_response_time(client, start_time, end_time, step)
-    result = client.fetch_range_metrics("http_request_duration_seconds", start_time, end_time, step)
+    query = 'sum by (instance, job) (rate(http_server_request_duration_seconds_sum[5m])) ' \
+            '/ sum by (instance, job) (rate(http_server_request_duration_seconds_count[5m])) * 1000'
+    result = client.fetch_range_metrics(query, start_time, end_time, step)
     parse_time_series(result)
   rescue => e
     Rails.logger.error("Error fetching response time: #{e.message}")
     []
   end
 
+  # Пропускная способность в запросах/сек
   def fetch_throughput(client, start_time, end_time, step)
-    result = client.fetch_range_metrics("rate(http_requests_total[1m])", start_time, end_time, step)
+    query = 'sum by (instance, job) (rate(http_server_requests_total[5m]))'
+    result = client.fetch_range_metrics(query, start_time, end_time, step)
     parse_time_series(result)
   rescue => e
     Rails.logger.error("Error fetching throughput: #{e.message}")
     []
   end
 
+  # Доля ошибок 5xx в процентах. Конструкция "or ... * 0" даёт нулевую
+  # линию, когда ошибок нет (иначе серия просто отсутствует)
   def fetch_error_rate(client, start_time, end_time, step)
-    result = client.fetch_range_metrics('rate(http_requests_total{status=~"5.."}[1m]) / rate(http_requests_total[1m])', start_time, end_time, step)
+    query = '(sum by (instance, job) (rate(http_server_requests_total{code=~"5.."}[5m])) ' \
+            'or sum by (instance, job) (rate(http_server_requests_total[5m])) * 0) ' \
+            '/ sum by (instance, job) (rate(http_server_requests_total[5m])) * 100'
+    result = client.fetch_range_metrics(query, start_time, end_time, step)
     parse_time_series(result)
   rescue => e
     Rails.logger.error("Error fetching error rate: #{e.message}")
     []
   end
 
+  # CPU — в процентах (доля процессорного времени), память — в мегабайтах
   def fetch_resource_usage(client, start_time, end_time, step)
-    cpu_result = client.fetch_range_metrics("process_cpu_seconds_total", start_time, end_time, step)
-    memory_result = client.fetch_range_metrics("process_resident_memory_bytes", start_time, end_time, step)
+    cpu_result = client.fetch_range_metrics("rate(process_cpu_seconds_total[5m]) * 100", start_time, end_time, step)
+    memory_result = client.fetch_range_metrics("process_resident_memory_bytes / 1024 / 1024", start_time, end_time, step)
 
     {
       cpu: parse_time_series(cpu_result),
@@ -189,7 +196,7 @@ class DashboardController < ApplicationController
         name: item["metric"]["instance"] || item["metric"]["job"],
         status: item["value"][1] == "1"
       }
-    end
+    end.uniq { |service| service[:name] } # один instance может скрейпиться несколькими job
   end
 
   def parse_time_series(result)
@@ -198,7 +205,11 @@ class DashboardController < ApplicationController
     result["data"]["result"].map do |series|
       {
         metric: series["metric"],
-        values: series["values"].map { |time, value| [ time * 1000, value.to_f ] }
+        values: series["values"].map do |time, value|
+          # Prometheus отдаёт NaN строкой (например, при делении 0/0)
+          parsed = Float(value) rescue Float::NAN
+          [ time * 1000, parsed.nan? ? nil : parsed ]
+        end
       }
     end
   end
@@ -250,7 +261,7 @@ class DashboardController < ApplicationController
       events = analysis.report["events"].take(10)
       {
         metric_name: analysis.metric.name,
-        timestamps: events.map { |e| Time.at(e["timestamp"]).strftime("%d.%м %H:%M") },
+        timestamps: events.map { |e| Time.at(e["timestamp"]).strftime("%d.%m %H:%M") },
         values: events.map { |e| e["value"] }
       }
     end.compact

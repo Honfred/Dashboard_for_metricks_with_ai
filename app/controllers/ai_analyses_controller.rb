@@ -105,7 +105,7 @@ class AiAnalysesController < ApplicationController
     else
       @available_analysis_types = AiService.new.available_analysis_types
       @ml_service_available = MlService.check_connection
-      render :new
+      render :new, status: :unprocessable_entity
     end
   end
 

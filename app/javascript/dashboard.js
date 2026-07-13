@@ -7,126 +7,145 @@ import * as Data from 'dashboard/data';
 
 // Глобальные переменные
 let refreshController = null;
-let currentDemoData = null;
+let currentData = null;
 
-document.addEventListener('DOMContentLoaded', function() {
+// Загружает данные с сервера (с фолбэком на демо-данные внутри Data)
+// и перерисовывает графики с учётом выбранных сервисов
+function loadData() {
+  const timeRange = document.getElementById('time-range')?.value || '1h';
+  return Data.fetchDataFromServer(timeRange).then(data => {
+    currentData = data;
+    refreshChartsWithSelectedServices(window.dashboardSelectedServices || []);
+    Alerts.checkAnomalies(data);
+    return data;
+  });
+}
+
+// Тела body, для которых уже выполнена инициализация. Turbo заменяет body
+// при каждом визите, поэтому WeakSet корректно отличает новый визит
+// (в том числе восстановление из кэша) от повторного события на той же странице
+const initializedBodies = new WeakSet();
+
+function setupDashboard() {
+  // Инициализируем только на странице дашборда и только один раз для текущего body
+  const grid = document.getElementById('metrics-grid');
+  if (!grid || initializedBodies.has(document.body)) return;
+  initializedBodies.add(document.body);
+
+  // Сбрасываем состояние прошлого визита
+  currentData = null;
+  window.dashboardSelectedServices = [];
+
   // Инициализация дашборда
   initDashboard();
-  
+
   // Настройка обновления данных
   setupAutoRefresh();
-  
+
   // Настройка перетаскивания панелей (drag-and-drop)
   Layout.setupDragAndDrop();
-  
+
   // Инициализация системы оповещений
   Alerts.initAlerts();
-  
+
   // Проверка скрытых панелей при загрузке
   Layout.checkEmptyRows();
   Layout.checkAllPanelsDisabled();
-  
-  // Инициализируем массив для выбранных сервисов в глобальном контексте
-  window.dashboardSelectedServices = [];
-  
-  // Обработчик для события выбора сервиса из таблицы service-health
-  document.addEventListener('dashboard:toggle-service', function(event) {
-    const serviceName = event.detail.service;
-    const ctrlKey = event.detail.ctrlKey;
-    
-    if (serviceName) {
-      toggleServiceSelection(serviceName, ctrlKey);
-    }
-  });
-  
-  // Обработчик для обновления всех графиков (используется при выходе из полноэкранного режима)
-  document.addEventListener('dashboard:refresh-all-charts', function() {
-    // Обновляем все графики с текущими данными
-    if (currentDemoData) {
-      Charts.renderCharts(currentDemoData);
-    } else {
-      const demoData = Data.createDemoData();
-      currentDemoData = demoData;
-      Charts.renderCharts(demoData);
-    }
-  });
-  
+
   // Обработчики для элементов управления
-  document.getElementById('time-range').addEventListener('change', updateTimeRange);
-  document.getElementById('auto-refresh').addEventListener('change', updateRefreshInterval);
-  document.getElementById('save-layout').addEventListener('click', saveCurrentSettings);
-  document.getElementById('toggle-edit-mode').addEventListener('click', Layout.toggleEditMode);
-  
+  // (элементы пересоздаются Turbo при каждом визите, поэтому вешаем заново)
+  document.getElementById('time-range')?.addEventListener('change', updateTimeRange);
+  document.getElementById('auto-refresh')?.addEventListener('change', updateRefreshInterval);
+  document.getElementById('save-layout')?.addEventListener('click', saveCurrentSettings);
+  document.getElementById('toggle-edit-mode')?.addEventListener('click', Layout.toggleEditMode);
+
   // Обработчики для переключателей видимости панелей
   document.querySelectorAll('.panel-toggle').forEach(function(checkbox) {
     checkbox.addEventListener('change', function() {
       Layout.togglePanelVisibility(this.dataset.panel, this.checked);
     });
   });
-  
+
   // Обработчики для действий с панелями
   document.querySelectorAll('.panel-fullscreen').forEach(function(button) {
     button.addEventListener('click', Layout.toggleFullscreen);
   });
-  
+
   // Обработчик для кнопки "Показать все панели"
   const showAllBtn = document.getElementById('show-all-panels');
   if (showAllBtn) {
     showAllBtn.addEventListener('click', Layout.showAllPanels);
   }
-  
-  // Обработчик событий для обновления графиков при изменении размера панелей
-  document.addEventListener('dashboard:resize-chart', function(event) {
-    handleChartResize(event.detail.panelType);
-  });
-  
-  // Обработчик событий для сохранения макета
-  document.addEventListener('dashboard:save-layout', function(event) {
-    saveCurrentSettings();
-  });
-  
-  // Загружаем настройки дашборда
-  loadSettings();
+}
+
+// Обработчики на document регистрируются один раз — модуль исполняется однократно
+
+// Обработчик для события выбора сервиса из таблицы service-health
+document.addEventListener('dashboard:toggle-service', function(event) {
+  const serviceName = event.detail.service;
+  const ctrlKey = event.detail.ctrlKey;
+
+  if (serviceName) {
+    toggleServiceSelection(serviceName, ctrlKey);
+  }
 });
+
+// Обработчик для обновления всех графиков (используется при выходе из полноэкранного режима)
+document.addEventListener('dashboard:refresh-all-charts', function() {
+  // Обновляем все графики с текущими данными (с учётом выбранных сервисов)
+  refreshChartsWithSelectedServices(window.dashboardSelectedServices || []);
+});
+
+// Обработчик событий для обновления графиков при изменении размера панелей
+document.addEventListener('dashboard:resize-chart', function(event) {
+  handleChartResize(event.detail.panelType);
+});
+
+// Обработчик событий для сохранения макета
+document.addEventListener('dashboard:save-layout', function(event) {
+  saveCurrentSettings();
+});
+
+// Останавливаем таймеры при уходе со страницы, иначе они продолжают
+// работать на других страницах (Turbo не выгружает модуль)
+document.addEventListener('turbo:before-cache', function() {
+  if (refreshController) {
+    refreshController.stop();
+    refreshController = null;
+  }
+  Alerts.stopAlertsPolling();
+});
+
+// Инициализация: turbo:load покрывает Turbo-навигацию и восстановление из кэша,
+// немедленный вызов — первый заход, когда модуль загрузился после turbo:load
+document.addEventListener('turbo:load', setupDashboard);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupDashboard);
+} else {
+  setupDashboard();
+}
 
 function initDashboard() {
   console.log('Инициализация дашборда начата...');
-  
+
   try {
-    // Сразу генерируем данные для графиков, чтобы они отображались при первой загрузке
-    currentDemoData = Data.createDemoData();
-    Charts.renderCharts(currentDemoData);
-    
-    // Проверяем данные на аномалии
-    Alerts.checkAnomalies(currentDemoData);
-    
-    // Загружаем настройки асинхронно (это не блокирует отображение графиков)
-    loadSettings().then(settings => {
-      if (settings) {
-        // Применяем загруженные настройки, но не перерисовываем графики если они уже есть
-        Settings.applySettings(settings, {
-          setupAutoRefresh: setupAutoRefresh,
-          togglePanelVisibility: Layout.togglePanelVisibility,
-          applyLayout: applyLayout
-        });
-      }
-      console.log('Дашборд инициализирован успешно');
-    }).catch(error => {
-      console.error('Ошибка при загрузке настроек:', error);
-      // Не генерируем данные повторно, так как они уже созданы
-    });
+    // Сначала применяем сохранённые настройки (временной диапазон, панели, макет),
+    // затем загружаем данные уже для актуального диапазона
+    loadSettings()
+      .then(() => loadData())
+      .then(() => {
+        console.log('Дашборд инициализирован успешно');
+      })
+      .catch(error => {
+        console.error('Ошибка при инициализации дашборда:', error);
+        // Демо-данные — только по env-флагу, иначе показываем пустые графики
+        currentData = Data.isDemoDataEnabled() ? Data.createDemoData() : Data.emptyDashboardData();
+        Charts.renderCharts(currentData);
+      });
   } catch (e) {
     console.error('Ошибка при инициализации дашборда:', e);
     const initErrorMsg = window.dashboardTranslations?.messages?.initError || 'Ошибка при инициализации дашборда';
     Charts.showChartError(initErrorMsg + ': ' + e.message);
-    
-    // Попытка восстановления при ошибке - создаем данные заново
-    try {
-      currentDemoData = Data.createDemoData();
-      Charts.renderCharts(currentDemoData);
-    } catch (recoveryError) {
-      console.error('Не удалось восстановиться после ошибки:', recoveryError);
-    }
   }
 }
 
@@ -235,16 +254,15 @@ function updateSelectedServiceIndicators(services) {
 
 // Обновление графиков с учетом выбранных сервисов
 function refreshChartsWithSelectedServices(services) {
-  if (currentDemoData) {
+  if (currentData) {
     // Фильтруем данные для выбранных сервисов или показываем все
-    const filteredData = services.length === 0 ? currentDemoData : 
-                        Data.filterDataByServices(currentDemoData, services);
-    
+    const filteredData = services.length === 0 ? currentData :
+                        Data.filterDataByServices(currentData, services);
+
     Charts.renderCharts(filteredData);
   } else {
-    const demoData = Data.createDemoData(); // Создаем новый набор данных
-    currentDemoData = demoData; // Сохраняем для последующего использования
-    Charts.renderCharts(demoData);
+    // Данных ещё нет — загружаем (после загрузки графики отрисуются)
+    loadData();
   }
 }
 
@@ -276,16 +294,13 @@ function setupAutoRefresh() {
   // Создаем новый контроллер обновления
   refreshController = Settings.setupAutoRefresh(function() {
     // Функция для периодического обновления данных
-    currentDemoData = Data.createDemoData();
-    Charts.renderCharts(currentDemoData);
-    Alerts.checkAnomalies(currentDemoData);
+    loadData();
   });
 }
 
 function updateTimeRange() {
   // Обновляем данные при изменении временного диапазона
-  currentDemoData = Data.createDemoData();
-  Charts.renderCharts(currentDemoData);
+  loadData();
 }
 
 function updateRefreshInterval() {
@@ -401,11 +416,13 @@ function applyLayout(layoutData) {
   // Проверяем пустые ряды и скрытые панели
   Layout.checkEmptyRows();
   Layout.checkAllPanelsDisabled();
-  
-  // Обновляем графики
+
+  // Обновляем графики, если данные уже загружены
+  // (при инициализации данные загрузятся позже и отрисуются сами)
   try {
-    const demoData = Data.createDemoData();
-    Charts.renderCharts(demoData);
+    if (currentData) {
+      refreshChartsWithSelectedServices(window.dashboardSelectedServices || []);
+    }
   } catch (e) {
     console.error('Ошибка при рендеринге графиков после применения макета:', e);
   }
@@ -417,20 +434,23 @@ function handleChartResize(panelType) {
     // Для таблицы сервисов не нужно пересоздавать график
     const container = document.querySelector(`.grid-panel[data-panel="${panelType}"] .chart-container`);
     if (container && !container.querySelector('.status-table')) {
-      Charts.renderServiceHealthTable(container.id, Data.generateServiceHealthData());
+      Charts.renderServiceHealthTable(container.id, currentData?.service_health || []);
     }
   } else {
-    // Обновляем соответствующий график
-    const demoData = Data.createDemoData();
-    
-    if (panelType === 'response-time' && demoData.response_time) {
-      Charts.renderCharts({ response_time: demoData.response_time });
-    } else if (panelType === 'throughput' && demoData.throughput) {
-      Charts.renderCharts({ throughput: demoData.throughput });
-    } else if (panelType === 'error-rate' && demoData.error_rate) {
-      Charts.renderCharts({ error_rate: demoData.error_rate });
-    } else if (panelType === 'resource-usage' && demoData.resource_usage) {
-      Charts.renderCharts({ resource_usage: demoData.resource_usage });
+    // Обновляем соответствующий график по текущим данным
+    if (!currentData) {
+      loadData();
+      return;
+    }
+
+    if (panelType === 'response-time' && currentData.response_time) {
+      Charts.renderCharts({ response_time: currentData.response_time });
+    } else if (panelType === 'throughput' && currentData.throughput) {
+      Charts.renderCharts({ throughput: currentData.throughput });
+    } else if (panelType === 'error-rate' && currentData.error_rate) {
+      Charts.renderCharts({ error_rate: currentData.error_rate });
+    } else if (panelType === 'resource-usage' && currentData.resource_usage) {
+      Charts.renderCharts({ resource_usage: currentData.resource_usage });
     }
   }
 }

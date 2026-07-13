@@ -6,6 +6,9 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+require "prometheus/middleware/collector"
+require "prometheus/client/formats/text"
+
 module DashboardForMetricksWithAi
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
@@ -24,6 +27,10 @@ module DashboardForMetricksWithAi
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
     
+    # Сбор реальных метрик HTTP-запросов (http_server_requests_total,
+    # http_server_request_duration_seconds) — их отдаёт эндпоинт /metrics
+    config.middleware.use Prometheus::Middleware::Collector
+
     # Настройка соединения с Prometheus
     config.prometheus_url = ENV["PROMETHEUS_URL"] || "http://localhost:9090"
 

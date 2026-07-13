@@ -63,9 +63,9 @@ export function renderCharts(data) {
     responseTime: 'Время отклика (мс)',
     throughput: 'Пропускная способность (запросов/сек)',
     errorRate: 'Уровень ошибок (%)',
-    resourceUsage: 'Общее использование ресурсов (%)',
+    resourceUsage: 'Ресурсы: CPU (%) и память (МБ)',
     cpuUsage: 'Использование CPU (%)',
-    memoryUsage: 'Использование памяти (%)'
+    memoryUsage: 'Использование памяти (МБ)'
   };
   
   try {
@@ -215,6 +215,10 @@ export function createLineChart(elementId, title, datasets) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        // Без анимации: график рисуется синхронно сразу после создания,
+        // не полагаясь на requestAnimationFrame (важно при Turbo-переходах
+        // и для фоновых вкладок, где rAF может не срабатывать)
+        animation: false,
         plugins: {
           title: {
             display: true,
@@ -263,7 +267,7 @@ export function createLineChart(elementId, title, datasets) {
 }
 
 function getTimeUnitForChart() {
-  const timeRange = document.getElementById('time-range').value;
+  const timeRange = document.getElementById('time-range')?.value || '1h';
   switch(timeRange) {
     case '15m':
     case '1h': return 'minute';

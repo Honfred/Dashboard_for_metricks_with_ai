@@ -13,12 +13,24 @@ class PrometheusService
     end_time = Time.now
     
     case time_range
+    when "15m"
+      start_time = 15.minutes.ago
+      step = "15"  # 15 секунд
+    when "30m"
+      start_time = 30.minutes.ago
+      step = "30"  # 30 секунд
     when "1h"
       start_time = 1.hour.ago
       step = "60"  # 1 минута
+    when "3h"
+      start_time = 3.hours.ago
+      step = "180"  # 3 минуты
     when "6h"
       start_time = 6.hours.ago
       step = "300"  # 5 минут
+    when "12h"
+      start_time = 12.hours.ago
+      step = "600"  # 10 минут
     when "24h"
       start_time = 24.hours.ago
       step = "600"  # 10 минут
@@ -91,8 +103,7 @@ class PrometheusService
     merged_targets
   end
 
-  private
-
+  # Публичный метод: используется также из AlertsService для instant-запросов
   def query_prometheus(query)
     uri = URI("#{@base_url}/api/v1/query")
     uri.query = URI.encode_www_form(query: query)
@@ -109,6 +120,8 @@ class PrometheusService
       { "status" => "error", "error" => e.message }
     end
   end
+
+  private
 
   def query_prometheus_range(query, start_time:, end_time:, step:)
     uri = URI("#{@base_url}/api/v1/query_range")

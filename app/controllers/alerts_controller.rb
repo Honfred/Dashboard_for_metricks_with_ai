@@ -14,18 +14,39 @@ class AlertsController < ApplicationController
                .by_service(params[:service])
                .recent
                .page(params[:page]).per(20)
-    
-    render :index
+
+    respond_to do |format|
+      format.html { render :index }
+      format.json { render json: @alerts }
+    end
   end
 
   def show
+  end
+
+  # Создание оповещения из клиентского кода дашборда (JSON)
+  def create
+    alert = Alert.trigger_for(
+      params[:service],
+      params[:metric],
+      params[:value],
+      params[:threshold],
+      params[:severity].presence || 'warning',
+      params[:message]
+    )
+
+    if alert.persisted?
+      render json: { success: true, alert: alert }, status: :created
+    else
+      render json: { success: false, errors: alert.errors.full_messages }, status: :unprocessable_entity
+    end
   end
 
   def update
     if @alert.update(alert_params)
       redirect_to @alert, notice: 'Оповещение успешно обновлено.'
     else
-      render :show
+      render :show, status: :unprocessable_entity
     end
   end
   

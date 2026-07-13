@@ -46,34 +46,20 @@ Rails.application.routes.draw do
     resources :ai_analyses, only: [:index, :new, :create, :show]
   end
   
-  # Переименовываем ресурс метрик для панели управления
-  scope '/dashboard' do
-    resources :metrics, as: 'dashboard_metrics', path: 'metrics'
-  end
-  
   # Добавляем маршрут для проверки статуса источников данных Prometheus
   get 'prometheus/status', to: 'prometheus#status'
   
   # Маршруты для анализа метрик с помощью AI без привязки к метрике
-  resources :ai_analyses, only: [:index, :show, :destroy]
+  resources :ai_analyses, only: [:index, :show]
 
   # Маршруты для оповещений
-  resources :alerts, only: [:index, :show, :update] do
+  resources :alerts, only: [:index, :show, :create, :update] do
     member do
       post 'resolve'
       post 'acknowledge'
     end
     collection do
       get 'active'
-    end
-  end
-  
-  # Маршруты для API оповещений
-  namespace :api do
-    resources :alerts, only: [:index, :create] do
-      collection do
-        get 'active'
-      end
     end
   end
 

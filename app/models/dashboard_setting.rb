@@ -21,8 +21,11 @@ class DashboardSetting < ApplicationRecord
   end
   
   # Получение настроек с применением значений по умолчанию
+  # Настройки хранятся в JSON со строковыми ключами, поэтому приводим их
+  # к символьным, иначе deep_merge не перекроет значения по умолчанию
   def merged_settings
-    self.class.default_settings.deep_merge(settings || {})
+    stored = (settings || {}).deep_symbolize_keys
+    self.class.default_settings.deep_merge(stored)
   end
   
   # Получение текущих настроек или создание по умолчанию

@@ -3,10 +3,16 @@
 // Массив для хранения текущих оповещений
 let currentAlerts = [];
 
+// Идентификатор таймера опроса оповещений
+let checkAlertsIntervalId = null;
+
 export function initAlerts() {
-  // Проверка наличия оповещений каждую минуту
-  setInterval(checkAlerts, 60000);
-  
+  // Проверка наличия оповещений каждую минуту.
+  // Сбрасываем предыдущий таймер, чтобы при повторной инициализации
+  // (Turbo-навигация) не плодить дублирующие запросы
+  stopAlertsPolling();
+  checkAlertsIntervalId = setInterval(checkAlerts, 60000);
+
   // Настройка модального окна оповещений
   const modal = document.getElementById('alerts-modal');
   if (!modal) return;
@@ -25,6 +31,14 @@ export function initAlerts() {
   });
 }
 
+// Останавливает периодический опрос оповещений (при уходе со страницы дашборда)
+export function stopAlertsPolling() {
+  if (checkAlertsIntervalId) {
+    clearInterval(checkAlertsIntervalId);
+    checkAlertsIntervalId = null;
+  }
+}
+
 export function checkAlerts() {
   // Запрашиваем активные оповещения с сервера
   fetch('/alerts/active.json')
@@ -37,54 +51,70 @@ export function checkAlerts() {
     });
 }
 
+// Последнее значение серии: поддерживаем формат датасетов Chart.js
+// (data: [{x, y}]) и «сырой» формат Prometheus (values: [[ts, value]])
+function getLastSeriesValue(series) {
+  const points = series.data || series.values;
+  if (!points || points.length === 0) return null;
+
+  const last = points[points.length - 1];
+  if (Array.isArray(last)) return last[1];
+  if (last && typeof last === 'object') return last.y;
+  return last;
+}
+
+// Имя сервиса, к которому относится серия
+function getSeriesService(series) {
+  return series.service ||
+         (series.metric && (series.metric.instance || series.metric.job)) ||
+         series.label ||
+         'unknown';
+}
+
 export function checkAnomalies(data) {
   // Проверяем данные на аномалии и генерируем оповещения при необходимости
   if (!data) return;
-  
+
   // Проверка превышения порогов для времени отклика
   if (data.response_time && data.response_time.length > 0) {
     data.response_time.forEach(series => {
-      // Получаем последнее значение в серии
-      if (series.values && series.values.length > 0) {
-        const lastValue = series.values[series.values.length - 1][1];
-        const threshold = 500; // Пороговое значение в миллисекундах
-        
-        if (lastValue > threshold) {
-          // Создаем оповещение на сервере
-          const alertData = {
-            service: series.metric && (series.metric.instance || series.metric.job) || 'unknown',
-            metric: 'response_time',
-            value: lastValue,
-            threshold: threshold,
-            severity: lastValue > threshold * 1.5 ? 'critical' : 'warning'
-          };
-          
-          createAlert(alertData);
-        }
+      const service = getSeriesService(series);
+      if (service === 'threshold') return; // Служебная серия порога
+
+      const lastValue = getLastSeriesValue(series);
+      const threshold = 500; // Пороговое значение в миллисекундах
+
+      if (lastValue !== null && lastValue > threshold) {
+        // Создаем оповещение на сервере
+        createAlert({
+          service: service,
+          metric: 'response_time',
+          value: lastValue,
+          threshold: threshold,
+          severity: lastValue > threshold * 1.5 ? 'critical' : 'warning'
+        });
       }
     });
   }
-  
+
   // Проверка превышения порогов для уровня ошибок
   if (data.error_rate && data.error_rate.length > 0) {
     data.error_rate.forEach(series => {
-      // Получаем последнее значение в серии
-      if (series.values && series.values.length > 0) {
-        const lastValue = series.values[series.values.length - 1][1];
-        const threshold = 0.05; // Пороговое значение 5% ошибок
-        
-        if (lastValue > threshold) {
-          // Создаем оповещение на сервере
-          const alertData = {
-            service: series.metric && (series.metric.instance || series.metric.job) || 'unknown',
-            metric: 'error_rate',
-            value: lastValue,
-            threshold: threshold,
-            severity: lastValue > threshold * 2 ? 'critical' : 'warning'
-          };
-          
-          createAlert(alertData);
-        }
+      const service = getSeriesService(series);
+      if (service === 'threshold') return; // Служебная серия порога
+
+      const lastValue = getLastSeriesValue(series);
+      const threshold = 0.05; // Пороговое значение 5% ошибок
+
+      if (lastValue !== null && lastValue > threshold) {
+        // Создаем оповещение на сервере
+        createAlert({
+          service: service,
+          metric: 'error_rate',
+          value: lastValue,
+          threshold: threshold,
+          severity: lastValue > threshold * 2 ? 'critical' : 'warning'
+        });
       }
     });
   }
@@ -145,7 +175,7 @@ export function updateAlerts(alerts) {
       <h3>${alert.service}</h3>
       <p>${metricLabel}: ${alert.metric}</p>
       <p>${valueLabel}: ${alert.value} (${thresholdLabel}: ${alert.threshold})</p>
-      <p>${timeLabel}: ${new Date(alert.timestamp).toLocaleString()}</p>
+      <p>${timeLabel}: ${new Date(alert.triggered_at).toLocaleString()}</p>
     `;
     alertsList.appendChild(alertEl);
   });

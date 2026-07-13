@@ -9,6 +9,8 @@ services:
     environment:
       ML_SERVICE_URL: http://ml-service:5000
       RAILS_ENV: development
+      # Демо-данные на дашборде при отсутствии реальных метрик ("true"/"false")
+      DASHBOARD_DEMO_DATA: "false"
       PG_HOST: postgres
       DB_USERNAME: postgres
       DB_PASSWORD: 123456

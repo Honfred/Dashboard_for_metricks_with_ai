@@ -52,8 +52,17 @@
   <div id="metrics-grid" class="metrics-grid">
     <% @settings[:layout][:rows].each_with_index do |row, row_index| %>
       <div class="grid-row" data-row="<%= row_index %>">
-        <% row[:panels].each do |panel| %>
-          <% panel_class = @settings[:displayed_panels].include?(panel) ? '' : 'panel-hidden' %>
+        <% row[:panels].each do |panel_data| %>
+          <%# Панель может быть строкой ('service-health') или объектом
+              {id:, dataPanel:, visible:} — в таком виде макет сохраняет клиент %>
+          <% if panel_data.is_a?(Hash) %>
+            <% panel = panel_data[:dataPanel].presence || panel_data[:id].to_s.delete_prefix('panel-') %>
+            <% panel_visible = panel_data[:visible] != false %>
+          <% else %>
+            <% panel = panel_data.to_s %>
+            <% panel_visible = true %>
+          <% end %>
+          <% panel_class = @settings[:displayed_panels].include?(panel) && panel_visible ? '' : 'panel-hidden' %>
           <div class="grid-panel panel <%= panel %> <%= panel_class %>" data-panel="<%= panel %>">
             <div class="panel-header">
               <h2><%= t("dashboard.panels.#{panel.gsub('-', '_')}") %></h2>
@@ -101,12 +110,12 @@
 </div>
 
 <% content_for :scripts do %>
-  <!-- Подключаем библиотеки Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-  
+  <!-- Chart.js, адаптер дат и SortableJS подключаются в layout -->
+
   <!-- Переводы для графиков и сообщений -->
   <script>
+    // Демо-данные разрешены только при DASHBOARD_DEMO_DATA=true
+    window.dashboardDemoDataEnabled = <%= ENV['DASHBOARD_DEMO_DATA'] == 'true' %>;
     window.dashboardTranslations = {
       charts: {
         responseTime: "<%= j t('dashboard.charts.response_time') %>",
@@ -155,7 +164,5 @@
 <% end %> 
 
 <% content_for :head do %>
-  <!-- Загружаем библиотеки Sortable для перетаскивания элементов -->
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <%= stylesheet_link_tag "dashboard" %>
 <% end %>
