@@ -21,76 +21,109 @@ function loadData() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+// Тела body, для которых уже выполнена инициализация. Turbo заменяет body
+// при каждом визите, поэтому WeakSet корректно отличает новый визит
+// (в том числе восстановление из кэша) от повторного события на той же странице
+const initializedBodies = new WeakSet();
+
+function setupDashboard() {
+  // Инициализируем только на странице дашборда и только один раз для текущего body
+  const grid = document.getElementById('metrics-grid');
+  if (!grid || initializedBodies.has(document.body)) return;
+  initializedBodies.add(document.body);
+
+  // Сбрасываем состояние прошлого визита
+  currentData = null;
+  window.dashboardSelectedServices = [];
+
   // Инициализация дашборда
   initDashboard();
-  
+
   // Настройка обновления данных
   setupAutoRefresh();
-  
+
   // Настройка перетаскивания панелей (drag-and-drop)
   Layout.setupDragAndDrop();
-  
+
   // Инициализация системы оповещений
   Alerts.initAlerts();
-  
+
   // Проверка скрытых панелей при загрузке
   Layout.checkEmptyRows();
   Layout.checkAllPanelsDisabled();
-  
-  // Инициализируем массив для выбранных сервисов в глобальном контексте
-  window.dashboardSelectedServices = [];
-  
-  // Обработчик для события выбора сервиса из таблицы service-health
-  document.addEventListener('dashboard:toggle-service', function(event) {
-    const serviceName = event.detail.service;
-    const ctrlKey = event.detail.ctrlKey;
-    
-    if (serviceName) {
-      toggleServiceSelection(serviceName, ctrlKey);
-    }
-  });
-  
-  // Обработчик для обновления всех графиков (используется при выходе из полноэкранного режима)
-  document.addEventListener('dashboard:refresh-all-charts', function() {
-    // Обновляем все графики с текущими данными (с учётом выбранных сервисов)
-    refreshChartsWithSelectedServices(window.dashboardSelectedServices || []);
-  });
-  
+
   // Обработчики для элементов управления
-  document.getElementById('time-range').addEventListener('change', updateTimeRange);
-  document.getElementById('auto-refresh').addEventListener('change', updateRefreshInterval);
-  document.getElementById('save-layout').addEventListener('click', saveCurrentSettings);
-  document.getElementById('toggle-edit-mode').addEventListener('click', Layout.toggleEditMode);
-  
+  // (элементы пересоздаются Turbo при каждом визите, поэтому вешаем заново)
+  document.getElementById('time-range')?.addEventListener('change', updateTimeRange);
+  document.getElementById('auto-refresh')?.addEventListener('change', updateRefreshInterval);
+  document.getElementById('save-layout')?.addEventListener('click', saveCurrentSettings);
+  document.getElementById('toggle-edit-mode')?.addEventListener('click', Layout.toggleEditMode);
+
   // Обработчики для переключателей видимости панелей
   document.querySelectorAll('.panel-toggle').forEach(function(checkbox) {
     checkbox.addEventListener('change', function() {
       Layout.togglePanelVisibility(this.dataset.panel, this.checked);
     });
   });
-  
+
   // Обработчики для действий с панелями
   document.querySelectorAll('.panel-fullscreen').forEach(function(button) {
     button.addEventListener('click', Layout.toggleFullscreen);
   });
-  
+
   // Обработчик для кнопки "Показать все панели"
   const showAllBtn = document.getElementById('show-all-panels');
   if (showAllBtn) {
     showAllBtn.addEventListener('click', Layout.showAllPanels);
   }
-  
-  // Обработчик событий для обновления графиков при изменении размера панелей
-  document.addEventListener('dashboard:resize-chart', function(event) {
-    handleChartResize(event.detail.panelType);
-  });
-  
-  // Обработчик событий для сохранения макета
-  document.addEventListener('dashboard:save-layout', function(event) {
-    saveCurrentSettings();
-  });
+}
+
+// Обработчики на document регистрируются один раз — модуль исполняется однократно
+
+// Обработчик для события выбора сервиса из таблицы service-health
+document.addEventListener('dashboard:toggle-service', function(event) {
+  const serviceName = event.detail.service;
+  const ctrlKey = event.detail.ctrlKey;
+
+  if (serviceName) {
+    toggleServiceSelection(serviceName, ctrlKey);
+  }
 });
+
+// Обработчик для обновления всех графиков (используется при выходе из полноэкранного режима)
+document.addEventListener('dashboard:refresh-all-charts', function() {
+  // Обновляем все графики с текущими данными (с учётом выбранных сервисов)
+  refreshChartsWithSelectedServices(window.dashboardSelectedServices || []);
+});
+
+// Обработчик событий для обновления графиков при изменении размера панелей
+document.addEventListener('dashboard:resize-chart', function(event) {
+  handleChartResize(event.detail.panelType);
+});
+
+// Обработчик событий для сохранения макета
+document.addEventListener('dashboard:save-layout', function(event) {
+  saveCurrentSettings();
+});
+
+// Останавливаем таймеры при уходе со страницы, иначе они продолжают
+// работать на других страницах (Turbo не выгружает модуль)
+document.addEventListener('turbo:before-cache', function() {
+  if (refreshController) {
+    refreshController.stop();
+    refreshController = null;
+  }
+  Alerts.stopAlertsPolling();
+});
+
+// Инициализация: turbo:load покрывает Turbo-навигацию и восстановление из кэша,
+// немедленный вызов — первый заход, когда модуль загрузился после turbo:load
+document.addEventListener('turbo:load', setupDashboard);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', setupDashboard);
+} else {
+  setupDashboard();
+}
 
 function initDashboard() {
   console.log('Инициализация дашборда начата...');

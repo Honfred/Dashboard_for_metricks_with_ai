@@ -26,8 +26,14 @@
     
     <%= javascript_importmap_tags %>
     
-    <!-- Chart.js (глобальный, единая версия для всех страниц с inline-графиками) -->
+    <!-- Chart.js (глобальный, единая версия для всех страниц с inline-графиками)
+         и адаптер дат для оси времени. Подключены в layout, чтобы быть
+         доступными сразу при Turbo-переходах (head не перезагружается) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <!-- SortableJS для перетаскивания панелей дашборда -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
     <%= yield :styles %>
   </head>

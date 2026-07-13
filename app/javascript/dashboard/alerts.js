@@ -3,10 +3,16 @@
 // Массив для хранения текущих оповещений
 let currentAlerts = [];
 
+// Идентификатор таймера опроса оповещений
+let checkAlertsIntervalId = null;
+
 export function initAlerts() {
-  // Проверка наличия оповещений каждую минуту
-  setInterval(checkAlerts, 60000);
-  
+  // Проверка наличия оповещений каждую минуту.
+  // Сбрасываем предыдущий таймер, чтобы при повторной инициализации
+  // (Turbo-навигация) не плодить дублирующие запросы
+  stopAlertsPolling();
+  checkAlertsIntervalId = setInterval(checkAlerts, 60000);
+
   // Настройка модального окна оповещений
   const modal = document.getElementById('alerts-modal');
   if (!modal) return;
@@ -23,6 +29,14 @@ export function initAlerts() {
       modal.style.display = 'none';
     }
   });
+}
+
+// Останавливает периодический опрос оповещений (при уходе со страницы дашборда)
+export function stopAlertsPolling() {
+  if (checkAlertsIntervalId) {
+    clearInterval(checkAlertsIntervalId);
+    checkAlertsIntervalId = null;
+  }
 }
 
 export function checkAlerts() {

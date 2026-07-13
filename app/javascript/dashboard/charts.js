@@ -215,6 +215,10 @@ export function createLineChart(elementId, title, datasets) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        // Без анимации: график рисуется синхронно сразу после создания,
+        // не полагаясь на requestAnimationFrame (важно при Turbo-переходах
+        // и для фоновых вкладок, где rAF может не срабатывать)
+        animation: false,
         plugins: {
           title: {
             display: true,
