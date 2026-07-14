@@ -1,0 +1,35 @@
+name: Сообщить о баге
+description: Что-то работает не так, как ожидалось
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Что произошло
+      description: Опишите проблему и что вы ожидали увидеть вместо этого.
+      placeholder: На дашборде график времени отклика перестаёт обновляться после…
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+      placeholder: |
+        1. Открыть /dashboard
+        2. Перейти на страницу алертов и вернуться назад
+        3. График не обновляется
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Окружение
+      description: Браузер, способ запуска (docker compose / иное), значение DASHBOARD_DEMO_DATA, если известно.
+      placeholder: Chrome 126, docker compose up, демо-данные выключены
+  - type: textarea
+    id: logs
+    attributes:
+      label: Логи / скриншоты
+      description: Вывод консоли браузера, логи `docker compose logs web`, скриншоты.
+      render: shell

@@ -5,9 +5,17 @@ on:
   push:
     branches: [ master ]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -19,11 +27,14 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      # TODO: убрать --no-exit-on-warn после разбора текущих предупреждений
+      # (permit! в dashboard_controller и EOL Ruby 3.1)
       - name: Scan for common Rails security vulnerabilities using static analysis
-        run: bin/brakeman --no-pager --no-exit-on-warn --no-exit-on-error || true
+        run: bundle exec brakeman --no-pager --no-exit-on-warn
 
   scan_js:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
@@ -40,6 +51,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,11 +62,14 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
+      # TODO: сделать шаг блокирующим (убрать || true) после чистки
+      # текущих ~1200 офензов: bin/rubocop -a и разбор остатка вручную
       - name: Lint code for consistent style
         run: bin/rubocop -f github || true
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     services:
       postgres:
