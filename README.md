@@ -7,14 +7,16 @@
 
 ## О проекте
 
-Данный дашборд предоставляет следующие возможности:
-- Визуализация метрик: время отклика, пропускная способность, уровень ошибок
-- Мониторинг использования ресурсов: CPU, память, дисковое пространство
-- Система оповещений о критических значениях метрик
-- Настраиваемый интерфейс с возможностью перетаскивания панелей
-- AI-анализ метрик для выявления аномалий и прогнозирования проблем
+Возможности:
+- Дашборд с настраиваемыми панелями: время отклика, пропускная способность, уровень ошибок, CPU/память (перетаскивание панелей, выбор временного диапазона и интервала автообновления)
+- Система оповещений: статусы triggered/acknowledged/resolved, фильтры по важности и сервису
+- AI-анализ метрик через ML-сервис: поиск аномалий, прогноз трендов, анализ производительности
+- Управление версиями ML-моделей: обучение, деплой, скачивание
+- Отчёты в PDF/CSV/JSON с фоновой генерацией и сроком жизни
+- Загрузка файлов (логи, скриншоты, конфиги) с привязкой к сущностям
+- Интерфейс на русском и английском
 
-Проект разработан на Ruby on Rails с использованием JavaScript для интерактивных элементов. Данные визуализируются с помощью библиотеки Chart.js, а система мониторинга использует Prometheus.
+Стек: Ruby on Rails 7.2 (Ruby 3.1), Turbo + Stimulus (importmap, без сборщика), Chart.js, PostgreSQL, Redis + Sidekiq (фоновые задачи), MinIO (S3-совместимое хранилище файлов), Prometheus (сбор метрик), ML-сервис на Python (каталог `modules/AI_api`).
 
 ## Требования
 
@@ -27,40 +29,49 @@
 
 1. Клонируйте репозиторий:
 ```bash
-git clone https://github.com/username/dashboard_for_metricks_with_ai.git
-cd dashboard_for_metricks_with_ai
+git clone https://github.com/Honfred/Dashboard_for_metricks_with_ai.git
+cd Dashboard_for_metricks_with_ai
 ```
 
-2. Запустите приложение с помощью Docker Compose:
+2. Соберите и запустите все сервисы:
 ```bash
 make build
 make start
 ```
 
-3. Создайте базу данных и выполните миграции:
-```bash
-docker compose exec web rails db:create db:migrate
-```
-
-4. Заполните систему тестовыми данными:
+3. Создайте базу данных и заполните её демо-данными:
 ```bash
 make generate-test-data
 ```
 
-5. Откройте дашборд в браузере:
-```
-http://localhost:3000
-```
+4. Откройте дашборд в браузере: http://localhost:3000
+
+### Сервисы docker-compose
+
+| Сервис | Адрес | Назначение |
+|---|---|---|
+| web | http://localhost:3000 | Rails-приложение |
+| sidekiq | — | фоновые задачи (генерация отчётов, обучение моделей, проверка алертов) |
+| prometheus | http://localhost:9090 | сбор и хранение метрик |
+| ml-service | http://localhost:5000 | Python-сервис AI-анализа |
+| minio | http://localhost:9001 | консоль S3-хранилища (файлы, отчёты, модели) |
+| postgres, redis | — | база данных и кэш/очереди |
+| pushgateway, node/postgres/redis-exporter | :9091, :9100, :9187, :9121 | экспортеры метрик для Prometheus |
 
 ### Основные команды
 
-Доступные Makefile команды:
-- `make start` - запуск всех сервисов
-- `make stop` - остановка всех сервисов
-- `make restart` - перезапуск всех сервисов
-- `make build` - сборка контейнеров
-- `make rebuild` - полная пересборка проекта
-- `make generate-test-data` - генерация тестовых данных для демонстрации
+- `make start` / `make stop` / `make restart` — запуск, остановка, перезапуск всех сервисов
+- `make build` / `make rebuild` — сборка контейнеров / полная пересборка
+- `make restart-web`, `make restart-sidekiq` — перезапуск отдельного сервиса
+- `make setup-db` — создание БД и миграции
+- `make generate-test-data` — демо-данные (метрики, алерты, анализы)
+
+### Переменные окружения
+
+- `DASHBOARD_DEMO_DATA` — `true` включает демо-данные на дашборде при отсутствии реальных метрик (по умолчанию `false`)
+- `PROMETHEUS_URL`, `ML_SERVICE_URL`, `AI_SERVICE_URL` — адреса внешних сервисов
+- `REDIS_URL`, `REDIS_CACHE_URL` — очереди Sidekiq (db 0) и кэш Rails (db 1)
+- `MINIO_*`, `STORAGE_SERVICE` — настройки S3-хранилища
 
 ## Тестирование
 
@@ -93,14 +104,28 @@ CI обновляет badge через gist. Для включения нужн�
 
 ## Структура проекта
 
-- `app/` - основной код приложения
-  - `controllers/` - контроллеры Rails
-  - `models/` - модели данных
-  - `views/` - представления и шаблоны
-  - `javascript/` - код JavaScript для интерактивных элементов
-- `config/` - конфигурационные файлы
-- `db/` - миграции базы данных и схема
-- `docker-compose.yml` - настройки Docker Compose
+- `app/` — основной код приложения
+  - `controllers/` — контроллеры (dashboard, metrics, alerts, ai_analyses, reports, uploads, ml_models)
+  - `models/` — модели (Metric, Alert, AiAnalysis, MlModelVersion, Report, UploadedFile, DashboardSetting)
+  - `services/` — интеграции: PrometheusService, MlService, AiService, AlertsService, ReportExportService
+  - `jobs/` — фоновые задачи Sidekiq (генерация отчётов, обучение моделей, AI-анализ, проверка метрик)
+  - `views/`, `javascript/` — представления и фронтенд (модули дашборда, Stimulus-контроллеры)
+- `spec/` — тесты RSpec (models, requests, system) с фабриками и стабами внешних сервисов
+- `modules/AI_api/` — Python ML-сервис (Flask, обучение и применение моделей)
+- `config/` — конфигурация Rails; `prometheus.yml`, `alerts.yml` — конфигурация Prometheus
+- `db/` — миграции и схема базы данных
+- `.github/workflows/` — CI (rubocop, brakeman, importmap audit, rspec) и релизы Docker-образа
+
+## Страницы приложения
+
+- `/` — список метрик и источников данных Prometheus
+- `/dashboard` — основной дашборд с панелями
+- `/dashboard/ai_overview` — сводка AI-анализов
+- `/alerts` — оповещения
+- `/reports` — отчёты
+- `/uploads` — загруженные файлы
+- `/ml_models` — версии ML-моделей
+- `/prometheus/status` — статус источников данных
 
 ## Работа с дашбордом
 
@@ -112,11 +137,3 @@ CI обновляет badge через gist. Для включения нужн�
 
 ### Временной диапазон
 Выберите временной диапазон для отображения метрик (последние 15 минут, час, день и т.д.).
-
-## Мониторинг Prometheus
-
-Дашборд интегрирован с Prometheus для сбора и анализа метрик. Вы можете получить доступ к интерфейсу Prometheus:
-
-```
-http://localhost:9090
-```
