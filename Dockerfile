@@ -22,7 +22,8 @@ RUN apk add --no-cache \
     freetds-dev \
     yaml-dev \
     libc6-compat \
-    gcompat
+    gcompat \
+    chromium
 
 WORKDIR /app
 

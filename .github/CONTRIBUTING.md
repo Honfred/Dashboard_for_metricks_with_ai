@@ -19,11 +19,11 @@ make stop         # остановить
 ## Тесты
 
 ```bash
-docker compose exec web bin/rails test          # юнит- и интеграционные тесты
-docker compose exec web bin/rails test:system   # системные тесты (браузер)
+docker compose exec web bundle exec rspec               # юнит- и request-спеки
+docker compose exec web bundle exec rspec spec/system   # системные тесты (браузер)
 ```
 
-Перед PR убедитесь, что тесты проходят: CI гоняет `db:test:prepare test test:system`.
+Перед PR убедитесь, что тесты проходят: CI гоняет `db:test:prepare` и `bundle exec rspec`.
 
 ## Стиль кода
 
