@@ -32,6 +32,10 @@ COPY Gemfile* ./
 RUN bundle config build.nokogiri --use-system-libraries && \
     bundle install --jobs $(nproc) --retry 3
 
+# Копируем код приложения: образ из ghcr.io самодостаточен.
+# В docker-compose код по-прежнему монтируется томом поверх копии.
+COPY . .
+
 ENV RAILS_ENV=development
 
 EXPOSE 3000
