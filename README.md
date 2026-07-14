@@ -1,7 +1,7 @@
 # Dashboard для Metricks с AI-анализом
 
 [![CI](https://github.com/Honfred/Dashboard_for_metricks_with_ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Honfred/Dashboard_for_metricks_with_ai/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FHonfred%2FCOVERAGE_GIST_ID%2Fraw%2Fdashboard-coverage.json)](https://github.com/Honfred/Dashboard_for_metricks_with_ai/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FHonfred%2F8ec4982785eed4f09eb115f05f6c2873%2Fraw%2Fdashboard-coverage.json)](https://github.com/Honfred/Dashboard_for_metricks_with_ai/actions/workflows/ci.yml)
 
 Интерактивный дашборд для визуализации метрик производительности систем с возможностями искусственного интеллекта для анализа и прогнозирования.
 
@@ -96,11 +96,11 @@ E2E-тесты с JS (`js: true`) используют chromium из Docker-об
 
 ### Badge покрытия
 
-CI обновляет badge через gist. Для включения нужно один раз:
-1. Создать [gist](https://gist.github.com) с файлом `dashboard-coverage.json` (содержимое любое).
-2. Создать token с правом `gist` и добавить его в секреты репозитория как `GIST_SECRET`.
-3. Добавить repo-переменную `COVERAGE_GIST_ID` со значением id созданного gist.
-4. Заменить `COVERAGE_GIST_ID` в URL badge выше на реальный id gist.
+Badge берёт процент из [gist](https://gist.github.com/Honfred/8ec4982785eed4f09eb115f05f6c2873),
+который CI обновляет на каждом пуше в `master` (шаг «Update coverage badge» в
+`.github/workflows/ci.yml`). Для работы нужны секрет `GIST_SECRET` (token с правом
+`gist`) и repo-переменная `COVERAGE_GIST_ID` — уже настроены. При пересоздании gist
+достаточно обновить переменную и id в URL badge выше.
 
 ## Структура проекта
 
