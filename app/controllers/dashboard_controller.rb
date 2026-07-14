@@ -42,7 +42,12 @@ class DashboardController < ApplicationController
   # API эндпоинт для сохранения настроек дашборда
   def save_settings
     begin
-      settings_data = params.require(:settings).permit!.to_h
+      settings_data = params.require(:settings).permit(
+        :refresh_interval,
+        :time_range,
+        displayed_panels: [],
+        layout: { rows: [ { panels: [] } ] }
+      ).to_h
 
       # Сохраняем настройки в базе данных
       dashboard_setting = DashboardSetting.current("default")
