@@ -2,54 +2,54 @@ class Alert < ApplicationRecord
   # ActiveStorage attachments
   has_many_attached :screenshots  # Скриншоты ошибок
   has_many_attached :logs         # Логи для анализа
-  
+
   # Polymorphic attachments
   has_many :uploaded_files, as: :uploadable, dependent: :destroy
 
   # Валидации
   validates :service, :metric, :value, :threshold, :severity, presence: true
-  validates :status, presence: true, inclusion: { in: %w(triggered resolved acknowledged) }
-  validates :severity, inclusion: { in: %w(info warning critical) }
-  
+  validates :status, presence: true, inclusion: { in: %w[triggered resolved acknowledged] }
+  validates :severity, inclusion: { in: %w[info warning critical] }
+
   # Скоупы для фильтрации
-  scope :active, -> { where(status: 'triggered') }
-  scope :resolved, -> { where(status: 'resolved') }
+  scope :active, -> { where(status: "triggered") }
+  scope :resolved, -> { where(status: "resolved") }
   scope :by_severity, ->(severity) { where(severity: severity) if severity.present? }
   scope :by_service, ->(service) { where(service: service) if service.present? }
   scope :recent, -> { order(triggered_at: :desc) }
   scope :triggered_for, ->(service, metric) { active.where(service: service, metric: metric) }
-  
+
   # Методы
   def active?
-    status == 'triggered'
+    status == "triggered"
   end
-  
+
   def resolved?
-    status == 'resolved'
+    status == "resolved"
   end
-  
+
   def acknowledged?
-    status == 'acknowledged'
+    status == "acknowledged"
   end
-  
+
   def resolve!
-    update(status: 'resolved', resolved_at: Time.current)
+    update(status: "resolved", resolved_at: Time.current)
   end
-  
+
   def acknowledge!
-    update(status: 'acknowledged')
+    update(status: "acknowledged")
   end
-  
+
   def trigger!
     return if active?
-    update(status: 'triggered', triggered_at: Time.current, resolved_at: nil)
+    update(status: "triggered", triggered_at: Time.current, resolved_at: nil)
   end
-  
+
   # Фабричный метод для создания оповещения
-  def self.trigger_for(service, metric, value, threshold, severity = 'warning', message = nil)
+  def self.trigger_for(service, metric, value, threshold, severity = "warning", message = nil)
     # Проверяем, не существует ли уже активное оповещение для этого сервиса и метрики
     alert = Alert.triggered_for(service, metric).first
-    
+
     if alert
       # Обновляем существующее оповещение
       alert.update(
@@ -61,7 +61,7 @@ class Alert < ApplicationRecord
       )
       return alert
     end
-    
+
     # Создаем новое оповещение
     Alert.create(
       service: service,
@@ -69,14 +69,14 @@ class Alert < ApplicationRecord
       value: value,
       threshold: threshold,
       severity: severity,
-      status: 'triggered',
+      status: "triggered",
       message: message || default_message(service, metric, value, threshold),
       triggered_at: Time.current
     )
   end
-  
+
   private
-  
+
   # Формирование сообщения по умолчанию
   def self.default_message(service, metric, value, threshold)
     "#{service}: метрика #{metric} превысила пороговое значение #{threshold} и достигла #{value}"

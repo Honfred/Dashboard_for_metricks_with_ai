@@ -1,70 +1,70 @@
 Rails.application.routes.draw do
   # Маршрут для смены локали
-  get 'set_locale/:locale', to: 'application#set_locale_action', as: :set_locale
-  
+  get "set_locale/:locale", to: "application#set_locale_action", as: :set_locale
+
   # Корневой маршрут
-  root 'metrics#index'
+  root "metrics#index"
 
   # Маршруты для загрузки файлов
   resources :uploads do
     member do
-      get 'download'
-      get 'preview'
+      get "download"
+      get "preview"
     end
     collection do
-      post 'bulk', action: :bulk_upload
+      post "bulk", action: :bulk_upload
     end
   end
 
   # Маршруты для отчётов
   resources :reports do
     member do
-      get 'download'
-      post 'regenerate'
+      get "download"
+      post "regenerate"
     end
     collection do
-      post 'quick_export'
+      post "quick_export"
     end
   end
 
   # Маршруты для ML моделей
-  resources :ml_models, only: [:index, :show, :destroy] do
+  resources :ml_models, only: [ :index, :show, :destroy ] do
     member do
-      post 'deploy'
-      get 'download'
+      post "deploy"
+      get "download"
     end
     collection do
-      post 'train'
+      post "train"
     end
   end
 
   # Маршрут для Prometheus метрик — должен быть до resources :metrics
-  get '/metrics', to: 'metrics#custom_metrics'
+  get "/metrics", to: "metrics#custom_metrics"
 
   # Маршруты для метрик
   resources :metrics do
-    resources :ai_analyses, only: [:index, :new, :create, :show]
+    resources :ai_analyses, only: [ :index, :new, :create, :show ]
   end
-  
+
   # Добавляем маршрут для проверки статуса источников данных Prometheus
-  get 'prometheus/status', to: 'prometheus#status'
-  
+  get "prometheus/status", to: "prometheus#status"
+
   # Маршруты для анализа метрик с помощью AI без привязки к метрике
-  resources :ai_analyses, only: [:index, :show]
+  resources :ai_analyses, only: [ :index, :show ]
 
   # Маршруты для оповещений
-  resources :alerts, only: [:index, :show, :create, :update] do
+  resources :alerts, only: [ :index, :show, :create, :update ] do
     member do
-      post 'resolve'
-      post 'acknowledge'
+      post "resolve"
+      post "acknowledge"
     end
     collection do
-      get 'active'
+      get "active"
     end
   end
 
   # Добавляем маршрут для проверки статуса ML-сервиса
-  get 'check_ml_service', to: 'metrics#check_ml_service'
+  get "check_ml_service", to: "metrics#check_ml_service"
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

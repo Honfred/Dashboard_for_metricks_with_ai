@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UploadsController < ApplicationController
-  before_action :set_uploaded_file, only: [:show, :destroy, :download, :preview]
+  before_action :set_uploaded_file, only: [ :show, :destroy, :download, :preview ]
 
   # GET /uploads
   def index
@@ -32,7 +32,7 @@ class UploadsController < ApplicationController
 
     respond_to do |format|
       if @uploaded_file.save
-        format.html { redirect_to upload_path(@uploaded_file), notice: t('uploads.created') }
+        format.html { redirect_to upload_path(@uploaded_file), notice: t("uploads.created") }
         format.json { render json: upload_json(@uploaded_file), status: :created }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -46,7 +46,7 @@ class UploadsController < ApplicationController
     @uploaded_file.destroy
 
     respond_to do |format|
-      format.html { redirect_to uploads_path, notice: t('uploads.deleted') }
+      format.html { redirect_to uploads_path, notice: t("uploads.deleted") }
       format.json { head :no_content }
     end
   end
@@ -58,9 +58,9 @@ class UploadsController < ApplicationController
       send_data @uploaded_file.file.download,
                 filename: @uploaded_file.file.filename.to_s,
                 type: @uploaded_file.file.content_type,
-                disposition: 'attachment'
+                disposition: "attachment"
     else
-      redirect_to uploads_path, alert: t('uploads.file_not_found')
+      redirect_to uploads_path, alert: t("uploads.file_not_found")
     end
   end
 
@@ -70,7 +70,7 @@ class UploadsController < ApplicationController
       send_data @uploaded_file.file.download,
                 filename: @uploaded_file.file.filename.to_s,
                 type: @uploaded_file.file.content_type,
-                disposition: 'inline'
+                disposition: "inline"
     else
       head :not_found
     end
@@ -80,7 +80,7 @@ class UploadsController < ApplicationController
   def bulk_upload
     files = Array(params[:files]).reject(&:blank?)
     if files.empty?
-      render json: { error: t('uploads.no_files', default: 'Файлы не переданы') }, status: :bad_request
+      render json: { error: t("uploads.no_files", default: "Файлы не переданы") }, status: :bad_request
       return
     end
 
@@ -89,16 +89,16 @@ class UploadsController < ApplicationController
     files.each do |file|
       uploaded_file = UploadedFile.new(
         file: file,
-        file_type: params[:file_type] || 'other',
+        file_type: params[:file_type] || "other",
         category: params[:category]
       )
 
       if uploaded_file.save
         results[:success] << upload_json(uploaded_file)
       else
-        results[:errors] << { 
-          filename: file.original_filename, 
-          errors: uploaded_file.errors.full_messages 
+        results[:errors] << {
+          filename: file.original_filename,
+          errors: uploaded_file.errors.full_messages
         }
       end
     end

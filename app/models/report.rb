@@ -6,39 +6,39 @@ class Report < ApplicationRecord
 
   # Validations
   validates :name, presence: true
-  validates :report_type, presence: true, inclusion: { 
-    in: %w[metrics alerts ai_analysis dashboard combined] 
+  validates :report_type, presence: true, inclusion: {
+    in: %w[metrics alerts ai_analysis dashboard combined]
   }
   validates :format, presence: true, inclusion: { in: %w[pdf csv json] }
-  validates :status, presence: true, inclusion: { 
-    in: %w[pending processing completed failed] 
+  validates :status, presence: true, inclusion: {
+    in: %w[pending processing completed failed]
   }
 
   # Scopes
-  scope :completed, -> { where(status: 'completed') }
-  scope :pending, -> { where(status: 'pending') }
+  scope :completed, -> { where(status: "completed") }
+  scope :pending, -> { where(status: "pending") }
   scope :by_type, ->(type) { where(report_type: type) if type.present? }
   scope :recent, -> { order(created_at: :desc) }
-  scope :not_expired, -> { where('expires_at IS NULL OR expires_at > ?', Time.current) }
+  scope :not_expired, -> { where("expires_at IS NULL OR expires_at > ?", Time.current) }
 
   # Callbacks
   after_create :schedule_generation
 
   # Методы статуса
   def pending?
-    status == 'pending'
+    status == "pending"
   end
 
   def processing?
-    status == 'processing'
+    status == "processing"
   end
 
   def completed?
-    status == 'completed'
+    status == "completed"
   end
 
   def failed?
-    status == 'failed'
+    status == "failed"
   end
 
   def expired?
@@ -63,16 +63,16 @@ class Report < ApplicationRecord
 
   # Статус методы
   def mark_processing!
-    update!(status: 'processing')
+    update!(status: "processing")
   end
 
   def mark_completed!
-    update!(status: 'completed', generated_at: Time.current)
+    update!(status: "completed", generated_at: Time.current)
   end
 
   def mark_failed!(error_message = nil)
-    metadata['error'] = error_message if error_message
-    update!(status: 'failed', metadata: metadata)
+    metadata["error"] = error_message if error_message
+    update!(status: "failed", metadata: metadata)
   end
 
   private

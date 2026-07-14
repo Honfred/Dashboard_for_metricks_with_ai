@@ -6,7 +6,7 @@ class CreateDashboardSettings < ActiveRecord::Migration[7.2]
 
       t.timestamps
     end
-    
+
     add_index :dashboard_settings, :name, unique: true
   end
 end

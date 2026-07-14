@@ -17,7 +17,7 @@ class CreateMlModelVersions < ActiveRecord::Migration[7.2]
 
     add_index :ml_model_versions, :model_type
     add_index :ml_model_versions, :status
-    add_index :ml_model_versions, [:model_type, :is_active]
+    add_index :ml_model_versions, [ :model_type, :is_active ]
     add_index :ml_model_versions, :version
   end
 end

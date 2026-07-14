@@ -3,8 +3,8 @@
 namespace :ml_models do
   desc "Импорт существующих ML моделей из modules/AI_api/models/"
   task import: :environment do
-    models_dir = Rails.root.join('modules', 'AI_api', 'models')
-    
+    models_dir = Rails.root.join("modules", "AI_api", "models")
+
     unless Dir.exist?(models_dir)
       puts "Директория моделей не найдена: #{models_dir}"
       exit 1
@@ -13,21 +13,21 @@ namespace :ml_models do
     imported = 0
     skipped = 0
 
-    Dir.glob(models_dir.join('*.joblib')).each do |file_path|
-      filename = File.basename(file_path, '.joblib')
-      
+    Dir.glob(models_dir.join("*.joblib")).each do |file_path|
+      filename = File.basename(file_path, ".joblib")
+
       # Парсим имя файла: metric_name_model_type.joblib
       # Например: http_requests_total_anomaly.joblib
-      parts = filename.split('_')
+      parts = filename.split("_")
       model_type = parts.pop  # anomaly, trend, performance
-      metric_name = parts.join('_')
+      metric_name = parts.join("_")
 
       next unless %w[anomaly trend performance].include?(model_type)
 
       # Проверяем, нет ли уже такой модели
       existing = MlModelVersion.find_by(
         model_type: model_type,
-        metadata: { 'metric_name' => metric_name }.to_json
+        metadata: { "metric_name" => metric_name }.to_json
       )
 
       if existing
@@ -39,11 +39,11 @@ namespace :ml_models do
       # Создаём запись о модели
       model_version = MlModelVersion.new(
         model_type: model_type,
-        status: 'completed',
+        status: "completed",
         trained_at: File.mtime(file_path),
         metadata: {
           metric_name: metric_name,
-          source: 'import',
+          source: "import",
           original_path: file_path,
           imported_at: Time.current.iso8601
         }
@@ -53,7 +53,7 @@ namespace :ml_models do
       model_version.model_file.attach(
         io: File.open(file_path),
         filename: File.basename(file_path),
-        content_type: 'application/octet-stream'
+        content_type: "application/octet-stream"
       )
 
       if model_version.save
@@ -88,17 +88,17 @@ namespace :ml_models do
   desc "Показать статус всех моделей"
   task status: :environment do
     puts "\n=== Статус ML моделей ===\n"
-    
+
     %w[anomaly performance trend].each do |model_type|
       models = MlModelVersion.by_type(model_type).recent
       active = models.find(&:is_active?)
-      
+
       puts "\n#{model_type.upcase}:"
       puts "  Всего версий: #{models.count}"
       puts "  Активная: #{active ? "v#{active.version}" : 'нет'}"
-      
+
       models.limit(3).each do |m|
-        status_icon = m.is_active? ? '✓' : ' '
+        status_icon = m.is_active? ? "✓" : " "
         puts "  [#{status_icon}] v#{m.version} - #{m.status} (#{m.trained_at&.strftime('%Y-%m-%d %H:%M') || 'N/A'})"
       end
     end

@@ -26,7 +26,7 @@ module DashboardForMetricksWithAi
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
-    
+
     # Сбор реальных метрик HTTP-запросов (http_server_requests_total,
     # http_server_request_duration_seconds) — их отдаёт эндпоинт /metrics
     config.middleware.use Prometheus::Middleware::Collector
@@ -38,9 +38,9 @@ module DashboardForMetricksWithAi
     config.ai_service_url = ENV["AI_SERVICE_URL"] || "http://localhost:5000"
 
     # Настройка локализации i18n
-    config.i18n.available_locales = [:ru, :en]
+    config.i18n.available_locales = [ :ru, :en ]
     config.i18n.default_locale = :ru
     config.i18n.fallbacks = true
-    config.i18n.load_path += Dir[Rails.root.join('config', 'locales', '**', '*.{rb,yml}')]
+    config.i18n.load_path += Dir[Rails.root.join("config", "locales", "**", "*.{rb,yml}")]
   end
 end

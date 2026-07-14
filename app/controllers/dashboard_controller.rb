@@ -13,14 +13,14 @@ class DashboardController < ApplicationController
 
   def ai_overview
     counts = AiAnalysis.completed.group(:analysis_type).count
-    @anomaly_analyses_count     = counts[AiAnalysis.analysis_types['anomaly_detection']]    || 0
-    @trend_analyses_count       = counts[AiAnalysis.analysis_types['trend_prediction']]     || 0
-    @performance_analyses_count = counts[AiAnalysis.analysis_types['performance_insight']]  || 0
+    @anomaly_analyses_count     = counts[AiAnalysis.analysis_types["anomaly_detection"]]    || 0
+    @trend_analyses_count       = counts[AiAnalysis.analysis_types["trend_prediction"]]     || 0
+    @performance_analyses_count = counts[AiAnalysis.analysis_types["performance_insight"]]  || 0
 
     @recent_anomalies    = AiAnalysis.anomaly_completed.includes(:metric).recent.limit(5)
     @recent_trends       = AiAnalysis.trend_completed.includes(:metric).recent.limit(5)
     @recent_performances = AiAnalysis.performance_completed.includes(:metric).recent.limit(5)
-                                    
+
     # Подготовка данных для графиков
     @anomaly_chart_data = prepare_anomaly_chart_data(@recent_anomalies)
     @trend_chart_data = prepare_trend_chart_data(@recent_trends)
@@ -31,7 +31,7 @@ class DashboardController < ApplicationController
     begin
       time_range = params[:time_range] || user_dashboard_settings[:time_range] || "1h"
       metrics_data = fetch_metrics_for_range(time_range)
-      
+
       render json: metrics_data
     rescue => e
       Rails.logger.error("Error fetching metrics API: #{e.message}")
@@ -43,11 +43,11 @@ class DashboardController < ApplicationController
   def save_settings
     begin
       settings_data = params.require(:settings).permit!.to_h
-      
+
       # Сохраняем настройки в базе данных
-      dashboard_setting = DashboardSetting.current('default')
+      dashboard_setting = DashboardSetting.current("default")
       dashboard_setting.update(settings: settings_data)
-      
+
       respond_to do |format|
         format.json { render json: { success: true, settings: dashboard_setting.merged_settings } }
       end
@@ -63,7 +63,7 @@ class DashboardController < ApplicationController
   def settings
     begin
       settings = user_dashboard_settings
-      
+
       render json: { success: true, settings: settings }
     rescue => e
       Rails.logger.error("Error fetching dashboard settings API: #{e.message}")
@@ -80,7 +80,7 @@ class DashboardController < ApplicationController
   def user_dashboard_settings
     # Получаем настройки из базы данных или используем настройки по умолчанию
     begin
-      DashboardSetting.current('default').merged_settings
+      DashboardSetting.current("default").merged_settings
     rescue => e
       Rails.logger.error("Error loading dashboard settings: #{e.message}")
       default_settings
@@ -99,7 +99,7 @@ class DashboardController < ApplicationController
   def fetch_metrics_for_range(time_range)
     cache_key = "prometheus_metrics_range_#{time_range}"
     cache_expiration = calculate_cache_expiration(time_range)
-    
+
     Rails.cache.fetch(cache_key, expires_in: cache_expiration) do
       client = PrometheusClient.new
       end_time = Time.now
@@ -142,8 +142,8 @@ class DashboardController < ApplicationController
 
   # Среднее время отклика в миллисекундах
   def fetch_response_time(client, start_time, end_time, step)
-    query = 'sum by (instance, job) (rate(http_server_request_duration_seconds_sum[5m])) ' \
-            '/ sum by (instance, job) (rate(http_server_request_duration_seconds_count[5m])) * 1000'
+    query = "sum by (instance, job) (rate(http_server_request_duration_seconds_sum[5m])) " \
+            "/ sum by (instance, job) (rate(http_server_request_duration_seconds_count[5m])) * 1000"
     result = client.fetch_range_metrics(query, start_time, end_time, step)
     parse_time_series(result)
   rescue => e
@@ -153,7 +153,7 @@ class DashboardController < ApplicationController
 
   # Пропускная способность в запросах/сек
   def fetch_throughput(client, start_time, end_time, step)
-    query = 'sum by (instance, job) (rate(http_server_requests_total[5m]))'
+    query = "sum by (instance, job) (rate(http_server_requests_total[5m]))"
     result = client.fetch_range_metrics(query, start_time, end_time, step)
     parse_time_series(result)
   rescue => e
@@ -165,8 +165,8 @@ class DashboardController < ApplicationController
   # линию, когда ошибок нет (иначе серия просто отсутствует)
   def fetch_error_rate(client, start_time, end_time, step)
     query = '(sum by (instance, job) (rate(http_server_requests_total{code=~"5.."}[5m])) ' \
-            'or sum by (instance, job) (rate(http_server_requests_total[5m])) * 0) ' \
-            '/ sum by (instance, job) (rate(http_server_requests_total[5m])) * 100'
+            "or sum by (instance, job) (rate(http_server_requests_total[5m])) * 0) " \
+            "/ sum by (instance, job) (rate(http_server_requests_total[5m])) * 100"
     result = client.fetch_range_metrics(query, start_time, end_time, step)
     parse_time_series(result)
   rescue => e
@@ -243,7 +243,7 @@ class DashboardController < ApplicationController
   def prepare_anomaly_chart_data(analyses)
     analyses.map do |analysis|
       next unless analysis.report.present? && analysis.report["events"].present?
-      
+
       events = analysis.report["events"].take(10)
       {
         metric_name: analysis.metric.name,
@@ -253,11 +253,11 @@ class DashboardController < ApplicationController
       }
     end.compact
   end
-  
+
   def prepare_trend_chart_data(analyses)
     analyses.map do |analysis|
       next unless analysis.report.present? && analysis.report["events"].present?
-      
+
       events = analysis.report["events"].take(10)
       {
         metric_name: analysis.metric.name,

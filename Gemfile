@@ -4,22 +4,22 @@ gem "rails", "~> 7.2.2", ">= 7.2.2.1"
 
 gem "sprockets-rails"
 
-gem 'prometheus-client'
-gem 'sidekiq'
-gem 'sidekiq-scheduler'
-gem 'redis'
-gem 'chartkick'
-gem 'groupdate'
-gem 'pg', '~> 1.5', '>= 1.5.6'
-gem 'httparty'
-gem 'kaminari'
+gem "prometheus-client"
+gem "sidekiq"
+gem "sidekiq-scheduler"
+gem "redis"
+gem "chartkick"
+gem "groupdate"
+gem "pg", "~> 1.5", ">= 1.5.6"
+gem "httparty"
+gem "kaminari"
 
 # ActiveStorage S3 support
-gem 'aws-sdk-s3', require: false
+gem "aws-sdk-s3", require: false
 
 # PDF generation
-gem 'prawn'
-gem 'prawn-table'
+gem "prawn"
+gem "prawn-table"
 
 # CSV export already in stdlib
 

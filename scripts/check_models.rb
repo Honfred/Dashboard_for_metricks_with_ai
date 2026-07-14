@@ -53,17 +53,17 @@ class MlApiClient
   def initialize(base_url)
     @base_url = base_url
   end
-  
+
   def detect_anomalies(metric_name)
     puts "Обнаружение аномалий для метрики #{metric_name}..."
-    
+
     # Генерация тестовых данных с некоторыми аномалиями
     now = Time.now.to_i
     twentyfour_hours_ago = now - 24 * SECONDS_IN_HOUR
     timestamps = (twentyfour_hours_ago..now).step(300).to_a # 5-минутные интервалы
-    values = timestamps.map { |t| 
+    values = timestamps.map { |t|
       base = Math.sin(t / 10000.0) + Math.cos(t / 5000.0)
-      
+
       # Добавляем аномалии в некоторые точки
       if rand < 0.05  # 5% точек будут аномальными
         base + (rand > 0.5 ? 5 : -5) * rand  # сильное отклонение
@@ -71,13 +71,13 @@ class MlApiClient
         base + rand * 0.5  # нормальный шум
       end
     }
-    
+
     response = post_json('/detect_anomalies', {
       metric_name: metric_name,
       values: values,
       timestamps: timestamps
     })
-    
+
     if response['status'] == 'success'
       puts "Обнаружено #{response['anomalies'].size} аномалий из #{values.size} точек данных"
       if response['anomalies'].any?
@@ -92,19 +92,19 @@ class MlApiClient
     else
       puts "Ошибка обнаружения аномалий: #{response['message']}"
     end
-    
+
     response
   end
-  
+
   def predict_trend(metric_name)
     puts "Прогнозирование тренда для метрики #{metric_name}..."
-    
+
     # По умолчанию прогноз на 24 часа вперед
     response = post_json('/predict_trend', {
       metric_name: metric_name,
       periods: 24
     })
-    
+
     if response['status'] == 'success'
       puts "Получен прогноз на #{response['prediction'].size} периодов"
       puts "Примеры прогноза:"
@@ -115,35 +115,35 @@ class MlApiClient
     else
       puts "Ошибка прогнозирования тренда: #{response['message']}"
     end
-    
+
     response
   end
-  
+
   def analyze_performance(metric_name)
     puts "Анализ производительности для метрики #{metric_name}..."
-    
+
     # Генерация тестовых данных для анализа
     features = []
-    
+
     # Подготовка параметров в зависимости от метрики
     if metric_name == "cpu_usage"
       # Пробуем разные комбинации параметров
-      [1000, 2000, 4000, 8000].each do |memory|
-        [50, 100, 200, 400].each do |requests|
-          features << [memory, requests]
+      [ 1000, 2000, 4000, 8000 ].each do |memory|
+        [ 50, 100, 200, 400 ].each do |requests|
+          features << [ memory, requests ]
         end
       end
     elsif metric_name == "memory_usage_bytes"
-      [10, 20, 50, 100].each do |users|
-        [50, 100, 200, 400].each do |requests|
-          features << [users, requests]
+      [ 10, 20, 50, 100 ].each do |users|
+        [ 50, 100, 200, 400 ].each do |requests|
+          features << [ users, requests ]
         end
       end
     elsif metric_name == "http_request_duration_seconds"
-      [20, 40, 60, 80].each do |cpu|
-        [2000, 4000, 6000, 8000].each do |memory|
-          [50, 200, 400].each do |requests|
-            features << [cpu, memory, requests]
+      [ 20, 40, 60, 80 ].each do |cpu|
+        [ 2000, 4000, 6000, 8000 ].each do |memory|
+          [ 50, 200, 400 ].each do |requests|
+            features << [ cpu, memory, requests ]
           end
         end
       end
@@ -151,19 +151,19 @@ class MlApiClient
       puts "Неизвестная метрика для анализа производительности: #{metric_name}"
       return { 'status' => 'error', 'message' => "Неизвестная метрика" }
     end
-    
+
     response = post_json('/analyze_performance', {
       metric_name: metric_name,
       features: features
     })
-    
+
     if response['status'] == 'success'
       puts "Получены предсказания для #{response['predictions'].size} комбинаций параметров"
       puts "Важность признаков:"
       response['feature_importance'].each do |index, importance|
         puts "  - Признак #{index}: #{(importance * 100).round(2)}%"
       end
-      
+
       # Анализ результатов
       predictions = response['predictions']
       case metric_name
@@ -189,21 +189,21 @@ class MlApiClient
     else
       puts "Ошибка анализа производительности: #{response['message']}"
     end
-    
+
     response
   end
 
   private
-  
+
   # Метод для анализа и вывода наиболее интересных предсказаний
   def analyze_predictions(features, predictions, &formatter)
     # Находим минимальное и максимальное предсказания
     min_index = predictions.index(predictions.min)
     max_index = predictions.index(predictions.max)
-    
+
     puts "  - Минимальное значение: #{formatter.call(features[min_index], predictions[min_index])}"
     puts "  - Максимальное значение: #{formatter.call(features[max_index], predictions[max_index])}"
-    
+
     # Показываем несколько случайных предсказаний
     puts "  - Случайные значения:"
     3.times do
@@ -211,13 +211,13 @@ class MlApiClient
       puts "    * #{formatter.call(features[idx], predictions[idx])}"
     end
   end
-  
+
   def post_json(endpoint, data)
     uri = URI("#{@base_url}#{endpoint}")
     http = Net::HTTP.new(uri.host, uri.port)
     request = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
     request.body = data.to_json
-    
+
     begin
       response = http.request(request)
       if response.is_a?(Net::HTTPSuccess)
@@ -234,7 +234,7 @@ end
 # Главная функция для проверки моделей
 def check_model(options)
   client = MlApiClient.new(options[:url])
-  
+
   case options[:action]
   when 'anomalies'
     client.detect_anomalies(options[:metric])

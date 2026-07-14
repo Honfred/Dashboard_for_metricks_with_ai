@@ -4,13 +4,13 @@ class AiAnalysis < ApplicationRecord
   # ActiveStorage attachments
   has_one_attached :report_pdf    # PDF отчёт анализа
   has_one_attached :raw_data      # Исходные данные в JSON/CSV
-  
+
   # Polymorphic attachments
   has_many :uploaded_files, as: :uploadable, dependent: :destroy
 
   validates :analysis_type, presence: true
 
-  scope :completed,            -> { where(status: 'completed') }
+  scope :completed,            -> { where(status: "completed") }
   scope :recent,               -> { order(created_at: :desc) }
   scope :anomaly_completed,    -> { anomaly_detection.completed }
   scope :trend_completed,      -> { trend_prediction.completed }
@@ -22,7 +22,7 @@ class AiAnalysis < ApplicationRecord
     trend_prediction: 1,
     performance_insight: 2
   }
-  
+
   # Enum для статусов анализа
   enum :status, {
     pending: "pending",
@@ -33,26 +33,26 @@ class AiAnalysis < ApplicationRecord
 
   # Методы для работы с результатами анализа
   def completed?
-    status == 'completed' && completed_at.present?
+    status == "completed" && completed_at.present?
   end
-  
+
   def failed?
-    status == 'failed'
+    status == "failed"
   end
 
   def processing_time
     return nil unless completed_at.present? && created_at.present?
     (completed_at - created_at).to_i
   end
-  
+
   def insights_count
-    return 0 unless report.present? && report['insights'].present?
-    report['insights'].size
+    return 0 unless report.present? && report["insights"].present?
+    report["insights"].size
   end
 
   def high_severity_insights_count
-    return 0 unless report.present? && report['insights'].present?
-    report['insights'].count { |i| i['severity'] == 'high' }
+    return 0 unless report.present? && report["insights"].present?
+    report["insights"].count { |i| i["severity"] == "high" }
   end
 
   # Получение данных анализа

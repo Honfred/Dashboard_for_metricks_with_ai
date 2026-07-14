@@ -17,13 +17,13 @@ class AlertsService
     targets = @prometheus_service.available_metrics
     services = targets.map { |t| t[:instance] }
 
-    triggered = Alert.triggered_for(services, 'service_availability').index_by(&:service)
+    triggered = Alert.triggered_for(services, "service_availability").index_by(&:service)
 
     targets.each do |target|
       service = target[:instance]
 
       if !target[:active]
-        Alert.trigger_for(service, 'service_availability', 0, 1, 'critical', "Сервис #{service} недоступен")
+        Alert.trigger_for(service, "service_availability", 0, 1, "critical", "Сервис #{service} недоступен")
       else
         triggered[service]&.resolve!
       end
@@ -37,19 +37,19 @@ class AlertsService
 
     series_list = result["data"]["result"]
     services = series_list.map { |s| s["metric"]["instance"] || s["metric"]["job"] || "unknown" }
-    triggered = Alert.triggered_for(services, 'response_time').index_by(&:service)
+    triggered = Alert.triggered_for(services, "response_time").index_by(&:service)
 
     series_list.each do |series|
       service   = series["metric"]["instance"] || series["metric"]["job"] || "unknown"
       value     = series["value"][1].to_f
-      threshold = get_threshold_for(service, 'response_time', 0.5)
+      threshold = get_threshold_for(service, "response_time", 0.5)
 
       if value > threshold
-        severity = if value > threshold * 2 then 'critical'
-                   elsif value > threshold * 1.5 then 'warning'
-                   else 'info'
-                   end
-        Alert.trigger_for(service, 'response_time', value, threshold, severity,
+        severity = if value > threshold * 2 then "critical"
+        elsif value > threshold * 1.5 then "warning"
+        else "info"
+        end
+        Alert.trigger_for(service, "response_time", value, threshold, severity,
           "Время отклика #{service} превышает порог #{threshold}s и составляет #{value.round(2)}s")
       else
         triggered[service]&.resolve!
@@ -65,19 +65,19 @@ class AlertsService
 
     series_list = result["data"]["result"]
     services = series_list.map { |s| s["metric"]["instance"] || s["metric"]["job"] || "unknown" }
-    triggered = Alert.triggered_for(services, 'error_rate').index_by(&:service)
+    triggered = Alert.triggered_for(services, "error_rate").index_by(&:service)
 
     series_list.each do |series|
       service   = series["metric"]["instance"] || series["metric"]["job"] || "unknown"
       value     = series["value"][1].to_f
-      threshold = get_threshold_for(service, 'error_rate', 0.05)
+      threshold = get_threshold_for(service, "error_rate", 0.05)
 
       if value > threshold
-        severity = if value > threshold * 3 then 'critical'
-                   elsif value > threshold * 2 then 'warning'
-                   else 'info'
-                   end
-        Alert.trigger_for(service, 'error_rate', value, threshold, severity,
+        severity = if value > threshold * 3 then "critical"
+        elsif value > threshold * 2 then "warning"
+        else "info"
+        end
+        Alert.trigger_for(service, "error_rate", value, threshold, severity,
           "Уровень ошибок #{service} превышает порог #{(threshold * 100).round(1)}% и составляет #{(value * 100).round(1)}%")
       else
         triggered[service]&.resolve!
@@ -94,4 +94,4 @@ class AlertsService
     # Пока что возвращаем значение по умолчанию
     default_value
   end
-end 
+end
