@@ -3,47 +3,47 @@ class TestAnalysisJob < ApplicationJob
 
   def perform(ai_analysis_id)
     Rails.logger.info("TestAnalysisJob: Starting test analysis for ID: #{ai_analysis_id}")
-    
+
     ai_analysis = AiAnalysis.find_by(id: ai_analysis_id)
     return unless ai_analysis
-    
+
     # Обновляем статус на "processing"
-    ai_analysis.update(status: 'processing')
+    ai_analysis.update(status: "processing")
     Rails.logger.info("TestAnalysisJob: Analysis status set to 'processing'")
-    
+
     # Имитируем задержку обработки
     sleep 3
-    
+
     # Генерируем тестовые результаты в зависимости от типа анализа
     result = generate_test_result_for(ai_analysis.analysis_type)
-    
+
     Rails.logger.info("TestAnalysisJob: Generated test result with status: #{result["status"]}")
-    
+
     # Сохраняем результаты анализа
     ai_analysis.update(
       status: "completed",
       results: result,
       completed_at: Time.current
     )
-    
+
     # Генерируем тестовый отчет
     report = generate_test_report_for(ai_analysis.analysis_type, ai_analysis.metric.name)
-    
+
     # Сохраняем отчет
     ai_analysis.update(report: report)
-    
+
     Rails.logger.info("TestAnalysisJob: Test analysis completed successfully")
   end
-  
+
   # Делаем этот метод публичным для вызова из контроллера
   def generate_test_report_for(analysis_type, metric_name)
     case analysis_type
-    when 'anomaly_detection'
+    when "anomaly_detection"
       # Создаем данные для графика аномалий
       timestamps = []
       values = []
       anomalies = []
-      
+
       # Генерируем последовательные точки для последних 30 часов
       30.downto(1).each do |i|
         time = Time.now.to_i - i * 3600
@@ -52,12 +52,12 @@ class TestAnalysisJob < ApplicationJob
         value = 100 + rand(-5..5)
         values << value
       end
-      
+
       # Добавляем несколько аномалий
-      [5, 12, 23].each do |i|
+      [ 5, 12, 23 ].each do |i|
         # Заменяем обычное значение на аномальное
         values[i] = values[i] + rand(30..50) * (rand > 0.5 ? 1 : -1)
-        
+
         # Добавляем информацию об аномалии
         anomalies << {
           "timestamp" => timestamps[i],
@@ -65,7 +65,7 @@ class TestAnalysisJob < ApplicationJob
           "score" => rand(0.7..0.95)
         }
       end
-      
+
       {
         "insights" => [
           {
@@ -102,32 +102,32 @@ class TestAnalysisJob < ApplicationJob
           "anomalies" => anomalies.map { |a| { "timestamp" => a["timestamp"], "value" => a["value"] } }
         }
       }
-    when 'trend_prediction'
+    when "trend_prediction"
       # Создаем тестовые данные для графика тренда
       current_timestamps = []
       current_values = []
-      
+
       # Текущие значения (история)
       24.downto(1).each do |i|
         time = Time.now.to_i - i * 3600
         current_timestamps << time
         current_values << rand(70..90)
       end
-      
+
       # Прогнозные значения
       prediction_timestamps = []
       prediction_values = []
-      trend_factor = [-1, 1].sample * rand(0.05..0.2) # случайный тренд вверх или вниз
+      trend_factor = [ -1, 1 ].sample * rand(0.05..0.2) # случайный тренд вверх или вниз
       base_value = current_values.last || 80
-      
+
       24.times do |i|
         time = Time.now.to_i + i * 3600
         prediction_timestamps << time
         prediction_values << (base_value * (1 + trend_factor * i)).round(2)
       end
-      
+
       trend_percentage = ((prediction_values.last - base_value) / base_value * 100).round(2)
-      
+
       {
         "insights" => [
           {
@@ -165,17 +165,17 @@ class TestAnalysisJob < ApplicationJob
           }
         }
       }
-    when 'performance_insight'
+    when "performance_insight"
       # Генерируем данные для анализа производительности
       predictions = 20.times.map { rand(30..200) }
-      
+
       # Генерируем данные о важности факторов
       feature_importance = {
         "0" => 0.45,
         "1" => 0.35,
         "2" => 0.2
       }
-      
+
       {
         "insights" => [
           {
@@ -221,28 +221,28 @@ class TestAnalysisJob < ApplicationJob
       }
     end
   end
-  
+
   # Делаем этот метод публичным для вызова из контроллера
   def generate_test_result_for(analysis_type)
     case analysis_type
-    when 'anomaly_detection'
+    when "anomaly_detection"
       generate_test_anomaly_result
-    when 'trend_prediction'
+    when "trend_prediction"
       generate_test_trend_result
-    when 'performance_insight'
+    when "performance_insight"
       generate_test_performance_result
     else
       { "status" => "error", "message" => "Неизвестный тип анализа" }
     end
   end
-  
+
   private
-  
+
   def generate_test_anomaly_result
     # Генерируем случайные аномалии
     anomalies_count = rand(2..5)
     current_time = Time.now.to_i
-    
+
     anomalies = []
     anomalies_count.times do |i|
       anomalies << {
@@ -251,7 +251,7 @@ class TestAnalysisJob < ApplicationJob
         "score" => rand(0.6..0.9)
       }
     end
-    
+
     {
       "status" => "success",
       "anomalies" => anomalies,
@@ -263,23 +263,23 @@ class TestAnalysisJob < ApplicationJob
       }
     }
   end
-  
+
   def generate_test_trend_result
     # Генерируем прогноз тренда
     periods = 24
     current_time = Time.now.to_i
     prediction = []
-    
+
     base_value = rand(50..100)
-    trend_factor = [-1, 1].sample * rand(0.05..0.2) # случайный тренд вверх или вниз
-    
+    trend_factor = [ -1, 1 ].sample * rand(0.05..0.2) # случайный тренд вверх или вниз
+
     periods.times do |i|
       prediction << {
         "timestamp" => current_time + i * 3600,
         "value" => base_value * (1 + trend_factor * i)
       }
     end
-    
+
     {
       "status" => "success",
       "prediction" => prediction,
@@ -290,11 +290,11 @@ class TestAnalysisJob < ApplicationJob
       }
     }
   end
-  
+
   def generate_test_performance_result
     # Генерируем анализ производительности
     predictions = 20.times.map { rand(30..200) }
-    
+
     {
       "status" => "success",
       "predictions" => predictions,

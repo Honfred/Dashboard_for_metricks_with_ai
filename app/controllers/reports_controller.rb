@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ReportsController < ApplicationController
-  before_action :set_report, only: [:show, :destroy, :download, :regenerate]
+  before_action :set_report, only: [ :show, :destroy, :download, :regenerate ]
 
   # GET /reports
   def index
@@ -33,7 +33,7 @@ class ReportsController < ApplicationController
 
     respond_to do |format|
       if @report.save
-        format.html { redirect_to reports_path, notice: t('reports.generation_started') }
+        format.html { redirect_to reports_path, notice: t("reports.generation_started") }
         format.json { render json: report_json(@report), status: :created }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -47,7 +47,7 @@ class ReportsController < ApplicationController
     @report.destroy
 
     respond_to do |format|
-      format.html { redirect_to reports_path, notice: t('reports.deleted') }
+      format.html { redirect_to reports_path, notice: t("reports.deleted") }
       format.json { head :no_content }
     end
   end
@@ -59,27 +59,27 @@ class ReportsController < ApplicationController
       send_data @report.file.download,
                 filename: @report.file.filename.to_s,
                 type: @report.file.content_type,
-                disposition: 'attachment'
+                disposition: "attachment"
     else
-      redirect_to reports_path, alert: t('reports.not_ready')
+      redirect_to reports_path, alert: t("reports.not_ready")
     end
   end
 
   # POST /reports/:id/regenerate
   def regenerate
-    @report.update!(status: 'pending')
+    @report.update!(status: "pending")
     ReportGenerationJob.perform_later(@report.id)
 
     respond_to do |format|
-      format.html { redirect_to reports_path, notice: t('reports.regeneration_started') }
+      format.html { redirect_to reports_path, notice: t("reports.regeneration_started") }
       format.json { render json: report_json(@report) }
     end
   end
 
   # POST /reports/quick_export
   def quick_export
-    report_type = params[:report_type] || 'metrics'
-    format_type = params[:format_type] || 'csv'
+    report_type = params[:report_type] || "metrics"
+    format_type = params[:format_type] || "csv"
 
     report = Report.create!(
       name: "#{report_type.titleize} Export - #{Time.current.strftime('%Y-%m-%d %H:%M')}",
@@ -90,7 +90,7 @@ class ReportsController < ApplicationController
     )
 
     respond_to do |format|
-      format.html { redirect_to reports_path, notice: t('reports.generation_started') }
+      format.html { redirect_to reports_path, notice: t("reports.generation_started") }
       format.json { render json: report_json(report), status: :created }
     end
   end

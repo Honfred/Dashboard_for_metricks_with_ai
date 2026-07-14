@@ -60,7 +60,7 @@ class PrometheusClient
 
   def make_request(uri)
     Rails.logger.debug("Making request to Prometheus: #{uri}")
-    
+
     http = Net::HTTP.new(uri.host, uri.port)
     http.open_timeout = REQUEST_TIMEOUT
     http.read_timeout = REQUEST_TIMEOUT

@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
   def current_user
     nil
   end
-  
+
   helper_method :current_user
 
   # Действие для смены локали
@@ -16,18 +16,18 @@ class ApplicationController < ActionController::Base
       session[:locale] = locale
       I18n.locale = locale
     end
-    
+
     # Редирект на предыдущую страницу, но без параметра locale в URL
     # чтобы локаль бралась из сессии
     fallback = root_path
     referer = request.referer
-    
+
     if referer.present?
       uri = URI.parse(referer)
       # Удаляем параметр locale из query string
       if uri.query.present?
         params_hash = Rack::Utils.parse_query(uri.query)
-        params_hash.delete('locale')
+        params_hash.delete("locale")
         uri.query = params_hash.empty? ? nil : Rack::Utils.build_query(params_hash)
       end
       redirect_to uri.to_s, allow_other_host: false
@@ -48,9 +48,9 @@ class ApplicationController < ActionController::Base
   end
 
   def extract_locale_from_accept_language_header
-    return nil unless request.env['HTTP_ACCEPT_LANGUAGE']
-    
-    request.env['HTTP_ACCEPT_LANGUAGE'].scan(/^[a-z]{2}/).first
+    return nil unless request.env["HTTP_ACCEPT_LANGUAGE"]
+
+    request.env["HTTP_ACCEPT_LANGUAGE"].scan(/^[a-z]{2}/).first
   end
 
   def default_url_options

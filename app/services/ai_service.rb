@@ -46,10 +46,10 @@ class AiService
       return JSON.parse(response.body) if response.is_a?(Net::HTTPSuccess)
 
       Rails.logger.error "AI Service error: #{response.message}"
-      { "types" => ["anomaly_detection", "trend_prediction", "performance_insight"] }
+      { "types" => [ "anomaly_detection", "trend_prediction", "performance_insight" ] }
     rescue => e
       Rails.logger.error "Error connecting to AI Service: #{e.message}"
-      { "types" => ["anomaly_detection", "trend_prediction", "performance_insight"] }
+      { "types" => [ "anomaly_detection", "trend_prediction", "performance_insight" ] }
     end
   end
 end

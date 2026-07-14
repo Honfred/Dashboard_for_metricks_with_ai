@@ -9,8 +9,8 @@ class UploadedFile < ApplicationRecord
 
   # Validations
   validates :name, presence: true
-  validates :file_type, presence: true, inclusion: { 
-    in: %w[log screenshot config metrics_import other] 
+  validates :file_type, presence: true, inclusion: {
+    in: %w[log screenshot config metrics_import other]
   }
   validate :acceptable_file
 
@@ -31,7 +31,7 @@ class UploadedFile < ApplicationRecord
 
   def download_url
     return nil unless file.attached?
-    Rails.application.routes.url_helpers.rails_blob_path(file, disposition: 'attachment', only_path: true)
+    Rails.application.routes.url_helpers.rails_blob_path(file, disposition: "attachment", only_path: true)
   end
 
   def file_size
@@ -50,11 +50,11 @@ class UploadedFile < ApplicationRecord
   end
 
   def image?
-    content_type&.start_with?('image/')
+    content_type&.start_with?("image/")
   end
 
   def text?
-    content_type&.start_with?('text/') || 
+    content_type&.start_with?("text/") ||
       %w[application/json application/xml].include?(content_type)
   end
 
@@ -70,21 +70,21 @@ class UploadedFile < ApplicationRecord
 
     # Максимальный размер 50MB
     if file.byte_size > 50.megabytes
-      errors.add(:file, I18n.t('errors.file_too_large', max_size: '50MB'))
+      errors.add(:file, I18n.t("errors.file_too_large", max_size: "50MB"))
     end
 
     # Разрешённые типы файлов
     acceptable_types = [
-      'image/png', 'image/jpeg', 'image/gif', 'image/webp',
-      'text/plain', 'text/csv', 'text/log',
-      'application/json', 'application/xml',
-      'application/pdf',
-      'application/zip', 'application/gzip',
-      'application/octet-stream'
+      "image/png", "image/jpeg", "image/gif", "image/webp",
+      "text/plain", "text/csv", "text/log",
+      "application/json", "application/xml",
+      "application/pdf",
+      "application/zip", "application/gzip",
+      "application/octet-stream"
     ]
 
     unless acceptable_types.include?(file.content_type)
-      errors.add(:file, I18n.t('errors.unacceptable_file_type'))
+      errors.add(:file, I18n.t("errors.unacceptable_file_type"))
     end
   end
 end

@@ -9,17 +9,17 @@ class MetricsController < ApplicationController
 
   def show
     Rails.logger.info("MetricsController#show - Запрос метрики #{@metric.name} с диапазоном #{params[:time_range] || '1h'}")
-    
+
     # Получаем данные метрики из единого метода
     @metric_data = get_metric_data(@metric.name, params[:time_range] || "1h")
-    
+
     @ai_analyses = @metric.ai_analyses.order(created_at: :desc).limit(5)
 
     respond_to do |format|
       format.html
-      format.json { 
+      format.json {
         response_data = { metric: @metric, data: @metric_data }
-        Rails.logger.info("MetricsController#show - Отдаю JSON: #{response_data.inspect.truncate(100)}") 
+        Rails.logger.info("MetricsController#show - Отдаю JSON: #{response_data.inspect.truncate(100)}")
         render json: response_data
       }
     end
@@ -61,10 +61,10 @@ class MetricsController < ApplicationController
   def custom_metrics
     begin
       response_body = Prometheus::Client::Formats::Text.marshal(Prometheus::Client.registry)
-      render plain: response_body, content_type: 'text/plain; version=0.0.4'
+      render plain: response_body, content_type: "text/plain; version=0.0.4"
     rescue => e
       Rails.logger.error("Error generating custom metrics: #{e.message}")
-      render plain: "# Error generating metrics: #{e.message}", content_type: 'text/plain; version=0.0.4', status: :internal_server_error
+      render plain: "# Error generating metrics: #{e.message}", content_type: "text/plain; version=0.0.4", status: :internal_server_error
     end
   end
 
@@ -79,7 +79,7 @@ class MetricsController < ApplicationController
         metric_name: @metric.name,
         start_time: start_time.to_i,
         end_time: end_time.to_i,
-        step: '5m'
+        step: "5m"
       )
 
       {
@@ -93,7 +93,7 @@ class MetricsController < ApplicationController
   end
 
   def check_ml_service
-    status = MlService.check_connection ? 'ok' : 'error'
+    status = MlService.check_connection ? "ok" : "error"
     render json: { status: status }
   end
 
@@ -128,7 +128,7 @@ class MetricsController < ApplicationController
 
   def detect_anomalies(metric_name, data)
     return { error: "No data available" } if data[:values].empty?
-    
+
     MlService.detect_anomalies(
       metric_name,
       data[:values],
@@ -138,7 +138,7 @@ class MetricsController < ApplicationController
     Rails.logger.error("Error detecting anomalies: #{e.message}")
     { error: "Failed to detect anomalies: #{e.message}" }
   end
-  
+
   def predict_trend(metric_name)
     MlService.predict_trend(metric_name, 24) # Прогноз на 24 часа вперед
   rescue => e

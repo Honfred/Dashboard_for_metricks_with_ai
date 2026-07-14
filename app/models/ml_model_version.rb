@@ -9,20 +9,20 @@ class MlModelVersion < ApplicationRecord
   before_validation :set_version, on: :create
 
   # Validations
-  validates :model_type, presence: true, inclusion: { 
-    in: %w[anomaly performance trend] 
+  validates :model_type, presence: true, inclusion: {
+    in: %w[anomaly performance trend]
   }
   validates :version, presence: true
-  validates :status, presence: true, inclusion: { 
-    in: %w[training completed failed deployed deprecated] 
+  validates :status, presence: true, inclusion: {
+    in: %w[training completed failed deployed deprecated]
   }
   validates :version, uniqueness: { scope: :model_type }
 
   # Scopes
   scope :by_type, ->(type) { where(model_type: type) if type.present? }
   scope :active, -> { where(is_active: true) }
-  scope :completed, -> { where(status: 'completed') }
-  scope :deployed, -> { where(status: 'deployed') }
+  scope :completed, -> { where(status: "completed") }
+  scope :deployed, -> { where(status: "deployed") }
   scope :recent, -> { order(created_at: :desc) }
 
   # Class methods
@@ -36,23 +36,23 @@ class MlModelVersion < ApplicationRecord
 
   # Статус методы
   def training?
-    status == 'training'
+    status == "training"
   end
 
   def completed?
-    status == 'completed'
+    status == "completed"
   end
 
   def deployed?
-    status == 'deployed'
+    status == "deployed"
   end
 
   def failed?
-    status == 'failed'
+    status == "failed"
   end
 
   def deprecated?
-    status == 'deprecated'
+    status == "deprecated"
   end
 
   # Методы работы с моделью
@@ -63,25 +63,25 @@ class MlModelVersion < ApplicationRecord
       **other_metrics
     ).compact
     self.trained_at = Time.current
-    self.status = 'completed'
+    self.status = "completed"
     save!
   end
 
   def mark_failed!(error_message = nil)
-    self.metadata['error'] = error_message if error_message
-    self.status = 'failed'
+    self.metadata["error"] = error_message if error_message
+    self.status = "failed"
     save!
   end
 
   def deploy!
     transaction do
       # Деактивировать текущую активную модель этого типа
-      self.class.by_type(model_type).active.update_all(is_active: false, status: 'deprecated')
-      
+      self.class.by_type(model_type).active.update_all(is_active: false, status: "deprecated")
+
       # Активировать эту модель
       update!(
         is_active: true,
-        status: 'deployed',
+        status: "deployed",
         deployed_at: Time.current
       )
     end
@@ -93,16 +93,16 @@ class MlModelVersion < ApplicationRecord
   end
 
   def accuracy
-    metrics['accuracy']
+    metrics["accuracy"]
   end
 
   def f1_score
-    metrics['f1_score']
+    metrics["f1_score"]
   end
 
   # Получить имя метрики из metadata
   def metric_name
-    metadata['metric_name']
+    metadata["metric_name"]
   end
 
   # Человекочитаемое название
@@ -118,13 +118,13 @@ class MlModelVersion < ApplicationRecord
 
   def set_version
     return if version.present?
-    
+
     last_version = self.class.by_type(model_type).maximum(:version)
     if last_version.present?
-      major, minor = last_version.split('.').map(&:to_i)
+      major, minor = last_version.split(".").map(&:to_i)
       self.version = "#{major}.#{minor + 1}"
     else
-      self.version = '1.0'
+      self.version = "1.0"
     end
   end
 end

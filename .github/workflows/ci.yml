@@ -62,10 +62,8 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
-      # TODO: сделать шаг блокирующим (убрать || true) после чистки
-      # текущих ~1200 офензов: bin/rubocop -a и разбор остатка вручную
       - name: Lint code for consistent style
-        run: bin/rubocop -f github || true
+        run: bin/rubocop -f github
 
   test:
     runs-on: ubuntu-latest
