@@ -35,3 +35,6 @@
 /config/master.key
 
 /.idea
+
+# Отчёты покрытия simplecov
+/coverage/

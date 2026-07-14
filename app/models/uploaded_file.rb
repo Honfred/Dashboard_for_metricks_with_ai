@@ -76,7 +76,8 @@ class UploadedFile < ApplicationRecord
     # Разрешённые типы файлов
     acceptable_types = [
       "image/png", "image/jpeg", "image/gif", "image/webp",
-      "text/plain", "text/csv", "text/log",
+      # ActiveStorage (Marcel) определяет *.log как text/x-log
+      "text/plain", "text/csv", "text/x-log",
       "application/json", "application/xml",
       "application/pdf",
       "application/zip", "application/gzip",

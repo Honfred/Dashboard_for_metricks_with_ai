@@ -28,7 +28,18 @@ amazon:
   force_path_style: true
   <% end %>
 
-# Для хранения ML моделей (отдельный bucket)
+# Для хранения ML моделей (отдельный bucket).
+# В тестах — локальный диск: сервис задан в модели через has_one_attached(service: :ml_models)
+# и переопределяет config.active_storage.service = :test
+<% if Rails.env.test? %>
+ml_models:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
+
+reports:
+  service: Disk
+  root: <%= Rails.root.join("tmp/storage") %>
+<% else %>
 ml_models:
   service: S3
   access_key_id: <%= ENV.fetch('MINIO_ACCESS_KEY', ENV.fetch('AWS_ACCESS_KEY_ID', 'minioadmin')) %>
@@ -47,3 +58,4 @@ reports:
   bucket: <%= ENV.fetch('REPORTS_BUCKET', 'reports') %>
   endpoint: <%= ENV.fetch('MINIO_ENDPOINT', ENV.fetch('AWS_ENDPOINT', 'http://minio:9000')) %>
   force_path_style: true
+<% end %>

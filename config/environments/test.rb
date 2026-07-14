@@ -34,6 +34,10 @@ Rails.application.configure do
   # Store uploaded files on the local file system in a temporary directory.
   config.active_storage.service = :test
 
+  # Джобы не выполняются, а накапливаются — проверяются через have_enqueued_job
+  # и perform_enqueued_jobs
+  config.active_job.queue_adapter = :test
+
   # Disable caching for Action Mailer templates even if Action Controller
   # caching is enabled.
   config.action_mailer.perform_caching = false

@@ -96,12 +96,56 @@ jobs:
           RAILS_ENV: test
           PG_HOST: localhost
           DATABASE_URL: postgres://postgres:123456@localhost:5432/dashboard_for_metricks_with_ai_test
-        run: bin/rails db:test:prepare test test:system
+          # Фиктивные хосты: все внешние запросы в тестах перехватывает WebMock
+          PROMETHEUS_URL: http://prometheus.test:9090
+          ML_SERVICE_URL: http://ml.test:5000
+          AI_SERVICE_URL: http://ml.test:5000
+          # Явный путь к браузеру для cuprite (см. spec/support/capybara.rb)
+          CHROME_PATH: /usr/bin/google-chrome
+        run: |
+          bin/rails db:test:prepare
+          bundle exec rspec
+
+      - name: Extract coverage percent
+        id: coverage
+        run: |
+          if [ ! -f coverage/.last_run.json ]; then
+            echo "coverage/.last_run.json не найден — пропускаю"
+            exit 0
+          fi
+          PERCENT=$(ruby -rjson -e 'puts JSON.parse(File.read("coverage/.last_run.json")).dig("result", "line").round(1)')
+          echo "percent=$PERCENT" >> "$GITHUB_OUTPUT"
+          echo "Line coverage: $PERCENT%"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage
+          if-no-files-found: ignore
+
+      # Badge живёт в gist и рендерится через shields.io endpoint.
+      # Нужны: секрет GIST_SECRET (token с правом gist) и repo-переменная
+      # COVERAGE_GIST_ID (id заранее созданного gist) — см. README
+      - name: Update coverage badge
+        if: github.ref == 'refs/heads/master' && github.event_name == 'push' && vars.COVERAGE_GIST_ID != ''
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: ${{ vars.COVERAGE_GIST_ID }}
+          filename: dashboard-coverage.json
+          label: coverage
+          message: ${{ steps.coverage.outputs.percent }}%
+          valColorRange: ${{ steps.coverage.outputs.percent }}
+          minColorRange: 50
+          maxColorRange: 90
 
       - name: Keep screenshots from failed system tests
         uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
+          path: |
+            ${{ github.workspace }}/tmp/screenshots
+            ${{ github.workspace }}/tmp/capybara
           if-no-files-found: ignore
