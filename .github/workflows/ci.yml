@@ -129,7 +129,7 @@ jobs:
       # COVERAGE_GIST_ID (id заранее созданного gist) — см. README
       - name: Update coverage badge
         if: github.ref == 'refs/heads/master' && github.event_name == 'push' && vars.COVERAGE_GIST_ID != ''
-        uses: schneegans/dynamic-badges-action@v1.7.0
+        uses: schneegans/dynamic-badges-action@v1.9.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: ${{ vars.COVERAGE_GIST_ID }}
